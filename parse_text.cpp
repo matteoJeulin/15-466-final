@@ -62,8 +62,8 @@ void Parser::parse_story(const std::string &filename)
 
     // assert(story.size() == nb_states && "Invalid number of states in the state machine, does not match number specified at the top of the file");
 
-    std::string atlas = std::filesystem::path(filename).stem();
-    std::ofstream out("./parsing/" + atlas + ".story", std::ios::binary);
+    auto atlas = std::filesystem::path(filename).stem();
+    std::ofstream out("./parsing/" + atlas.string() + ".story", std::ios::binary);
     write_chunk("stry", story, &out);
     out.close();
 
