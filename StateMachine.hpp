@@ -28,7 +28,7 @@ struct TextManager
         GLuint tex_id;
         uint32_t width, height;
         float advance;
-        float bearing_x, bearing_y;
+        FT_Int bearing_x, bearing_y;
     };
 
     void load_glyph(hb_codepoint_t gid);
