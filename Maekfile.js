@@ -204,11 +204,11 @@ const show_meshes_exe = maek.LINK([...show_meshes_names, ...common_names], 'scen
 const show_scene_exe = maek.LINK([...show_scene_names, ...common_names], 'scenes/show-scene');
 const utility_exe = maek.LINK([...utility_objs, ...common_names], 'utility');
 
-const freetype_test_exe = maek.LINK([...freetype_test_names], 'freetype-test');
+//const freetype_test_exe = maek.LINK([...freetype_test_names], 'freetype-test');
 
 //set the default target to the game (and copy the readme files):
-maek.TARGETS = [game_exe, show_meshes_exe, show_scene_exe, freetype_test_exe, utility_exe, ...copies];
-
+//maek.TARGETS = [game_exe, show_meshes_exe, show_scene_exe, freetype_test_exe, utility_exe, ...copies];
+maek.TARGETS = [game_exe, show_meshes_exe, show_scene_exe, utility_exe, ...copies];
 //Note that tasks that produce ':abstract targets' are never cached.
 // This is similar to how .PHONY targets behave in make.
 
