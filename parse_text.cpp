@@ -42,8 +42,7 @@ void Parser::parse_story(const std::string &filename)
 
         // Get the transitions form current_state
         uint32_t transition_index = 0;
-        c = file.peek();
-        while (c != '}')
+        while (file.peek() != '}' && file)
         {
             assert(transition_index < max_transition && "Too many transitions from current state.");
             StateMachine::Transition t;
@@ -55,7 +54,6 @@ void Parser::parse_story(const std::string &filename)
             current_state.transitions[transition_index] = t;
 
             transition_index++;
-            c = file.peek();
         }
         file >> c;
 
