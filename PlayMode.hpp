@@ -27,5 +27,49 @@ struct PlayMode : Mode
 	{
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
-	} left, right, down, up;
+	} left, right, down, up, jump, mute;
+
+	// local copy of the game scene (so code can change it during gameplay):
+	Scene scene;
+
+	Scene::Transform *player = nullptr;
+	Scene::Transform *goal = nullptr;
+	Scene::Transform *deathPlane = nullptr;
+	std::vector<Scene::Transform *> platforms;
+
+	// camera:
+	Scene::Camera *camera = nullptr;
+
+	glm::vec3 playerSpeed = glm::vec3(0.0f);
+
+	// Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
+	const float playerAcceleration = 7.5f;
+
+	// Player's maximum speed
+	const float playerMaxSpeed = 10.0f;
+
+	// Player and shark speeds have different units because of their scale in blender
+	float jumpSpeed = 10.0f;
+
+	// Gravitational force
+	float gravity = 19.62f;
+
+	bool noclip = false;
+	bool won = false;
+	bool dead = false;
+
+	bool jumping = false;
+
+	// Position of the player in the previous frame
+	glm::vec3 previous_player_pos;
+	// Platform on which the player is
+	Scene::Transform *player_platform = nullptr;
+
+	std::string screen_text = "";
+
+	// Checks if the player is colliding with the top of a given platform and applies collision
+	bool collide_platform_top(Scene::Transform *platform);
+
+	// Checks if the player is colliding with the side of a given platform and applies collision
+	bool collide_platform_side(Scene::Transform *platform);
 };
