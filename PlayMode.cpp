@@ -14,19 +14,8 @@
 #include <random>
 #include <fstream>
 
-Load<StateMachine> story_states(LoadTagDefault, []() -> StateMachine const *
-								{
-	std::vector<StateMachine::State> states;
-
-	std::ifstream file("./parsing/test.story", std::ios::binary);
-	read_chunk(file, "stry", &states);
-
-	return new StateMachine(states); });
-
 PlayMode::PlayMode()
 {
-	story = StateMachine(story_states.value);
-	story.reset();
 }
 
 PlayMode::~PlayMode()
@@ -74,12 +63,10 @@ void PlayMode::update(float elapsed)
 		if (left.pressed)
 		{
 			left.pressed = false;
-			story.switch_state(story.current_state.transitions[0]);
 		}
 		else if (right.pressed)
 		{
 			right.pressed = false;
-			story.switch_state(story.current_state.transitions[1]);
 		}
 	}
 
@@ -99,8 +86,5 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
 
-	{
-		story.draw_current_state(drawable_size, glm::vec2(36.0f, 36.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-	}
 	GL_ERRORS();
 }

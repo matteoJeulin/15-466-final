@@ -172,7 +172,7 @@ const common_names = [
 	maek.CPP('Mode.cpp'),
 	maek.CPP('GL.cpp'),
 	maek.CPP('Load.cpp'),
-	maek.CPP('StateMachine.cpp')
+	maek.CPP('TextManager.cpp')
 ];
 
 const show_meshes_names = [
@@ -187,14 +187,6 @@ const show_scene_names = [
 	maek.CPP('ShowSceneMode.cpp')
 ];
 
-const freetype_test_names = [
-	maek.CPP('freetype-test.cpp')
-];
-
-const utility_objs = [
-  	maek.CPP('parse_text.cpp')
-];
-
 //the '[exeFile =] LINK(objFiles, exeFileBase, [, options])' links an array of objects into an executable:
 // objFiles: array of objects to link
 // exeFileBase: name of executable file to produce
@@ -202,13 +194,12 @@ const utility_objs = [
 const game_exe = maek.LINK([...game_names, ...common_names], 'dist/game');
 const show_meshes_exe = maek.LINK([...show_meshes_names, ...common_names], 'scenes/show-meshes');
 const show_scene_exe = maek.LINK([...show_scene_names, ...common_names], 'scenes/show-scene');
-const utility_exe = maek.LINK([...utility_objs, ...common_names], 'utility');
 
 //const freetype_test_exe = maek.LINK([...freetype_test_names], 'freetype-test');
 
 //set the default target to the game (and copy the readme files):
 //maek.TARGETS = [game_exe, show_meshes_exe, show_scene_exe, freetype_test_exe, utility_exe, ...copies];
-maek.TARGETS = [game_exe, show_meshes_exe, show_scene_exe, utility_exe, ...copies];
+maek.TARGETS = [game_exe, show_meshes_exe, show_scene_exe, ...copies];
 //Note that tasks that produce ':abstract targets' are never cached.
 // This is similar to how .PHONY targets behave in make.
 

@@ -8,7 +8,7 @@
 #include <vector>
 #include <deque>
 
-#include "StateMachine.hpp"
+#include "TextManager.hpp"
 
 struct PlayMode : Mode
 {
@@ -28,6 +28,4 @@ struct PlayMode : Mode
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
 	} left, right, down, up;
-
-	StateMachine story;
 };
