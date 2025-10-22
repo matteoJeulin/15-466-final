@@ -17,12 +17,12 @@
 GLuint level_meshes_for_lit_color_texture_program = 0;
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 							  {
-	MeshBuffer const *ret = new MeshBuffer(data_path("level.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("Cheese.pnct"));
 	level_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret; });
 
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
-						{ return new Scene(data_path("level.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
+						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
 												 Mesh const &mesh = level_meshes->lookup(mesh_name);
 
@@ -40,24 +40,28 @@ PlayMode::PlayMode() : scene(*level_scene)
 {
 	for (auto &transform : scene.transforms)
 	{
-		if (transform.name == "Player")
-			player = &transform;
-		else if (transform.name == "DeathPlane")
-			deathPlane = &transform;
-		else if (transform.name.substr(0, 4) == "Plat")
+		if (transform.name == "Cheese_Wheel")
+			cheese_wheel = &transform;
+		else if (transform.name == "Hot_Plate")
+			hot_plate = &transform;
+		else if (transform.name == "Cold_Plate")
+			cold_plate = &transform;
+		else if (transform.name.substr(0, 9) == "Collision")
 		{
-			platforms.emplace_back(&transform);
-			if (transform.name == "PlatEnd")
-				goal = &transform;
+			collision_platforms.emplace_back(&transform);
+			if (transform.name == "Collision_CounterTop") {
+				counter_top = &transform;
+				std::cout << "countertop added" << std::endl;
+			}
+			
 		}
 	}
-
-	if (player == nullptr)
-		throw std::runtime_error("Player not found.");
-	if (deathPlane == nullptr)
-		throw std::runtime_error("Death plane not found.");
-	if (goal == nullptr)
-		throw std::runtime_error("Goal not found.");
+	if (cheese_wheel == nullptr)
+		throw std::runtime_error("Cheese not found.");
+	if (hot_plate == nullptr)
+		throw std::runtime_error("Hot plate not found.");
+	if (cold_plate == nullptr)
+		throw std::runtime_error("Cold plate not found.");
 
 	// get pointer to camera for convenience:
 	if (scene.cameras.size() != 1)
@@ -174,8 +178,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				evt.motion.yrel / float(window_size.y));
 			// Make sure the rotation does not roll the character by multiplying yaw on one side
 			// and pitch on the other (source: https://stackoverflow.com/questions/46738139/prevent-rotation-around-certain-axis-with-quaternion)
-			player->rotation = glm::normalize(
-				glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 0.0f, 1.0f)) * player->rotation * glm::angleAxis(-motion.y * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f)));
+			cheese_wheel->rotation = glm::normalize(
+				glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 0.0f, 1.0f)) * cheese_wheel->rotation * glm::angleAxis(-motion.y * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f)));
 			return true;
 		}
 	}
@@ -185,68 +189,78 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 bool PlayMode::collide_platform_top(Scene::Transform *platform)
 {
-	glm::vec3 &player_pos = player->position;
-	glm::vec3 player_size = player->scale;
+	glm::vec3 &cheese_pos = cheese_wheel->position;
+	glm::vec3 cheese_size = cheese_wheel->scale;
 
 	glm::vec3 platform_pos = platform->position;
 	glm::vec3 platform_size = platform->scale;
-	// Check the x and y coordinates
-	if (player_pos.x <= platform_pos.x + platform_size.x && player_pos.x >= platform_pos.x - platform_size.x &&
-		player_pos.y <= platform_pos.y + platform_size.y && player_pos.y >= platform_pos.y - platform_size.y &&
-		// Check if the elevation is correct
-		player_pos.z - player_size.z < platform_pos.z + platform_size.z && previous_player_pos.z - player_size.z >= platform_pos.z + platform_size.z)
+
+	bool overlapXY =
+		(cheese_pos.x - cheese_size.x <= platform_pos.x + platform_size.x) &&
+		(cheese_pos.x + cheese_size.x >= platform_pos.x - platform_size.x) &&
+		(cheese_pos.y - cheese_size.y <= platform_pos.y + platform_size.y) &&
+		(cheese_pos.y + cheese_size.y >= platform_pos.y - platform_size.y);
+
+	if (!overlapXY) return false;
+
+	//Check the x and y coordinates
+	if (cheese_pos.x <= platform_pos.x + platform_size.x && cheese_pos.x >= platform_pos.x - platform_size.x &&
+		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
+		//Check if the elevation is correct
+		cheese_pos.z - cheese_size.z < platform_pos.z + platform_size.z && previous_cheese_pos.z - cheese_size.z >= platform_pos.z + platform_size.z)
 	{
-		player_pos.z = platform_pos.z + platform_size.z + player_size.z;
-		playerSpeed.z = 0.0f;
-		player_platform = platform;
+		cheese_pos.z = platform_pos.z + platform_size.z + cheese_size.z;
+		cheeseSpeed.z = 0.0f;
+		cheese_platform = platform;
 		return true;
 	}
 
 	return false;
 }
 
+
 bool PlayMode::collide_platform_side(Scene::Transform *platform)
 {
-	glm::vec3 &player_pos = player->position;
-	glm::vec3 player_size = player->scale;
+	glm::vec3 &cheese_pos = cheese_wheel->position;
+	glm::vec3 cheese_size = cheese_wheel->scale;
 
 	glm::vec3 platform_pos = platform->position;
 	glm::vec3 platform_size = platform->scale;
 
 	// Check the collision with each if the sides individually
-	if (player_pos.x <= platform_pos.x + platform_size.x && player_pos.x >= platform_pos.x - platform_size.x &&
-		player_pos.z <= platform_pos.z + platform_size.z && player_pos.z >= platform_pos.z - platform_size.z &&
-		player_pos.y - player_size.y < platform_pos.y + platform_size.y && previous_player_pos.y - player_size.y >= platform_pos.y + platform_size.y)
+	if (cheese_pos.x <= platform_pos.x + platform_size.x && cheese_pos.x >= platform_pos.x - platform_size.x &&
+		cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
+		cheese_pos.y - cheese_size.y < platform_pos.y + platform_size.y && previous_cheese_pos.y - cheese_size.y >= platform_pos.y + platform_size.y)
 	{
-		player_pos.y = platform_pos.y + platform_size.y + player_size.y;
-		playerSpeed.y = 0.0f;
+		cheese_pos.y = platform_pos.y + platform_size.y + cheese_size.y;
+		cheeseSpeed.y = 0.0f;
 		return true;
 	}
 
-	if (player_pos.x <= platform_pos.x + platform_size.x && player_pos.x >= platform_pos.x - platform_size.x &&
-		player_pos.z <= platform_pos.z + platform_size.z && player_pos.z >= platform_pos.z - platform_size.z &&
-		player_pos.y + player_size.y > platform_pos.y - platform_size.y && previous_player_pos.y + player_size.y <= platform_pos.y - platform_size.y)
+	if (cheese_pos.x <= platform_pos.x + platform_size.x && cheese_pos.x >= platform_pos.x - platform_size.x &&
+		cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
+		cheese_pos.y + cheese_size.y > platform_pos.y - platform_size.y && previous_cheese_pos.y + cheese_size.y <= platform_pos.y - platform_size.y)
 	{
-		player_pos.y = platform_pos.y - platform_size.y - player_size.y;
-		playerSpeed.y = 0.0f;
+		cheese_pos.y = platform_pos.y - platform_size.y - cheese_size.y;
+		cheeseSpeed.y = 0.0f;
 		return true;
 	}
 
-	if (player_pos.z <= platform_pos.z + platform_size.z && player_pos.z >= platform_pos.z - platform_size.z &&
-		player_pos.y <= platform_pos.y + platform_size.y && player_pos.y >= platform_pos.y - platform_size.y &&
-		player_pos.x - player_size.x < platform_pos.x + platform_size.x && previous_player_pos.x - player_size.x >= platform_pos.x + platform_size.x)
+	if (cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
+		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
+		cheese_pos.x - cheese_size.x < platform_pos.x + platform_size.x && previous_cheese_pos.x - cheese_size.x >= platform_pos.x + platform_size.x)
 	{
-		player_pos.x = platform_pos.x + platform_size.x + player_size.x;
-		playerSpeed.x = 0.0f;
+		cheese_pos.x = platform_pos.x + platform_size.x + cheese_size.x;
+		cheeseSpeed.x = 0.0f;
 		return true;
 	}
 
-	if (player_pos.z <= platform_pos.z + platform_size.z && player_pos.z >= platform_pos.z - platform_size.z &&
-		player_pos.y <= platform_pos.y + platform_size.y && player_pos.y >= platform_pos.y - platform_size.y &&
-		player_pos.x + player_size.x > platform_pos.x - platform_size.x && previous_player_pos.x + player_size.y <= platform_pos.x - platform_size.x)
+	if (cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
+		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
+		cheese_pos.x + cheese_size.x > platform_pos.x - platform_size.x && previous_cheese_pos.x + cheese_size.x <= platform_pos.x - platform_size.x)
 	{
-		player_pos.x = platform_pos.x - platform_size.x - player_size.x;
-		playerSpeed.x = 0.0f;
+		cheese_pos.x = platform_pos.x - platform_size.x - cheese_size.x;
+		cheeseSpeed.x = 0.0f;
 		return true;
 	}
 
@@ -257,33 +271,34 @@ void PlayMode::update(float elapsed)
 {
 			// combine inputs into a move:
 		if (left.pressed && !right.pressed)
-			playerSpeed.x = std::max(playerSpeed.x - playerAcceleration * elapsed, -playerMaxSpeed);
+			cheeseSpeed.x = std::max(cheeseSpeed.x - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
 		if (!left.pressed && right.pressed)
-			playerSpeed.x = std::min(playerSpeed.x + playerAcceleration * elapsed, playerMaxSpeed);
+			cheeseSpeed.x = std::min(cheeseSpeed.x + cheeseAcceleration * elapsed, cheeseMaxSpeed);
 		if (down.pressed && !up.pressed)
-			playerSpeed.y = std::max(playerSpeed.y - playerAcceleration * elapsed, -playerMaxSpeed);
+			cheeseSpeed.y = std::max(cheeseSpeed.y - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
 		if (!down.pressed && up.pressed)
-			playerSpeed.y = std::min(playerSpeed.y + playerAcceleration * elapsed, playerMaxSpeed);
-		if (jump.pressed && !jumping && player_platform != nullptr)
+			cheeseSpeed.y = std::min(cheeseSpeed.y + cheeseAcceleration * elapsed, cheeseMaxSpeed);
+		if (jump.pressed && !jumping && cheese_platform != nullptr)
 		{
-			playerSpeed.z = jumpSpeed;
+			cheeseSpeed.z = jumpSpeed;
 			jump.pressed = false;
 			jumping = true;
 		}
 
 		// Apply inertia to get the player down to 0 speed.
-		if ((!left.pressed && !right.pressed) || (left.pressed && playerSpeed.x > 0) || (right.pressed && playerSpeed.x < 0))
+		if ((!left.pressed && !right.pressed) || (left.pressed && cheeseSpeed.x > 0) || (right.pressed && cheeseSpeed.x < 0))
 		{
-			playerSpeed.x -= playerSpeed.x * elapsed * 10;
+			cheeseSpeed.x -= cheeseSpeed.x * elapsed * 10;
 		}
-		if ((!up.pressed && !down.pressed) || (up.pressed && playerSpeed.y < 0) || (down.pressed && playerSpeed.y > 0))
+		if ((!up.pressed && !down.pressed) || (up.pressed && cheeseSpeed.y < 0) || (down.pressed && cheeseSpeed.y > 0))
 		{
-			playerSpeed.y -= playerSpeed.y * elapsed * 10;
+			cheeseSpeed.y -= cheeseSpeed.y * elapsed * 10;
 		}
 
-		playerSpeed.z -= gravity * elapsed;
+		cheeseSpeed.z -= gravity * elapsed;
 
-		glm::mat4x3 frame = player->make_parent_from_local();
+		//glm::mat4x3 frame = player->make_parent_from_local();
+		glm::mat4x3 frame = cheese_wheel->make_parent_from_local();
 		glm::vec3 frame_forward = -frame[0];
 		glm::vec3 frame_right = frame[1];
 
@@ -293,15 +308,16 @@ void PlayMode::update(float elapsed)
 		frame_right = glm::normalize(frame_right);
 
 
-		previous_player_pos = player->position;
+		//previous_player_pos = player->position;
+		previous_cheese_pos = cheese_wheel->position;
 
 		// y-axis is the forward/backward direction and the x-axis is the right/left direction
-		player->position += playerSpeed.x * frame_right * elapsed + playerSpeed.y * frame_forward * elapsed + playerSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
+		cheese_wheel->position += cheeseSpeed.x * frame_right * elapsed + cheeseSpeed.y * frame_forward * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 
 		if (!noclip)
 		{
-			player_platform = nullptr;
-			for (Scene::Transform *platform : platforms)
+			cheese_platform = nullptr;
+			for (Scene::Transform *platform : collision_platforms)
 			{
 				collide_platform_side(platform);
 				if (collide_platform_top(platform))

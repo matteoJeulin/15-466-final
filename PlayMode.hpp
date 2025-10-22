@@ -32,21 +32,28 @@ struct PlayMode : Mode
 	// local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 
-	Scene::Transform *player = nullptr;
+	/*Scene::Transform *player = nullptr;
 	Scene::Transform *goal = nullptr;
 	Scene::Transform *deathPlane = nullptr;
-	std::vector<Scene::Transform *> platforms;
+	std::vector<Scene::Transform *> platforms;*/
+
+	Scene::Transform* cheese_wheel = nullptr;
+	Scene::Transform* hot_plate = nullptr;
+	Scene::Transform* cold_plate = nullptr;
+	Scene::Transform* counter_top = nullptr;
+	std::vector<Scene::Transform *> collision_platforms;
 
 	// camera:
 	Scene::Camera *camera = nullptr;
 
-	glm::vec3 playerSpeed = glm::vec3(0.0f);
+	//glm::vec3 playerSpeed = glm::vec3(0.0f);
 
+	glm::vec3 cheeseSpeed = glm::vec3(0.0f);
 	// Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
-	const float playerAcceleration = 7.5f;
+	const float cheeseAcceleration = 7.5f;
 
 	// Player's maximum speed
-	const float playerMaxSpeed = 10.0f;
+	const float cheeseMaxSpeed = 10.0f;
 
 	// Player and shark speeds have different units because of their scale in blender
 	float jumpSpeed = 10.0f;
@@ -61,9 +68,9 @@ struct PlayMode : Mode
 	bool jumping = false;
 
 	// Position of the player in the previous frame
-	glm::vec3 previous_player_pos;
+	glm::vec3 previous_cheese_pos;
 	// Platform on which the player is
-	Scene::Transform *player_platform = nullptr;
+	Scene::Transform *cheese_platform = nullptr;
 
 	std::string screen_text = "";
 
