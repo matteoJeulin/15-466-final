@@ -51,9 +51,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 			collision_platforms.emplace_back(&transform);
 			if (transform.name == "Collision_CounterTop") {
 				counter_top = &transform;
-				std::cout << "countertop added" << std::endl;
 			}
-			
 		}
 	}
 	if (cheese_wheel == nullptr)
@@ -95,28 +93,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			right.pressed = true;
 			return true;
 		}
-		else if (evt.key.key == SDLK_W || evt.key.key == SDLK_UP)
-		{
-			up.downs += 1;
-			up.pressed = true;
-			return true;
-		}
-		else if (evt.key.key == SDLK_S || evt.key.key == SDLK_DOWN)
-		{
-			down.downs += 1;
-			down.pressed = true;
-			return true;
-		}
 		else if (evt.key.key == SDLK_SPACE)
 		{
 			jump.downs += 1;
 			jump.pressed = true;
-			return true;
-		}
-		else if (evt.key.key == SDLK_M)
-		{
-			mute.downs += 1;
-			mute.pressed = true;
 			return true;
 		}
 	}
@@ -130,16 +110,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		else if (evt.key.key == SDLK_D || evt.key.key == SDLK_RIGHT)
 		{
 			right.pressed = false;
-			return true;
-		}
-		else if (evt.key.key == SDLK_W || evt.key.key == SDLK_UP)
-		{
-			up.pressed = false;
-			return true;
-		}
-		else if (evt.key.key == SDLK_S || evt.key.key == SDLK_DOWN)
-		{
-			down.pressed = false;
 			return true;
 		}
 		else if (evt.key.key == SDLK_SPACE)
@@ -166,20 +136,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		if (SDL_GetWindowRelativeMouseMode(Mode::window) == false)
 		{
 			SDL_SetWindowRelativeMouseMode(Mode::window, true);
-			return true;
-		}
-	}
-	else if (evt.type == SDL_EVENT_MOUSE_MOTION)
-	{
-		if (SDL_GetWindowRelativeMouseMode(Mode::window) == true)
-		{
-			glm::vec2 motion = glm::vec2(
-				evt.motion.xrel / float(window_size.y),
-				evt.motion.yrel / float(window_size.y));
-			// Make sure the rotation does not roll the character by multiplying yaw on one side
-			// and pitch on the other (source: https://stackoverflow.com/questions/46738139/prevent-rotation-around-certain-axis-with-quaternion)
-			cheese_wheel->rotation = glm::normalize(
-				glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 0.0f, 1.0f)) * cheese_wheel->rotation * glm::angleAxis(-motion.y * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f)));
 			return true;
 		}
 	}
@@ -269,15 +225,11 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 
 void PlayMode::update(float elapsed)
 {
-			// combine inputs into a move:
+		// combine inputs into a move:
 		if (left.pressed && !right.pressed)
 			cheeseSpeed.x = std::max(cheeseSpeed.x - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
 		if (!left.pressed && right.pressed)
 			cheeseSpeed.x = std::min(cheeseSpeed.x + cheeseAcceleration * elapsed, cheeseMaxSpeed);
-		if (down.pressed && !up.pressed)
-			cheeseSpeed.y = std::max(cheeseSpeed.y - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
-		if (!down.pressed && up.pressed)
-			cheeseSpeed.y = std::min(cheeseSpeed.y + cheeseAcceleration * elapsed, cheeseMaxSpeed);
 		if (jump.pressed && !jumping && cheese_platform != nullptr)
 		{
 			cheeseSpeed.z = jumpSpeed;
@@ -289,10 +241,6 @@ void PlayMode::update(float elapsed)
 		if ((!left.pressed && !right.pressed) || (left.pressed && cheeseSpeed.x > 0) || (right.pressed && cheeseSpeed.x < 0))
 		{
 			cheeseSpeed.x -= cheeseSpeed.x * elapsed * 10;
-		}
-		if ((!up.pressed && !down.pressed) || (up.pressed && cheeseSpeed.y < 0) || (down.pressed && cheeseSpeed.y > 0))
-		{
-			cheeseSpeed.y -= cheeseSpeed.y * elapsed * 10;
 		}
 
 		cheeseSpeed.z -= gravity * elapsed;
