@@ -41,17 +41,20 @@ TextManager::TextManager()
 {
     FT_Error ft_error;
 
-    if ((ft_error = FT_Init_FreeType(&ft_library)))
+    ft_error = FT_Init_FreeType(&ft_library);
+    if ((ft_error))
     {
         std::cout << "No library" << std::endl;
         abort();
     }
-    if ((ft_error = FT_New_Face(ft_library, font_file, 0, &ft_face)))
+    ft_error = FT_New_Face(ft_library, font_file, 0, &ft_face);
+    if ((ft_error))
     {
         std::cout << "No Face " << ft_error << std::endl;
         abort();
     }
-    if ((ft_error = FT_Set_Char_Size(ft_face, font_size * 64, font_size * 64, 0, 0)))
+    ft_error = FT_Set_Char_Size(ft_face, font_size * 64, font_size * 64, 0, 0);
+    if ((ft_error))
     {
         std::cout << "No Char size" << std::endl;
         abort();
