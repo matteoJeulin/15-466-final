@@ -9,6 +9,7 @@
 #include <deque>
 
 #include "TextManager.hpp"
+#include "DynamicMeshBuffer.hpp"
 
 struct PlayMode : Mode
 {
@@ -79,4 +80,12 @@ struct PlayMode : Mode
 
 	// Checks if the player is colliding with the side of a given platform and applies collision
 	bool collide_platform_side(Scene::Transform *platform);
+
+	//dynamic mesh data:
+	DynamicMeshBuffer wave;
+	//vao mapping wave data for lit_color_texture_program:
+	GLuint wave_for_lit_color_texture_program = 0;
+	//drawable (in scene) associated with the wave data:
+	Scene::Drawable *wave_drawable = nullptr;
+	float wave_acc = 0.0f;
 };

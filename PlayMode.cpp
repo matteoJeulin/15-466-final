@@ -13,6 +13,10 @@
 
 #include <random>
 #include <fstream>
+#include <cmath>
+
+
+constexpr float PI = 3.14159265358979323846f;
 
 GLuint level_meshes_for_lit_color_texture_program = 0;
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
@@ -65,10 +69,27 @@ PlayMode::PlayMode() : scene(*level_scene)
 	if (scene.cameras.size() != 1)
 		throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
+
+	{ //set up drawable for wave:
+		//make vao:
+		wave_for_lit_color_texture_program = wave.make_vao_for_program(lit_color_texture_program->program);
+
+		//make scene entry for the vao:
+		scene.transforms.emplace_back();
+		scene.drawables.emplace_back(&scene.transforms.back());
+		wave_drawable = &scene.drawables.back();
+		wave_drawable->pipeline = lit_color_texture_program_pipeline;
+		wave_drawable->pipeline.vao = wave_for_lit_color_texture_program;
+		wave_drawable->pipeline.type = GL_TRIANGLE_STRIP;
+		wave_drawable->pipeline.start = 0;
+		wave_drawable->pipeline.count = 0; //will set dynamically, later, based on generated geometry
+	}
 }
 
 PlayMode::~PlayMode()
 {
+	glDeleteVertexArrays(1, &wave_for_lit_color_texture_program);
+	wave_for_lit_color_texture_program = 0;
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
@@ -273,6 +294,66 @@ void PlayMode::update(float elapsed)
 					jumping = false;
 				}
 			}
+		}
+
+			//----------------------------------------
+		{ //generate some waves:
+
+			//advance wave animation:
+			wave_acc += elapsed / 5.0f; //5 second wave animation cycle
+			wave_acc -= std::floor(wave_acc);
+
+			//make geometry:
+			size_t size = 100; //will use a size x size grid
+			std::vector< DynamicMeshBuffer::Vertex > vertices;
+			size_t expected_size = (size-1) * (2 * size) + (size - 2) * 2;
+			vertices.reserve(expected_size);
+
+			auto attrib_at = [&](size_t xi, size_t yi) -> DynamicMeshBuffer::Vertex {
+				//rescale indices to a [-10,10]^2 grid:
+				glm::vec2 pos = (glm::vec2(xi, yi) / float(size-1) - 0.5f) * 20.0f;
+
+				float r = std::hypot(pos.x, pos.y) + 0.01f; //never quite reach the center -- avoid divide-by-zero
+				float h = std::sin((r * 0.25f + wave_acc) * (2.0f * PI));
+
+				DynamicMeshBuffer::Vertex vertex;
+				vertex.Position = glm::vec3(pos, h);
+
+				// calculus :-/
+				// dh/dx = std::cos(...) * 0.25 * 2.0 * M_PI * dr/dx
+				// dr/dx = 
+				float dh_dr = 0.25f * 2.0f * PI * std::cos((r * 0.25f + wave_acc) * (2.0f * PI));
+				float dr_dx = 0.5f * (1.0f / r) * 2.0f * pos.x;
+				float dr_dy = 0.5f * (1.0f / r) * 2.0f * pos.y;
+				glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx);
+				glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy);
+				vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
+
+
+				vertex.Color = glm::u8vec4(0xff); //glm::u8vec4(0xff, std::clamp< int32_t >(256.0f * (h * 0.5f + 0.5f), 0, 255), 0xff, 0xff);
+				vertex.TexCoord = glm::vec2(xi, yi) / float(size-1);
+
+				return vertex;
+			};
+
+			for (size_t yi = 0; yi + 1 < size; ++yi) {
+				for (size_t xi = 0; xi < size; ++xi) {
+					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
+					vertices.emplace_back(attrib_at(xi, yi));
+					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
+					vertices.emplace_back(attrib_at(xi, yi+1));
+				}
+			}
+			assert(vertices.size() == expected_size);
+
+			//upload to the GPU:
+			wave.set(vertices, GL_STREAM_DRAW);
+
+			//make sure scene has the info to draw it:
+			wave_drawable->pipeline.count = wave.count;
+
+			//lift it up above the car:
+			wave_drawable->transform->position = cheese_wheel->position;
 		}
 }
 

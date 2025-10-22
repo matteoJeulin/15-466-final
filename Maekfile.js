@@ -172,7 +172,8 @@ const common_names = [
 	maek.CPP('Mode.cpp'),
 	maek.CPP('GL.cpp'),
 	maek.CPP('Load.cpp'),
-	maek.CPP('TextManager.cpp')
+	maek.CPP('TextManager.cpp'),
+	maek.CPP('DynamicMeshBuffer.cpp')
 ];
 
 const show_meshes_names = [
