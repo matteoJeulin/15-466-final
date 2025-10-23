@@ -58,10 +58,10 @@ struct PlayMode : Mode
 	const float cheeseMaxSpeed = 10.0f;
 
 	// Player and shark speeds have different units because of their scale in blender
-	float jumpSpeed = 15.0f;
+	float jumpSpeed = 10.0f;
 
 	// Gravitational force
-	float gravity = 9.81f;
+	float gravity = 19.62f;
 
 	bool noclip = false;
 	bool won = false;
