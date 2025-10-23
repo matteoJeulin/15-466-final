@@ -28,7 +28,7 @@ struct PlayMode : Mode
 	{
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
-	} left, right, down, up, jump, mute;
+	} left, right, down, up, jump, mute, debug_heat; // debug_temp flips temp delta between -MELT_MAX and MELT_MAX
 
 	// local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
@@ -42,6 +42,7 @@ struct PlayMode : Mode
 	Scene::Transform* hot_plate = nullptr;
 	Scene::Transform* cold_plate = nullptr;
 	Scene::Transform* counter_top = nullptr;
+	Scene::Transform* gate = nullptr;
 	std::vector<Scene::Transform *> collision_platforms;
 
 	// camera:
@@ -65,6 +66,7 @@ struct PlayMode : Mode
 	bool noclip = false;
 	bool won = false;
 	bool dead = false;
+	bool inside_gate = false;
 
 	bool jumping = false;
 
@@ -72,6 +74,12 @@ struct PlayMode : Mode
 	glm::vec3 previous_cheese_pos;
 	// Platform on which the player is
 	Scene::Transform *cheese_platform = nullptr;
+
+	// Melt Properties
+	const float MELT_MIN = 0;
+	const float MELT_MAX = 5;
+	float melt_level = 0;
+	float melt_delta = MELT_MAX; // positive means melting, negative means cooling
 
 	std::string screen_text = "";
 

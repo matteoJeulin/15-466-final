@@ -44,6 +44,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 {
 	for (auto &transform : scene.transforms)
 	{
+		std::cout << transform.name << std::endl;
 		if (transform.name == "Cheese_Wheel")
 			cheese_wheel = &transform;
 		else if (transform.name == "Hot_Plate")
@@ -55,6 +56,9 @@ PlayMode::PlayMode() : scene(*level_scene)
 			collision_platforms.emplace_back(&transform);
 			if (transform.name == "Collision_CounterTop") {
 				counter_top = &transform;
+			}
+			else if (transform.name == "Collision_Gate") {
+				gate = &transform;
 			}
 		}
 	}
@@ -120,6 +124,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			jump.pressed = true;
 			return true;
 		}
+		else if (evt.key.key == SDLK_J) {
+			debug_heat.downs += 1;
+			debug_heat.pressed = true;
+			return true;
+		}
 	}
 	else if (evt.type == SDL_EVENT_KEY_UP)
 	{
@@ -141,6 +150,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		else if (evt.key.key == SDLK_M)
 		{
 			mute.pressed = false;
+			return true;
+		}
+		else if (evt.key.key == SDLK_J) {
+			debug_heat.pressed = false;
 			return true;
 		}
 	}
@@ -198,19 +211,29 @@ bool PlayMode::collide_platform_top(Scene::Transform *platform)
 
 bool PlayMode::collide_platform_side(Scene::Transform *platform)
 {
+	// TODO: inside_gate is not being set properly because
+	// 		 collision seems to check for initial impact
+
 	glm::vec3 &cheese_pos = cheese_wheel->position;
 	glm::vec3 cheese_size = cheese_wheel->scale;
 
 	glm::vec3 platform_pos = platform->position;
 	glm::vec3 platform_size = platform->scale;
 
-	// Check the collision with each if the sides individually
+	// Check the collision with each of the sides individually
 	if (cheese_pos.x <= platform_pos.x + platform_size.x && cheese_pos.x >= platform_pos.x - platform_size.x &&
 		cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
 		cheese_pos.y - cheese_size.y < platform_pos.y + platform_size.y && previous_cheese_pos.y - cheese_size.y >= platform_pos.y + platform_size.y)
 	{
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (A) %f\n", melt_level);
+			return true;
+		}
+
 		cheese_pos.y = platform_pos.y + platform_size.y + cheese_size.y;
 		cheeseSpeed.y = 0.0f;
+
 		return true;
 	}
 
@@ -218,8 +241,15 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
 		cheese_pos.y + cheese_size.y > platform_pos.y - platform_size.y && previous_cheese_pos.y + cheese_size.y <= platform_pos.y - platform_size.y)
 	{
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (B) %f\n", melt_level);
+			return true;
+		} 
+
 		cheese_pos.y = platform_pos.y - platform_size.y - cheese_size.y;
 		cheeseSpeed.y = 0.0f;
+		
 		return true;
 	}
 
@@ -227,8 +257,14 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
 		cheese_pos.x - cheese_size.x < platform_pos.x + platform_size.x && previous_cheese_pos.x - cheese_size.x >= platform_pos.x + platform_size.x)
 	{
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (C) %f\n", melt_level);
+			return true;
+		}
 		cheese_pos.x = platform_pos.x + platform_size.x + cheese_size.x;
 		cheeseSpeed.x = 0.0f;
+
 		return true;
 	}
 
@@ -236,16 +272,29 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
 		cheese_pos.x + cheese_size.x > platform_pos.x - platform_size.x && previous_cheese_pos.x + cheese_size.x <= platform_pos.x - platform_size.x)
 	{
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (D) %f\n", melt_level);
+			return true;
+		}
+
 		cheese_pos.x = platform_pos.x - platform_size.x - cheese_size.x;
 		cheeseSpeed.x = 0.0f;
+
 		return true;
 	}
+
+	// if (platform == gate) {
+	// 	inside_gate = false;
+	// 	printf("Outside %f\n", melt_level);
+	// }
 
 	return false;
 }
 
 void PlayMode::update(float elapsed)
 {
+
 		// combine inputs into a move:
 		if (left.pressed && !right.pressed)
 			cheeseSpeed.x = std::max(cheeseSpeed.x - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
@@ -294,13 +343,30 @@ void PlayMode::update(float elapsed)
 					jumping = false;
 				}
 			}
+			collide_platform_side(gate);
+		}
+
+		// Melt Logic
+		{
+
+			// DEBUG
+			if (debug_heat.pressed) {
+				melt_delta *= -1;
+				debug_heat.pressed = false;
+			}
+
+			// if (!inside_gate || melt_delta > 0)
+			melt_level += melt_delta * elapsed;
+			melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+			// std::cout << melt_level << std::endl;
 		}
 
 			//----------------------------------------
 		{ //generate some waves:
 
 			//advance wave animation:
-			wave_acc += elapsed / 5.0f; //5 second wave animation cycle
+			// DEBUG: (speed based on melt level)
+			wave_acc += melt_level * elapsed / 5.0f; //5 second wave animation cycle
 			wave_acc -= std::floor(wave_acc);
 
 			//make geometry:
