@@ -73,27 +73,58 @@ PlayMode::PlayMode() : scene(*level_scene)
 	if (scene.cameras.size() != 1)
 		throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
+	
+	Scene::Drawable *cheese_drawable = nullptr;
+    for (auto &drawable : scene.drawables) {
+        if (drawable.transform == cheese_wheel) {
+            cheese_drawable = &drawable;
+            break;
+        }
+    }
 
-	{ //set up drawable for wave:
-		//make vao:
-		wave_for_lit_color_texture_program = wave.make_vao_for_program(lit_color_texture_program->program);
+	if (cheese_drawable == nullptr) throw std::runtime_error("Cheese wheel drawable not found.");
 
-		//make scene entry for the vao:
-		scene.transforms.emplace_back();
-		scene.drawables.emplace_back(&scene.transforms.back());
-		wave_drawable = &scene.drawables.back();
-		wave_drawable->pipeline = lit_color_texture_program_pipeline;
-		wave_drawable->pipeline.vao = wave_for_lit_color_texture_program;
-		wave_drawable->pipeline.type = GL_TRIANGLE_STRIP;
-		wave_drawable->pipeline.start = 0;
-		wave_drawable->pipeline.count = 0; //will set dynamically, later, based on generated geometry
-	}
+    cheese_mesh = &level_meshes->lookup("Cheese_Wheel"); 
+	float min_z_value = cheese_mesh->min.z;
+
+    std::vector< DynamicMeshBuffer::Vertex > initial_vertices;
+    initial_vertices.reserve(cheese_mesh->count);
+
+	const size_t vertex_stride = sizeof(DynamicMeshBuffer::Vertex);
+
+	const GLintptr offset_bytes = (GLintptr)cheese_mesh->start * vertex_stride;
+	const GLsizeiptr size_bytes = (GLsizeiptr)cheese_mesh->count * vertex_stride;
+
+	std::vector<DynamicMeshBuffer::Vertex> initial_vertices(cheese_mesh->count );
+	glBindBuffer(GL_ARRAY_BUFFER, level_meshes->buffer);
+
+	glGetBufferSubData(
+		GL_ARRAY_BUFFER,            
+		offset_bytes,               // Byte offset to start reading
+		size_bytes,                 // Total bytes to read
+		initial_vertices.data()     // Destination pointer in CPU memory
+	);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	initial_cheese_vertices_cpu = initial_vertices;
+	cheese_vertices_cpu = initial_vertices;
+
+	initial_cheese.set(initial_vertices.data(), initial_vertices.size(), GL_DYNAMIC_DRAW); 
+    melted_cheese.set(initial_vertices.data(), initial_vertices.size(), GL_DYNAMIC_DRAW);
+
+	//change static to dynamic mesh 
+    cheese_lit_color_texture_program = initial_cheese.make_vao_for_program(lit_color_texture_program->program);
+	melted_cheese_lit_color_texture_program = initial_cheese.make_vao_for_program(lit_color_texture_program->program);
+    cheese_drawable->pipeline.vao = cheese_lit_color_texture_program;
+    cheese_drawable->pipeline.type = cheese_mesh->type;
+    cheese_drawable->pipeline.start = 0; // Starts from 0 in the new buffer
+    cheese_drawable->pipeline.count = cheese_mesh->count;
 }
 
 PlayMode::~PlayMode()
 {
-	glDeleteVertexArrays(1, &wave_for_lit_color_texture_program);
-	wave_for_lit_color_texture_program = 0;
+	glDeleteVertexArrays(1, &cheese_lit_color_texture_program);
+	cheese_lit_color_texture_program = 0;
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
@@ -354,58 +385,41 @@ void PlayMode::update(float elapsed)
 			// DEBUG: (speed based on melt level)
 			wave_acc += melt_level * elapsed / 5.0f; //5 second wave animation cycle
 			wave_acc -= std::floor(wave_acc);
+			
 
-			//make geometry:
-			size_t size = 100; //will use a size x size grid
-			std::vector< DynamicMeshBuffer::Vertex > vertices;
-			size_t expected_size = (size-1) * (2 * size) + (size - 2) * 2;
-			vertices.reserve(expected_size);
+			for (auto &vertex : cheese_vertices_cpu) {
+				glm::vec3 pos = vertex.Position;
+				float melt_percentage = (melt_level)/ MELT_MAX;
+				float melt_level_z = pos.z * melt_percentage;
 
-			auto attrib_at = [&](size_t xi, size_t yi) -> DynamicMeshBuffer::Vertex {
-				//rescale indices to a [-10,10]^2 grid:
-				glm::vec2 pos = (glm::vec2(xi, yi) / float(size-1) - 0.5f) * 20.0f;
+				float r = std::hypot(pos.x, pos.y) + 0.01f; 
+				float sin_arg = (r * 0.25f + wave_acc) * (2.0f * PI);
+				float h = std::sin(sin_arg);
+				
+				float dh_dr = 0.25f * 2.0f * PI * std::cos(sin_arg);
 
-				float r = std::hypot(pos.x, pos.y) + 0.01f; //never quite reach the center -- avoid divide-by-zero
-				float h = std::sin((r * 0.25f + wave_acc) * (2.0f * PI));
+				// Apply deformation to the Z component (vertical axis for the cheese wheel)
+				// Adjust the multiplier for the desired wave intensity
+				float wave_amplitude = 0.5f; // Adjust this value to change the wave height
+				
+				// Deform the position:
+				vertex.Position.z = melt_level_z + h * wave_amplitude;
+				
+				// Deform the normal (assuming the wave is propagating in the XY plane):
+				
+				// Recalculate derivative parts for the new normal vector:
+				// dr/dx = x / r; dr/dy = y / r (from r = sqrt(x^2 + y^2))
+				float dr_dx = pos.x / r; 
+				float dr_dy = pos.y / r; 
 
-				DynamicMeshBuffer::Vertex vertex;
-				vertex.Position = glm::vec3(pos, h);
-
-				// calculus :-/
-				// dh/dx = std::cos(...) * 0.25 * 2.0 * M_PI * dr/dx
-				// dr/dx = 
-				float dh_dr = 0.25f * 2.0f * PI * std::cos((r * 0.25f + wave_acc) * (2.0f * PI));
-				float dr_dx = 0.5f * (1.0f / r) * 2.0f * pos.x;
-				float dr_dy = 0.5f * (1.0f / r) * 2.0f * pos.y;
-				glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx);
-				glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy);
+				// Tangent vectors (dp_dx, dp_dy) for the surface:
+				glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx * wave_amplitude);
+				glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy * wave_amplitude);
+				
+				// New normal is the cross product of the tangent vectors:
 				vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
-
-
-				vertex.Color = glm::u8vec4(0xff); //glm::u8vec4(0xff, std::clamp< int32_t >(256.0f * (h * 0.5f + 0.5f), 0, 255), 0xff, 0xff);
-				vertex.TexCoord = glm::vec2(xi, yi) / float(size-1);
-
-				return vertex;
-			};
-
-			for (size_t yi = 0; yi + 1 < size; ++yi) {
-				for (size_t xi = 0; xi < size; ++xi) {
-					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
-					vertices.emplace_back(attrib_at(xi, yi));
-					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
-					vertices.emplace_back(attrib_at(xi, yi+1));
-				}
 			}
-			assert(vertices.size() == expected_size);
-
-			//upload to the GPU:
-			wave.set(vertices, GL_STREAM_DRAW);
-
-			//make sure scene has the info to draw it:
-			wave_drawable->pipeline.count = wave.count;
-
-			//lift it up above the car:
-			wave_drawable->transform->position = cheese_wheel->position;
+			initial_cheese.set(cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
 		}
 }
 

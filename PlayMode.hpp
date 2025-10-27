@@ -89,10 +89,16 @@ struct PlayMode : Mode
 	bool collide_platform_side(Scene::Transform *platform);
 
 	//dynamic mesh data:
-	DynamicMeshBuffer wave;
+	DynamicMeshBuffer initial_cheese;
+	DynamicMeshBuffer melted_cheese;
+	Mesh const *cheese_mesh = nullptr;
+	std::vector<DynamicMeshBuffer::Vertex> initial_cheese_vertices_cpu;
+	std::vector<DynamicMeshBuffer::Vertex> cheese_vertices_cpu;
 	//vao mapping wave data for lit_color_texture_program:
-	GLuint wave_for_lit_color_texture_program = 0;
+	GLuint cheese_lit_color_texture_program = 0;
+	GLuint melted_cheese_lit_color_texture_program = 0;
 	//drawable (in scene) associated with the wave data:
 	Scene::Drawable *wave_drawable = nullptr;
 	float wave_acc = 0.0f;
+	float min_z_value = 0.0;
 };
