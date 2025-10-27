@@ -10,6 +10,7 @@
 
 #include "TextManager.hpp"
 #include "DynamicMeshBuffer.hpp"
+#include "Mesh.hpp"
 
 struct PlayMode : Mode
 {
@@ -100,5 +101,4 @@ struct PlayMode : Mode
 	//drawable (in scene) associated with the wave data:
 	Scene::Drawable *wave_drawable = nullptr;
 	float wave_acc = 0.0f;
-	float min_z_value = 0.0;
 };

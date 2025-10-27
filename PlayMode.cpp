@@ -14,6 +14,7 @@
 #include <random>
 #include <fstream>
 #include <cmath>
+#include <string>
 
 
 constexpr float PI = 3.14159265358979323846f;
@@ -78,17 +79,16 @@ PlayMode::PlayMode() : scene(*level_scene)
     for (auto &drawable : scene.drawables) {
         if (drawable.transform == cheese_wheel) {
             cheese_drawable = &drawable;
-            break;
+			break;
         }
     }
 
+	level_meshes->print_all_meshes();
+
 	if (cheese_drawable == nullptr) throw std::runtime_error("Cheese wheel drawable not found.");
 
-    cheese_mesh = &level_meshes->lookup("Cheese_Wheel"); 
-	float min_z_value = cheese_mesh->min.z;
-
-    std::vector< DynamicMeshBuffer::Vertex > initial_vertices;
-    initial_vertices.reserve(cheese_mesh->count);
+    cheese_mesh = &(level_meshes->lookup("Cheese_Wheel")); 
+	
 
 	const size_t vertex_stride = sizeof(DynamicMeshBuffer::Vertex);
 
@@ -383,14 +383,16 @@ void PlayMode::update(float elapsed)
 
 			//advance wave animation:
 			// DEBUG: (speed based on melt level)
-			wave_acc += melt_level * elapsed / 5.0f; //5 second wave animation cycle
+			float cheese_base = cheese_mesh->min.z;
+			wave_acc += elapsed / 5.0f; //5 second wave animation cycle
 			wave_acc -= std::floor(wave_acc);
 			
-
+			cheese_vertices_cpu = initial_cheese_vertices_cpu;
+			initial_cheese.set(initial_cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
 			for (auto &vertex : cheese_vertices_cpu) {
 				glm::vec3 pos = vertex.Position;
 				float melt_percentage = (melt_level)/ MELT_MAX;
-				float melt_level_z = pos.z * melt_percentage;
+				float melt_level_z = ((pos.z-cheese_base) * melt_percentage)+cheese_base;
 
 				float r = std::hypot(pos.x, pos.y) + 0.01f; 
 				float sin_arg = (r * 0.25f + wave_acc) * (2.0f * PI);
@@ -399,11 +401,11 @@ void PlayMode::update(float elapsed)
 				float dh_dr = 0.25f * 2.0f * PI * std::cos(sin_arg);
 
 				// Apply deformation to the Z component (vertical axis for the cheese wheel)
-				// Adjust the multiplier for the desired wave intensity
-				float wave_amplitude = 0.5f; // Adjust this value to change the wave height
+				// Adjust the multiplier for the desired wave intensity0
+				float wave_amplitude = 0.05f; // Adjust this value to change the wave height
 				
 				// Deform the position:
-				vertex.Position.z = melt_level_z + h * wave_amplitude;
+				vertex.Position.z = melt_level_z + h*wave_amplitude;
 				
 				// Deform the normal (assuming the wave is propagating in the XY plane):
 				
@@ -420,6 +422,7 @@ void PlayMode::update(float elapsed)
 				vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
 			}
 			initial_cheese.set(cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
+			
 		}
 }
 
@@ -443,6 +446,24 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
+
+	// { //use DrawLines to overlay some text:
+	// 	glDisable(GL_DEPTH_TEST);
+	// 	float aspect = float(drawable_size.x) / float(drawable_size.y);
+	// 	DrawLines lines(glm::mat4(
+	// 		1.0f / aspect, 0.0f, 0.0f, 0.0f,
+	// 		0.0f, 1.0f, 0.0f, 0.0f,
+	// 		0.0f, 0.0f, 1.0f, 0.0f,
+	// 		0.0f, 0.0f, 0.0f, 1.0f
+	// 	));
+
+	// 	constexpr float H = 0.09f;
+	// 	lines.draw_text("heat level: " + std::to_string(melt_level),
+	// 		glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
+	// 		glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+	// 		glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+	// }
+		
 
 	scene.draw(*camera);
 
