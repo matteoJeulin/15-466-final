@@ -59,7 +59,7 @@ struct PlayMode : Mode
 	const float cheeseMaxSpeed = 10.0f;
 
 	// Player and shark speeds have different units because of their scale in blender
-	float jumpSpeed = 10.0f;
+	float jumpSpeed = 30.0f;
 
 	// Gravitational force
 	float gravity = 19.62f;
@@ -95,6 +95,8 @@ struct PlayMode : Mode
 	Mesh const *cheese_mesh = nullptr;
 	std::vector<DynamicMeshBuffer::Vertex> initial_cheese_vertices_cpu;
 	std::vector<DynamicMeshBuffer::Vertex> cheese_vertices_cpu;
+	glm::quat theta; 
+
 	//vao mapping wave data for lit_color_texture_program:
 	GLuint cheese_lit_color_texture_program = 0;
 	GLuint melted_cheese_lit_color_texture_program = 0;

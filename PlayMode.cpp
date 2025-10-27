@@ -89,6 +89,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 
     cheese_mesh = &(level_meshes->lookup("Wheel_Prototype")); 
 	
+	theta= cheese_wheel->rotation;
 
 	const size_t vertex_stride = sizeof(DynamicMeshBuffer::Vertex);
 
@@ -343,8 +344,8 @@ void PlayMode::update(float elapsed)
 		frame_right.z = 0;
 		frame_right = glm::normalize(frame_right);
 
-		constexpr float ROTATION_FACTOR = 5.0f; 
-		float rotation_angle = cheeseSpeed.y * elapsed * ROTATION_FACTOR;
+		constexpr float ROTATION_FACTOR = 1.0f; 
+		float rotation_angle = cheeseSpeed.x * elapsed * (-ROTATION_FACTOR);
 
 
 		//previous_player_pos = player->position;
@@ -353,8 +354,8 @@ void PlayMode::update(float elapsed)
 		// y-axis is the forward/backward direction and the x-axis is the right/left direction
 		cheese_wheel->position += cheeseSpeed.x * frame_right * elapsed + cheeseSpeed.y * frame_forward * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 
-		glm::quat rotation = glm::angleAxis(rotation_angle, frame_right);
-		cheese_wheel->rotation = cheese_wheel->rotation * rotation;
+		glm::quat rotation = glm::angleAxis(rotation_angle, frame_forward);
+		theta = theta * rotation;
 
 
 
@@ -410,6 +411,7 @@ void PlayMode::update(float elapsed)
 
 
 			for (auto &vertex : cheese_vertices_cpu) {
+				vertex.Position = vertex.Position*theta;
 				glm::vec3 pos = vertex.Position;
 				glm::vec4 original_color_f = glm::vec4(vertex.Color); // Already 0-255 range
 				
@@ -432,7 +434,7 @@ void PlayMode::update(float elapsed)
 
 					// Assign the result back to the vertex (rounding the floats to integers)
 					vertex.Color = glm::u8vec4(final_color_f);
-					vertex.Position.z = cheese_base + 0.1f +(melt_percentage_level)*std::abs(h*wave_amplitude); 
+					vertex.Position.z = cheese_base + 0.1f +(melt_percentage_level)*std::abs(0*h*wave_amplitude); 
 
 									// Apply deformation to the Z component (vertical axis for the cheese wheel)
 				// Adjust the multiplier for the desired wave intensity0
@@ -443,7 +445,7 @@ void PlayMode::update(float elapsed)
 				else{
 
 					// Deform the position:
-					vertex.Position.z = melt_level_z + 0.1f+(melt_percentage_level)*std::abs(h*wave_amplitude);
+					vertex.Position.z = melt_level_z + 0.1f+(melt_percentage_level)*std::abs(0*h*wave_amplitude);
 				}
 
    
