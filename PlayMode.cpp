@@ -44,7 +44,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 {
 	for (auto &transform : scene.transforms)
 	{
-		std::cout << transform.name << std::endl;
+		// std::cout << transform.name << std::endl;
 		if (transform.name == "Cheese_Wheel")
 			cheese_wheel = &transform;
 		else if (transform.name == "Hot_Plate")
@@ -59,6 +59,9 @@ PlayMode::PlayMode() : scene(*level_scene)
 			}
 			else if (transform.name == "Collision_Gate") {
 				gate = &transform;
+			}
+			else if (transform.name == "Collision_Hot_Plate" || transform.name == "Collision_Cold_Plate") {
+				collision_plates.emplace_back(&transform);
 			}
 		}
 	}
@@ -159,19 +162,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	}
 	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
 	{
-		if (SDL_GetWindowRelativeMouseMode(Mode::window) == false)
-		{
-			SDL_SetWindowRelativeMouseMode(Mode::window, true);
-			return true;
-		}
-	}
-	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
-	{
-		if (SDL_GetWindowRelativeMouseMode(Mode::window) == false)
-		{
-			SDL_SetWindowRelativeMouseMode(Mode::window, true);
-			return true;
-		}
+		// if (SDL_GetWindowRelativeMouseMode(Mode::window) == false)
+		// {
+		// 	SDL_SetWindowRelativeMouseMode(Mode::window, true);
+		// 	return true;
+		// }
 	}
 
 	return false;
@@ -202,6 +197,14 @@ bool PlayMode::collide_platform_top(Scene::Transform *platform)
 		cheese_pos.z = platform_pos.z + platform_size.z + cheese_size.z;
 		cheeseSpeed.z = 0.0f;
 		cheese_platform = platform;
+
+		printf("On top of %s\n", platform->name.c_str());
+
+		// TESTING: plates will soon be togglable
+		if (platform->name == "Collision_Hot_Plate" || platform->name == "Collision_Cold_Plate") {
+			printf("On a plate\n");
+		}
+
 		return true;
 	}
 
@@ -211,9 +214,6 @@ bool PlayMode::collide_platform_top(Scene::Transform *platform)
 
 bool PlayMode::collide_platform_side(Scene::Transform *platform)
 {
-	// TODO: inside_gate is not being set properly because
-	// 		 collision seems to check for initial impact
-
 	glm::vec3 &cheese_pos = cheese_wheel->position;
 	glm::vec3 cheese_size = cheese_wheel->scale;
 
@@ -322,6 +322,12 @@ void PlayMode::update(float elapsed)
 		if (!noclip)
 		{
 			cheese_platform = nullptr;
+
+			// plate collision
+			for (Scene::Transform *plate : collision_plates) {
+				collide_platform_top(plate);
+			}
+
 			for (Scene::Transform *platform : collision_platforms)
 			{
 				collide_platform_side(platform);
