@@ -354,6 +354,9 @@ void PlayMode::update(float elapsed)
 		// y-axis is the forward/backward direction and the x-axis is the right/left direction
 		cheese_wheel->position += cheeseSpeed.x * frame_right * elapsed + cheeseSpeed.y * frame_forward * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 
+		camera->transform->position += cheeseSpeed.x* frame_right*0.9f*elapsed ;//need to change this
+
+
 		glm::quat rotation = glm::angleAxis(rotation_angle, frame_forward);
 		theta = theta * rotation;
 
@@ -512,8 +515,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	// 		glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 	// 		glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 	// }
-		
-
+	
+	
 	scene.draw(*camera);
 
 	GL_ERRORS();
