@@ -6,7 +6,6 @@
 
 #include <vector>
 
-//reference from https://github.com/15-466/15-466-f25-base3-dynamic/
 struct DynamicMeshBuffer {
 	//DynamicMeshBuffer manages dynamically-uploaded vertices.
 

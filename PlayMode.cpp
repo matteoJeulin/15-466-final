@@ -14,7 +14,6 @@
 #include <random>
 #include <fstream>
 #include <cmath>
-#include <string>
 
 
 constexpr float PI = 3.14159265358979323846f;
@@ -45,8 +44,8 @@ PlayMode::PlayMode() : scene(*level_scene)
 {
 	for (auto &transform : scene.transforms)
 	{
-		std::cout << transform.name << std::endl;
-		if (transform.name == "Wheel_Prototype")
+		// std::cout << transform.name << std::endl;
+		if (transform.name == "Cheese_Wheel")
 			cheese_wheel = &transform;
 		else if (transform.name == "Hot_Plate")
 			hot_plate = &transform;
@@ -74,58 +73,27 @@ PlayMode::PlayMode() : scene(*level_scene)
 	if (scene.cameras.size() != 1)
 		throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
-	
-	Scene::Drawable *cheese_drawable = nullptr;
-    for (auto &drawable : scene.drawables) {
-        if (drawable.transform == cheese_wheel) {
-            cheese_drawable = &drawable;
-			break;
-        }
-    }
 
-	level_meshes->print_all_meshes();
+	{ //set up drawable for wave:
+		//make vao:
+		wave_for_lit_color_texture_program = wave.make_vao_for_program(lit_color_texture_program->program);
 
-	if (cheese_drawable == nullptr) throw std::runtime_error("Cheese wheel drawable not found.");
-
-    cheese_mesh = &(level_meshes->lookup("Wheel_Prototype")); 
-	
-	theta= cheese_wheel->rotation;
-
-	const size_t vertex_stride = sizeof(DynamicMeshBuffer::Vertex);
-
-	const GLintptr offset_bytes = (GLintptr)cheese_mesh->start * vertex_stride;
-	const GLsizeiptr size_bytes = (GLsizeiptr)cheese_mesh->count * vertex_stride;
-
-	std::vector<DynamicMeshBuffer::Vertex> initial_vertices(cheese_mesh->count );
-	glBindBuffer(GL_ARRAY_BUFFER, level_meshes->buffer);
-
-	glGetBufferSubData(
-		GL_ARRAY_BUFFER,            
-		offset_bytes,               // Byte offset to start reading
-		size_bytes,                 // Total bytes to read
-		initial_vertices.data()     // Destination pointer in CPU memory
-	);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	initial_cheese_vertices_cpu = initial_vertices;
-	cheese_vertices_cpu = initial_vertices;
-
-	initial_cheese.set(initial_vertices.data(), initial_vertices.size(), GL_DYNAMIC_DRAW); 
-    melted_cheese.set(initial_vertices.data(), initial_vertices.size(), GL_DYNAMIC_DRAW);
-
-	//change static to dynamic mesh 
-    cheese_lit_color_texture_program = initial_cheese.make_vao_for_program(lit_color_texture_program->program);
-	melted_cheese_lit_color_texture_program = initial_cheese.make_vao_for_program(lit_color_texture_program->program);
-    cheese_drawable->pipeline.vao = cheese_lit_color_texture_program;
-    cheese_drawable->pipeline.type = cheese_mesh->type;
-    cheese_drawable->pipeline.start = 0; // Starts from 0 in the new buffer
-    cheese_drawable->pipeline.count = cheese_mesh->count;
+		//make scene entry for the vao:
+		scene.transforms.emplace_back();
+		scene.drawables.emplace_back(&scene.transforms.back());
+		wave_drawable = &scene.drawables.back();
+		wave_drawable->pipeline = lit_color_texture_program_pipeline;
+		wave_drawable->pipeline.vao = wave_for_lit_color_texture_program;
+		wave_drawable->pipeline.type = GL_TRIANGLE_STRIP;
+		wave_drawable->pipeline.start = 0;
+		wave_drawable->pipeline.count = 0; //will set dynamically, later, based on generated geometry
+	}
 }
 
 PlayMode::~PlayMode()
 {
-	glDeleteVertexArrays(1, &cheese_lit_color_texture_program);
-	cheese_lit_color_texture_program = 0;
+	glDeleteVertexArrays(1, &wave_for_lit_color_texture_program);
+	wave_for_lit_color_texture_program = 0;
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
@@ -357,23 +325,12 @@ void PlayMode::update(float elapsed)
 		frame_right.z = 0;
 		frame_right = glm::normalize(frame_right);
 
-		constexpr float ROTATION_FACTOR = 1.0f; 
-		float rotation_angle = cheeseSpeed.x * elapsed * (-ROTATION_FACTOR);
-
 
 		//previous_player_pos = player->position;
 		previous_cheese_pos = cheese_wheel->position;
 
 		// y-axis is the forward/backward direction and the x-axis is the right/left direction
 		cheese_wheel->position += cheeseSpeed.x * frame_right * elapsed + cheeseSpeed.y * frame_forward * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
-
-		camera->transform->position += cheeseSpeed.x* frame_right*0.9f*elapsed ;//need to change this
-
-
-		glm::quat rotation = glm::angleAxis(rotation_angle, frame_forward);
-		theta = theta * rotation;
-
-
 
 		if (!noclip)
 		{
@@ -409,86 +366,60 @@ void PlayMode::update(float elapsed)
 
 			//advance wave animation:
 			// DEBUG: (speed based on melt level)
-			float cheese_base = cheese_mesh->min.z;
-			float cheese_top = cheese_mesh->max.z;
-			float height_range = cheese_top - cheese_base;
-			wave_acc += elapsed / 5.0f; //5 second wave animation cycle
+			wave_acc += melt_level * elapsed / 5.0f; //5 second wave animation cycle
 			wave_acc -= std::floor(wave_acc);
-			float cheese_spread = 1.0f;
 
-			// Target Brown (e.g., RGB: 139, 69, 19)
-			constexpr glm::vec4 TARGET_BROWN = glm::vec4(60.0f, 10.0f, 2.0f, 255.0f);
-			
-			cheese_vertices_cpu = initial_cheese_vertices_cpu;
-			initial_cheese.set(initial_cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
-			glm::vec3 center = cheese_wheel->position;
-			float melt_percentage_level = (MELT_MAX-melt_level)/ MELT_MAX;
-			float melt_factor = (1.0f-melt_percentage_level);
-			float flow = (1.0f+melt_factor*cheese_spread);
+			//make geometry:
+			size_t size = 100; //will use a size x size grid
+			std::vector< DynamicMeshBuffer::Vertex > vertices;
+			size_t expected_size = (size-1) * (2 * size) + (size - 2) * 2;
+			vertices.reserve(expected_size);
 
+			auto attrib_at = [&](size_t xi, size_t yi) -> DynamicMeshBuffer::Vertex {
+				//rescale indices to a [-10,10]^2 grid:
+				glm::vec2 pos = (glm::vec2(xi, yi) / float(size-1) - 0.5f) * 20.0f;
 
-			for (auto &vertex : cheese_vertices_cpu) {
-				vertex.Position = vertex.Position*theta;
-				glm::vec3 pos = vertex.Position;
-				glm::vec4 original_color_f = glm::vec4(vertex.Color); // Already 0-255 range
-				
-				float melt_level_z = ((pos.z-cheese_base) * melt_percentage_level)+cheese_base;
+				float r = std::hypot(pos.x, pos.y) + 0.01f; //never quite reach the center -- avoid divide-by-zero
+				float h = std::sin((r * 0.25f + wave_acc) * (2.0f * PI));
 
-				float melt_z_percent = ((pos.z-cheese_base)/(height_range));
+				DynamicMeshBuffer::Vertex vertex;
+				vertex.Position = glm::vec3(pos, h);
 
-
-				float r = std::hypot(pos.x, pos.y) + 0.01f; 
-				float sin_arg = (r * 0.25f + wave_acc) * (2.0f * PI);
-				float h = std::sin(sin_arg);
-							float wave_amplitude = 0.00f; // Adjust this value to change the wave height
-				
-				float dh_dr = 0.25f * 2.0f * PI * std::cos(sin_arg);
-				if (melt_z_percent < melt_factor){
-					vertex.Position.x  = (1.0f+flow)*vertex.Position.x ;
-					vertex.Position.y = (1.0f+flow)*vertex.Position.y ;
-					 // Lerp (Interpolate): new_color = (1.0 - factor) * start_color + factor * end_color
-					glm::vec4 final_color_f = glm::mix(original_color_f, TARGET_BROWN, (1.0f-(melt_factor*melt_factor)));
-
-					// Assign the result back to the vertex (rounding the floats to integers)
-					vertex.Color = glm::u8vec4(final_color_f);
-					vertex.Position.z = cheese_base + 0.1f +(melt_percentage_level)*std::abs(0*h*wave_amplitude); 
-
-									// Apply deformation to the Z component (vertical axis for the cheese wheel)
-				// Adjust the multiplier for the desired wave intensity0
-	
-				
-			
-				}
-				else{
-
-					// Deform the position:
-					vertex.Position.z = melt_level_z + 0.1f+(melt_percentage_level)*std::abs(0*h*wave_amplitude);
-				}
-
-   
-				
-
-
-
-				
-				// Deform the normal (assuming the wave is propagating in the XY plane):
-				
-				// Recalculate derivative parts for the new normal vector:
-				// dr/dx = x / r; dr/dy = y / r (from r = sqrt(x^2 + y^2))
-				float dr_dx = pos.x / r; 
-				float dr_dy = pos.y / r; 
-
-				// Tangent vectors (dp_dx, dp_dy) for the surface:
-				glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx * wave_amplitude);
-				glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy * wave_amplitude);
-				
-				// New normal is the cross product of the tangent vectors:
+				// calculus :-/
+				// dh/dx = std::cos(...) * 0.25 * 2.0 * M_PI * dr/dx
+				// dr/dx = 
+				float dh_dr = 0.25f * 2.0f * PI * std::cos((r * 0.25f + wave_acc) * (2.0f * PI));
+				float dr_dx = 0.5f * (1.0f / r) * 2.0f * pos.x;
+				float dr_dy = 0.5f * (1.0f / r) * 2.0f * pos.y;
+				glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx);
+				glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy);
 				vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
-									
 
+
+				vertex.Color = glm::u8vec4(0xff); //glm::u8vec4(0xff, std::clamp< int32_t >(256.0f * (h * 0.5f + 0.5f), 0, 255), 0xff, 0xff);
+				vertex.TexCoord = glm::vec2(xi, yi) / float(size-1);
+
+				return vertex;
+			};
+
+			for (size_t yi = 0; yi + 1 < size; ++yi) {
+				for (size_t xi = 0; xi < size; ++xi) {
+					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
+					vertices.emplace_back(attrib_at(xi, yi));
+					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
+					vertices.emplace_back(attrib_at(xi, yi+1));
+				}
 			}
-			initial_cheese.set(cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
-			
+			assert(vertices.size() == expected_size);
+
+			//upload to the GPU:
+			wave.set(vertices, GL_STREAM_DRAW);
+
+			//make sure scene has the info to draw it:
+			wave_drawable->pipeline.count = wave.count;
+
+			//lift it up above the car:
+			wave_drawable->transform->position = cheese_wheel->position;
 		}
 }
 
@@ -513,24 +444,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
 
-	// { //use DrawLines to overlay some text:
-	// 	glDisable(GL_DEPTH_TEST);
-	// 	float aspect = float(drawable_size.x) / float(drawable_size.y);
-	// 	DrawLines lines(glm::mat4(
-	// 		1.0f / aspect, 0.0f, 0.0f, 0.0f,
-	// 		0.0f, 1.0f, 0.0f, 0.0f,
-	// 		0.0f, 0.0f, 1.0f, 0.0f,
-	// 		0.0f, 0.0f, 0.0f, 1.0f
-	// 	));
-
-	// 	constexpr float H = 0.09f;
-	// 	lines.draw_text("heat level: " + std::to_string(melt_level),
-	// 		glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
-	// 		glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-	// 		glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-	// }
-	
-	
 	scene.draw(*camera);
 
 	GL_ERRORS();

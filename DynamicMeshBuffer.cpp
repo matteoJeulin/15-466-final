@@ -9,9 +9,8 @@
 #include <set>
 #include <cassert>
 
-//reference from https://github.com/15-466/15-466-f25-base3-dynamic/
 DynamicMeshBuffer::DynamicMeshBuffer() {
-	glGenBuffers(1, &buffer); 
+	glGenBuffers(1, &buffer);
 	//Now that we have a buffer name, need to bind it to actually create the buffer object:
 	//"No buffer objects are associated with the returned buffer object names until they are first bound by calling glBindBuffer." (https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGenBuffers.xhtml)
 	glBindBuffer(GL_ARRAY_BUFFER, buffer); 
