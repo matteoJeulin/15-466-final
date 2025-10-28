@@ -1,5 +1,5 @@
 #include "PlayMode.hpp"
-
+#include "Mode.hpp"
 #include "LitColorTextureProgram.hpp"
 
 #include "DrawLines.hpp"
@@ -15,7 +15,7 @@
 #include <fstream>
 #include <cmath>
 #include <string>
-
+// code adapted from https://medium.com/@logandvllrd/how-to-pick-a-3d-object-using-raycasting-in-c-39112aed1987
 static PlayMode::Ray screen_point_to_world_ray(Scene::Camera *cam, glm::vec2 mouse_px, glm::uvec2 drawable_px)
 {
 	// NDC for the mouse
@@ -529,6 +529,10 @@ void PlayMode::update(float elapsed)
 			if (collide(platform))
 			{
 				std::cout << platform->name << std::endl;
+				if (platform->name == "Collision_Rat") {
+					Mode::set_current(std::make_shared<PlayMode>());
+					return;
+				}
 				jumping = false;
 			}
 		}
