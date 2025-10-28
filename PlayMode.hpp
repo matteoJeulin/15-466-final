@@ -31,6 +31,11 @@ struct PlayMode : Mode
 		uint8_t pressed = 0;
 	} left, right, down, up, jump, mute, debug_heat; // debug_temp flips temp delta between -MELT_MAX and MELT_MAX
 
+	struct Ray {
+		glm::vec3 origin;
+		glm::vec3 dir; // normalized
+	};
+
 	// local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 
@@ -44,11 +49,19 @@ struct PlayMode : Mode
 	Scene::Transform* cold_plate = nullptr;
 	Scene::Transform* counter_top = nullptr;
 	Scene::Transform* gate = nullptr;
+	Scene::Transform* switch_1 = nullptr;
+	Scene::Transform* switch_2 = nullptr;
 	std::vector<Scene::Transform *> collision_platforms;
 	std::vector<Scene::Transform *> collision_plates;
 
 	// camera:
 	Scene::Camera *camera = nullptr;
+
+	// mouse:
+	glm::uvec2 last_drawable_px = glm::uvec2(1, 1);
+	Ray last_ray;
+	bool has_last_ray = false;
+	//static Ray screen_point_to_world_ray(Scene::Camera* cam, glm::vec2 mouse_px, glm::uvec2 window_size);
 
 	//glm::vec3 playerSpeed = glm::vec3(0.0f);
 
