@@ -258,6 +258,8 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.y - cheese_size.y < platform_pos.y + platform_size.y && previous_cheese_pos.y - cheese_size.y >= platform_pos.y + platform_size.y)
 	{
 		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (A) %f\n", melt_level);
 			return true;
 		}
 
@@ -272,6 +274,8 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.y + cheese_size.y > platform_pos.y - platform_size.y && previous_cheese_pos.y + cheese_size.y <= platform_pos.y - platform_size.y)
 	{
 		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (B) %f\n", melt_level);
 			return true;
 		} 
 
@@ -286,6 +290,8 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.x - cheese_size.x < platform_pos.x + platform_size.x && previous_cheese_pos.x - cheese_size.x >= platform_pos.x + platform_size.x)
 	{
 		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (C) %f\n", melt_level);
 			return true;
 		}
 		cheese_pos.x = platform_pos.x + platform_size.x + cheese_size.x;
@@ -299,6 +305,8 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.x + cheese_size.x > platform_pos.x - platform_size.x && previous_cheese_pos.x + cheese_size.x <= platform_pos.x - platform_size.x)
 	{
 		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		// 	inside_gate = true;
+			printf("Inside the gate (D) %f\n", melt_level);
 			return true;
 		}
 
@@ -307,6 +315,11 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 
 		return true;
 	}
+
+	// if (platform == gate) {
+	// 	inside_gate = false;
+	// 	printf("Outside %f\n", melt_level);
+	// }
 
 	return false;
 }
@@ -385,6 +398,7 @@ void PlayMode::update(float elapsed)
 				debug_heat.pressed = false;
 			}
 
+			// if (!inside_gate || melt_delta > 0)
 			melt_level += melt_delta * elapsed;
 			melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
 			// std::cout << melt_level << std::endl;
