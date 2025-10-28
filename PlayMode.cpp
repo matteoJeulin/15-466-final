@@ -517,6 +517,8 @@ void PlayMode::update(float elapsed)
 	collision_cheese_wheel->position += cheeseSpeed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 
 	camera->transform->position += cheeseSpeed.y * glm::vec3(0.0f, 1.0f, 0.0f) * 0.9f * elapsed; // need to change this
+	camera->transform->position.z = collision_cheese_wheel->position.z + 30.0f; // need to change this
+
 
 	glm::quat rotation = glm::angleAxis(rotation_angle, glm::vec3(1, 0.0f, 0.0f));
 	theta = theta * rotation;
