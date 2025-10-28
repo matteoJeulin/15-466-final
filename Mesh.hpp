@@ -45,6 +45,9 @@ struct MeshBuffer {
 	//This is the OpenGL vertex buffer object containing the mesh data:
 	GLuint buffer = 0;
 
+
+	void print_all_meshes() const;
+
 	//-- internals ---
 
 	//used by the lookup() function:

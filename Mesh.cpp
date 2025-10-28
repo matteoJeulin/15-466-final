@@ -10,6 +10,7 @@
 #include <string>
 #include <set>
 #include <cstddef>
+#include <iostream>
 
 MeshBuffer::MeshBuffer(std::string const &filename) {
 	glGenBuffers(1, &buffer);
@@ -147,4 +148,18 @@ GLuint MeshBuffer::make_vao_for_program(GLuint program) const {
 	}
 
 	return vao;
+}
+
+void MeshBuffer::print_all_meshes() const {
+    std::cout << "--- Loaded Meshes in MeshBuffer ---" << std::endl;
+    if (meshes.empty()) {
+        std::cout << "  (No meshes found.)" << std::endl;
+        return;
+    }
+    for (const auto& pair : meshes) {
+        // 'pair.first' is the mesh name (the key)
+        // 'pair.second' is the Mesh struct (the value)
+        std::cout << "  - " << pair.first << std::endl;
+    }
+    std::cout << "-----------------------------------" << std::endl;
 }
