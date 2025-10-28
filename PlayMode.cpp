@@ -15,6 +15,7 @@
 #include <fstream>
 #include <cmath>
 #include <string>
+#include <algorithm>
 
 static PlayMode::Ray screen_point_to_world_ray(Scene::Camera *cam, glm::vec2 mouse_px, glm::uvec2 drawable_px)
 {
@@ -113,7 +114,7 @@ Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
-												if (transform->name.substr(0, 9) == "Collision") {
+												if ((transform->name.substr(0, 9) == "Collision"|| transform->name == "Cheese_Wheel")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
@@ -153,16 +154,20 @@ PlayMode::PlayMode() : scene(*level_scene)
 		}
 		else if (transform.name.substr(0, 9) == "Collision")
 		{
-			collision_platforms.emplace_back(&transform);
+			if (transform.name != "Collision_Hot_Plate" && transform.name != "Collision_Cold_Plate")
+			{
+				collision_platforms.emplace_back(&transform);
+			}
+
 			if (transform.name == "Collision_CounterTop")
 			{
 				counter_top = &transform;
 			}
 
-			else if (transform.name == "Collision_Hot_Plate" || transform.name == "Collision_Cold_Plate")
-			{
-				collision_plates.emplace_back(&transform);
-			}
+			// else if (transform.name == "Collision_Hot_Plate" || transform.name == "Collision_Cold_Plate")
+			// {
+			// 	collision_plates.emplace_back(&transform);
+			// }
 		}
 	}
 	if (cheese_wheel == nullptr)
@@ -443,9 +448,9 @@ bool PlayMode::collide(Scene::Transform *object)
 							   : glm::vec3(0.0f, 0.0f, 1.0f); // Default upward if all else fails
 		}
 
-		std::cout << "Cheese pos: " << cheese_pos.x << " " << cheese_pos.y << " " << cheese_pos.z << std::endl;
-		std::cout << "Cheese speed: " << cheeseSpeed.x << " " << cheeseSpeed.y << " " << cheeseSpeed.z << std::endl;
-		std::cout << "Actual Normal: " << actualNormal.x << " " << actualNormal.y << " " << actualNormal.z << std::endl;
+		// std::cout << "Cheese pos: " << cheese_pos.x << " " << cheese_pos.y << " " << cheese_pos.z << std::endl;
+		// std::cout << "Cheese speed: " << cheeseSpeed.x << " " << cheeseSpeed.y << " " << cheeseSpeed.z << std::endl;
+		// std::cout << "Actual Normal: " << actualNormal.x << " " << actualNormal.y << " " << actualNormal.z << std::endl;
 
 		// Move player along the actual collision normal
 		// Apply the advanced sliding resolution only if there is penetration
@@ -518,17 +523,18 @@ void PlayMode::update(float elapsed)
 	{
 		cheese_platform = nullptr;
 
-		// plate collision
-		for (Scene::Transform *plate : collision_plates)
-		{
-			collide(plate);
-		}
+		// // plate collision
+		// for (Scene::Transform *plate : collision_plates)
+		// {
+		// 	collide(plate);
+		// }
 
 		for (Scene::Transform *platform : collision_platforms)
 		{
+			
 			if (collide(platform))
 			{
-				std::cout << platform->name << std::endl;
+				std::cout<<platform->name<<std::endl;
 				jumping = false;
 			}
 		}
@@ -546,6 +552,16 @@ void PlayMode::update(float elapsed)
 
 		melt_level += melt_delta * elapsed;
 		melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+
+		//remove this code b
+		bool found = std::find(collision_platforms.begin(), collision_platforms.end(), gate)!= collision_platforms.end();
+		
+		if (melt_level == MELT_MIN &&(!found)){
+				collision_platforms.push_back(gate);
+		}
+		else if (melt_level == MELT_MAX && found){
+			collision_platforms.pop_back();
+		}
 		// std::cout << melt_level << std::endl;
 	}
 
