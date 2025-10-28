@@ -40,6 +40,7 @@ struct PlayMode : Mode
 	std::vector<Scene::Transform *> platforms;*/
 
 	Scene::Transform* cheese_wheel = nullptr;
+	Scene::Transform* collision_cheese_wheel = nullptr;
 	Scene::Transform* hot_plate = nullptr;
 	Scene::Transform* cold_plate = nullptr;
 	Scene::Transform* counter_top = nullptr;
@@ -89,6 +90,13 @@ struct PlayMode : Mode
 
 	// Checks if the player is colliding with the side of a given platform and applies collision
 	bool collide_platform_side(Scene::Transform *platform);
+
+		// Checks the collision between the player and an object with a rectangular hitbox
+	bool collide(Scene::Transform *object);
+
+	void ResolveCollisionAndSlide(Scene::Transform *object, glm::vec3& position, glm::vec3& current_velocity, 
+                             const glm::vec3& collision_normal, float penetration_depth);
+
 
 	//dynamic mesh data:
 	DynamicMeshBuffer initial_cheese;

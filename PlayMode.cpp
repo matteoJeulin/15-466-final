@@ -48,6 +48,8 @@ PlayMode::PlayMode() : scene(*level_scene)
 		std::cout << transform.name << std::endl;
 		if (transform.name == "Wheel_Prototype")
 			cheese_wheel = &transform;
+		else if (transform.name == "Cheese_Wheel")
+			collision_cheese_wheel = &transform;
 		else if (transform.name == "Hot_Plate")
 			hot_plate = &transform;
 		else if (transform.name == "Cold_Plate")
@@ -311,6 +313,157 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 	return false;
 }
 
+//taken from gemini 
+void PlayMode::ResolveCollisionAndSlide(Scene::Transform *object, glm::vec3& position, glm::vec3& current_velocity, 
+                             const glm::vec3& collision_normal, float penetration_depth) {
+
+    position += collision_normal * penetration_depth;
+
+    float velocity_into_wall = glm::dot(current_velocity, collision_normal);
+
+    if (velocity_into_wall < 0.0f) {
+        
+        glm::vec3 velocity_perpendicular = collision_normal * velocity_into_wall;
+    
+        current_velocity -= velocity_perpendicular;
+
+        // current_velocity *= (1.0f - friction_coefficient); 
+    }
+}
+
+bool PlayMode::collide(Scene::Transform *object)
+{
+	glm::vec3 object_pos = object->position;
+	glm::vec3 object_size = object->scale;
+
+	glm::vec3 &cheese_pos = cheese_wheel->position;
+	glm::vec3 cheese_size = cheese_wheel->scale;
+
+
+	glm::vec3 playerCenter = (cheese_pos - object_pos);
+
+	// Taken from https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+	// Check the collision between a circle and a bounding box
+
+	glm::vec3 boxMin = object_pos - object_size;
+	glm::vec3 boxMax = object_pos + object_size;
+
+
+	// The sphereCenter is now cheese_wheel->position in world space
+	auto intersects = ([](glm::vec3 sphereCenter, float sphereRadius, glm::vec3 boxMin, glm::vec3 boxMax)
+	{
+		// Clamp sphere center to the box bounds in all 3 axes
+		float x = std::max(boxMin.x, std::min(sphereCenter.x, boxMax.x));
+		float y = std::max(boxMin.y, std::min(sphereCenter.y, boxMax.y));
+		float z = std::max(boxMin.z, std::min(sphereCenter.z, boxMax.z));
+		
+		glm::vec3 closestPoint = glm::vec3(x, y, z);
+
+		// Calculate distance squared between sphere center and closest point on box
+		float distSq = glm::dot(sphereCenter - closestPoint, sphereCenter - closestPoint);
+
+		// If distance is less than radius, there is a collision
+		std::pair<bool, glm::vec3> solution(distSq <= sphereRadius * sphereRadius, closestPoint);
+		
+		return solution; 
+	});
+
+	// The check:
+	std::pair<bool, glm::vec3> intersection = intersects(cheese_pos, cheese_size.y, boxMin, boxMax);
+
+	if (intersection.first)
+	{
+		// Inspiration taken from https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
+		glm::vec3 closestPoint = intersection.second;
+
+		// If we are in a gate and melted enough, pass through it
+		if (object == gate && melt_level > (MELT_MIN + MELT_MAX) / 2)
+			return true;
+
+		// Transform clamped point to world space - this is the actual collision point
+		glm::vec3 closestPointWorld = intersection.second;
+
+			// Calculate vector from collision point to player center
+		// This is the correct direction for the collision normal
+		glm::vec3 collisionToPlayer = cheese_pos - closestPointWorld;
+		float distance = glm::length(collisionToPlayer);
+
+	
+
+
+		// Calculate penetration and collision normal
+		float penetration = cheese_size.y - distance;
+
+		// The collision normal points from the closest point toward the player center
+		// If distance is too small, we're at the center and need a fallback
+		glm::vec3 actualNormal;
+		if (distance > 0.0001f)
+		{
+				actualNormal = glm::normalize(collisionToPlayer);
+		}
+		else
+		{
+			// Fallback: use the direction from box center to player
+			glm::vec3 boxCenterWorld = object_pos;
+			boxCenterWorld.y = 0.0f;
+			glm::vec3 centerToPlayer = cheese_pos - boxCenterWorld;
+			actualNormal = (glm::length(centerToPlayer) > 0.0001f)
+							   ? glm::normalize(centerToPlayer)
+							   : glm::vec3(0.0f, 0.0f, 1.0f); // Default upward if all else fails
+		}
+
+
+		//Snapping corner snagging fix using Gemini
+		glm::vec3 dominant_normal = actualNormal;
+
+        // Find the largest absolute component (the dominant axis)
+        float max_comp = std::max({std::abs(dominant_normal.x), std::abs(dominant_normal.y), std::abs(dominant_normal.z)});
+        
+        float tolerance = max_comp * 0.99f; 
+
+        // 2. Zero out non-dominant components
+        if (std::abs(dominant_normal.x) < tolerance) dominant_normal.x = 0.0f;
+        if (std::abs(dominant_normal.y) < tolerance) dominant_normal.y = 0.0f; // KEY FIX for Y-snagging
+        if (std::abs(dominant_normal.z) < tolerance) dominant_normal.z = 0.0f;
+        
+
+        if (glm::length(dominant_normal) > 0.0f) {
+            actualNormal = glm::normalize(dominant_normal);
+        }
+
+		// Move player along the actual collision normal
+		// Apply the advanced sliding resolution only if there is penetration
+		if (penetration > 0.0001f)
+		{			// Pass the cheese_wheel's position and speed by reference for modification
+			ResolveCollisionAndSlide(
+				object, // The collided object (useful for debug/logging)
+				cheese_pos, 
+				cheeseSpeed, 
+				actualNormal, 
+				penetration
+			);
+			
+			// Check for landing on top (This logic should remain)
+			if (actualNormal.z > 0.7f)
+			{ // cos(45°) ≈ 0.707, so steeper than 45° upward
+				cheese_platform = object;
+			}
+			else
+			{
+				cheese_platform = nullptr;
+			}
+		} 
+		return true;
+	}
+	else{
+		cheese_platform = nullptr;
+		return false;
+	}
+	
+}
+
+
+
 void PlayMode::update(float elapsed)
 {
 
@@ -319,6 +472,8 @@ void PlayMode::update(float elapsed)
 			cheeseSpeed.x = std::max(cheeseSpeed.x - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
 		if (!left.pressed && right.pressed)
 			cheeseSpeed.x = std::min(cheeseSpeed.x + cheeseAcceleration * elapsed, cheeseMaxSpeed);
+
+
 		if (jump.pressed && !jumping && cheese_platform != nullptr)
 		{
 			cheeseSpeed.z = jumpSpeed;
@@ -373,13 +528,12 @@ void PlayMode::update(float elapsed)
 
 			for (Scene::Transform *platform : collision_platforms)
 			{
-				collide_platform_side(platform);
-				if (collide_platform_top(platform))
-				{
+				if (collide(platform)){
 					jumping = false;
+					break;
 				}
 			}
-			collide_platform_side(gate);
+			
 		}
 
 		// Melt Logic
@@ -397,10 +551,7 @@ void PlayMode::update(float elapsed)
 		}
 
 			//----------------------------------------
-		{ //generate some waves:
-
-			//advance wave animation:
-			// DEBUG: (speed based on melt level)
+		{ //
 			float cheese_base = cheese_mesh->min.z;
 			float cheese_top = cheese_mesh->max.z;
 			float height_range = cheese_top - cheese_base;
@@ -418,7 +569,7 @@ void PlayMode::update(float elapsed)
 			float melt_factor = (1.0f-melt_percentage_level);
 			float flow = (1.0f+melt_factor*cheese_spread);
 
-
+			//Gemnin chat
 			for (auto &vertex : cheese_vertices_cpu) {
 				vertex.Position = vertex.Position*theta;
 				glm::vec3 pos = vertex.Position;
@@ -505,23 +656,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
 
-	// { //use DrawLines to overlay some text:
-	// 	glDisable(GL_DEPTH_TEST);
-	// 	float aspect = float(drawable_size.x) / float(drawable_size.y);
-	// 	DrawLines lines(glm::mat4(
-	// 		1.0f / aspect, 0.0f, 0.0f, 0.0f,
-	// 		0.0f, 1.0f, 0.0f, 0.0f,
-	// 		0.0f, 0.0f, 1.0f, 0.0f,
-	// 		0.0f, 0.0f, 0.0f, 1.0f
-	// 	));
-
-	// 	constexpr float H = 0.09f;
-	// 	lines.draw_text("heat level: " + std::to_string(melt_level),
-	// 		glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
-	// 		glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-	// 		glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-	// }
-	
 	
 	scene.draw(*camera);
 
