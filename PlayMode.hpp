@@ -85,8 +85,6 @@ struct PlayMode : Mode
 
 	bool jumping = false;
 
-	// Position of the player in the previous frame
-	glm::vec3 previous_cheese_pos;
 	// Platform on which the player is
 	Scene::Transform *cheese_platform = nullptr;
 
