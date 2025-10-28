@@ -1,4 +1,5 @@
 #include "PlayMode.hpp"
+#include "Mode.hpp"
 
 #include "LitColorTextureProgram.hpp"
 
@@ -154,7 +155,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 		}
 		else if (transform.name.substr(0, 9) == "Collision")
 		{
-			if (transform.name != "Collision_Hot_Plate" && transform.name != "Collision_Cold_Plate")
+			if (transform.name != "Collision_Hot_Plate" && transform.name != "Collision_Cold_Plate"&& transform.name != "Collision_Hot_Plate" && transform.name != "Collision_Cold_Plate")
 			{
 				collision_platforms.emplace_back(&transform);
 			}
@@ -164,11 +165,12 @@ PlayMode::PlayMode() : scene(*level_scene)
 				counter_top = &transform;
 			}
 
-			// else if (transform.name == "Collision_Hot_Plate" || transform.name == "Collision_Cold_Plate")
-			// {
-			// 	collision_plates.emplace_back(&transform);
-			// }
+			
 		}
+		else if (transform.name == "Cube" || transform.name == "Cube.001")
+			{
+				collision_plates.emplace_back(&transform);
+			}
 	}
 	if (cheese_wheel == nullptr)
 		throw std::runtime_error("Cheese not found.");
@@ -524,10 +526,13 @@ void PlayMode::update(float elapsed)
 		cheese_platform = nullptr;
 
 		// // plate collision
-		// for (Scene::Transform *plate : collision_plates)
-		// {
-		// 	collide(plate);
-		// }
+		for (Scene::Transform *plate : collision_plates)
+		{
+			if(collide(plate)){
+				melt_level += melt_delta * elapsed;
+				melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+			}
+		}
 
 		for (Scene::Transform *platform : collision_platforms)
 		{
@@ -535,6 +540,10 @@ void PlayMode::update(float elapsed)
 			if (collide(platform))
 			{
 				std::cout<<platform->name<<std::endl;
+					if (platform->name == "Collision_Rat") {
+					Mode::set_current(std::make_shared<PlayMode>());
+					return;
+				}
 				jumping = false;
 			}
 		}
@@ -550,8 +559,8 @@ void PlayMode::update(float elapsed)
 			debug_heat.pressed = false;
 		}
 
-		melt_level += melt_delta * elapsed;
-		melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+		// melt_level += melt_delta * elapsed;
+		// melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
 
 		//remove this code b
 		bool found = std::find(collision_platforms.begin(), collision_platforms.end(), gate)!= collision_platforms.end();
