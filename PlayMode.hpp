@@ -44,6 +44,7 @@ struct PlayMode : Mode
 	Scene::Transform* counter_top = nullptr;
 	Scene::Transform* gate = nullptr;
 	std::vector<Scene::Transform *> collision_platforms;
+	std::vector<Scene::Transform *> collision_plates;
 
 	// camera:
 	Scene::Camera *camera = nullptr;
