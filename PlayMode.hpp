@@ -89,6 +89,9 @@ struct PlayMode : Mode
 	// Checks if the player is colliding with the side of a given platform and applies collision
 	bool collide_platform_side(Scene::Transform *platform);
 
+	// Checks the collision between the player and an object with a rectangular hitbox
+	bool collide(Scene::Transform *object);
+
 	//dynamic mesh data:
 	DynamicMeshBuffer wave;
 	//vao mapping wave data for lit_color_texture_program:

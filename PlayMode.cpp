@@ -15,7 +15,6 @@
 #include <fstream>
 #include <cmath>
 
-
 constexpr float PI = 3.14159265358979323846f;
 
 GLuint level_meshes_for_lit_color_texture_program = 0;
@@ -54,10 +53,12 @@ PlayMode::PlayMode() : scene(*level_scene)
 		else if (transform.name.substr(0, 9) == "Collision")
 		{
 			collision_platforms.emplace_back(&transform);
-			if (transform.name == "Collision_CounterTop") {
+			if (transform.name == "Collision_CounterTop")
+			{
 				counter_top = &transform;
 			}
-			else if (transform.name == "Collision_Gate") {
+			else if (transform.name == "Collision_Gate")
+			{
 				gate = &transform;
 			}
 			else if (transform.name == "Collision_Hot_Plate" || transform.name == "Collision_Cold_Plate") {
@@ -77,11 +78,11 @@ PlayMode::PlayMode() : scene(*level_scene)
 		throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
 
-	{ //set up drawable for wave:
-		//make vao:
+	{ // set up drawable for wave:
+		// make vao:
 		wave_for_lit_color_texture_program = wave.make_vao_for_program(lit_color_texture_program->program);
 
-		//make scene entry for the vao:
+		// make scene entry for the vao:
 		scene.transforms.emplace_back();
 		scene.drawables.emplace_back(&scene.transforms.back());
 		wave_drawable = &scene.drawables.back();
@@ -89,7 +90,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 		wave_drawable->pipeline.vao = wave_for_lit_color_texture_program;
 		wave_drawable->pipeline.type = GL_TRIANGLE_STRIP;
 		wave_drawable->pipeline.start = 0;
-		wave_drawable->pipeline.count = 0; //will set dynamically, later, based on generated geometry
+		wave_drawable->pipeline.count = 0; // will set dynamically, later, based on generated geometry
 	}
 }
 
@@ -127,7 +128,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			jump.pressed = true;
 			return true;
 		}
-		else if (evt.key.key == SDLK_J) {
+		else if (evt.key.key == SDLK_J)
+		{
 			debug_heat.downs += 1;
 			debug_heat.pressed = true;
 			return true;
@@ -155,7 +157,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			mute.pressed = false;
 			return true;
 		}
-		else if (evt.key.key == SDLK_J) {
+		else if (evt.key.key == SDLK_J)
+		{
 			debug_heat.pressed = false;
 			return true;
 		}
@@ -186,12 +189,13 @@ bool PlayMode::collide_platform_top(Scene::Transform *platform)
 		(cheese_pos.y - cheese_size.y <= platform_pos.y + platform_size.y) &&
 		(cheese_pos.y + cheese_size.y >= platform_pos.y - platform_size.y);
 
-	if (!overlapXY) return false;
+	if (!overlapXY)
+		return false;
 
-	//Check the x and y coordinates
+	// Check the x and y coordinates
 	if (cheese_pos.x <= platform_pos.x + platform_size.x && cheese_pos.x >= platform_pos.x - platform_size.x &&
 		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
-		//Check if the elevation is correct
+		// Check if the elevation is correct
 		cheese_pos.z - cheese_size.z < platform_pos.z + platform_size.z && previous_cheese_pos.z - cheese_size.z >= platform_pos.z + platform_size.z)
 	{
 		cheese_pos.z = platform_pos.z + platform_size.z + cheese_size.z;
@@ -211,7 +215,6 @@ bool PlayMode::collide_platform_top(Scene::Transform *platform)
 	return false;
 }
 
-
 bool PlayMode::collide_platform_side(Scene::Transform *platform)
 {
 	glm::vec3 &cheese_pos = cheese_wheel->position;
@@ -225,7 +228,8 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
 		cheese_pos.y - cheese_size.y < platform_pos.y + platform_size.y && previous_cheese_pos.y - cheese_size.y >= platform_pos.y + platform_size.y)
 	{
-		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2)
+		{
 			return true;
 		}
 
@@ -239,13 +243,14 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.z <= platform_pos.z + platform_size.z && cheese_pos.z >= platform_pos.z - platform_size.z &&
 		cheese_pos.y + cheese_size.y > platform_pos.y - platform_size.y && previous_cheese_pos.y + cheese_size.y <= platform_pos.y - platform_size.y)
 	{
-		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2)
+		{
 			return true;
-		} 
+		}
 
 		cheese_pos.y = platform_pos.y - platform_size.y - cheese_size.y;
 		cheeseSpeed.y = 0.0f;
-		
+
 		return true;
 	}
 
@@ -253,7 +258,8 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
 		cheese_pos.x - cheese_size.x < platform_pos.x + platform_size.x && previous_cheese_pos.x - cheese_size.x >= platform_pos.x + platform_size.x)
 	{
-		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2)
+		{
 			return true;
 		}
 		cheese_pos.x = platform_pos.x + platform_size.x + cheese_size.x;
@@ -266,7 +272,8 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 		cheese_pos.y <= platform_pos.y + platform_size.y && cheese_pos.y >= platform_pos.y - platform_size.y &&
 		cheese_pos.x + cheese_size.x > platform_pos.x - platform_size.x && previous_cheese_pos.x + cheese_size.x <= platform_pos.x - platform_size.x)
 	{
-		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2) {
+		if (platform == gate && melt_level > (MELT_MIN + MELT_MAX) / 2)
+		{
 			return true;
 		}
 
@@ -279,140 +286,242 @@ bool PlayMode::collide_platform_side(Scene::Transform *platform)
 	return false;
 }
 
-void PlayMode::update(float elapsed)
+bool PlayMode::collide(Scene::Transform *object)
 {
+	glm::vec3 object_pos = object->position;
+	glm::vec3 object_size = object->scale;
 
-		// combine inputs into a move:
-		if (left.pressed && !right.pressed)
-			cheeseSpeed.x = std::max(cheeseSpeed.x - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
-		if (!left.pressed && right.pressed)
-			cheeseSpeed.x = std::min(cheeseSpeed.x + cheeseAcceleration * elapsed, cheeseMaxSpeed);
-		if (jump.pressed && !jumping && cheese_platform != nullptr)
+	glm::vec3 &cheese_pos = cheese_wheel->position;
+	glm::vec3 cheese_size = cheese_wheel->scale;
+
+	// Transform player position from world space to object's local space
+	glm::quat invRotation = glm::inverse(object->rotation);
+	glm::vec3 playerCenter = invRotation * (cheese_pos - object_pos);
+	// playerCenter.x = 0.0f;
+
+	// Taken from https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+	// Check the collision between a circle and a bounding box
+	auto intersects = ([](glm::vec3 sphereCenter, float sphereRadius, glm::vec3 boxMin, glm::vec3 boxMax)
+					   {
+		// get box closest point to sphere center by clamping
+		float y = std::max(boxMin.y, std::min(sphereCenter.y, boxMax.y));
+		float z = std::max(boxMin.z, std::min(sphereCenter.z, boxMax.z));
+
+		float distance = std::sqrt(
+					(y - sphereCenter.y) * (y - sphereCenter.y) +
+					(z - sphereCenter.z) * (z - sphereCenter.z)
+				);
+		std::pair<bool, glm::vec3> solution(distance <= sphereRadius,
+											glm::vec3(0.0f, y, z));
+		
+		return solution; });
+
+	// Bounding box of the object
+	glm::vec3 boxMin = glm::vec3(0.0f, -object_size.y, -object_size.z);
+	glm::vec3 boxMax = glm::vec3(0.0f, object_size.y, object_size.z);
+
+	std::pair<bool, glm::vec3> intersection = intersects(playerCenter, cheese_size.y, boxMin, boxMax);
+	// std::pair<bool, glm::vec3> oldIntersection = intersects(prevPlayerCenter, cheese_size.y, boxMin, boxMax);
+
+	if (intersection.first)
+	{
+		// Inspiration taken from https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
+		glm::vec3 closestPoint = intersection.second;
+
+		// If we are in a gate and melted enough, pass through it
+		if (object == gate && melt_level > (MELT_MIN + MELT_MAX) / 2)
+			return true;
+
+		// Transform clamped point to world space - this is the actual collision point
+		glm::vec3 closestPointWorld = object->rotation * closestPoint + object_pos;
+
+		// Calculate vector from collision point to player center
+		// This is the correct direction for the collision normal
+		glm::vec3 collisionToPlayer = cheese_pos - closestPointWorld;
+		float distance = glm::length(collisionToPlayer);
+
+		// Calculate penetration and collision normal
+		float penetration = cheese_size.y - distance;
+
+		// The collision normal points from the closest point toward the player center
+		// If distance is too small, we're at the center and need a fallback
+		glm::vec3 actualNormal;
+		if (distance > 0.0001f)
 		{
-			cheeseSpeed.z = jumpSpeed;
-			jump.pressed = false;
-			jumping = true;
+			actualNormal = glm::normalize(collisionToPlayer);
+		}
+		else
+		{
+			// Fallback: use the direction from box center to player
+			glm::vec3 boxCenterWorld = object_pos;
+			boxCenterWorld.x = 0.0f;
+			glm::vec3 centerToPlayer = cheese_pos - boxCenterWorld;
+			actualNormal = (glm::length(centerToPlayer) > 0.0001f)
+							   ? glm::normalize(centerToPlayer)
+							   : glm::vec3(0.0f, 0.0f, 1.0f); // Default upward if all else fails
 		}
 
-		// Apply inertia to get the player down to 0 speed.
-		if ((!left.pressed && !right.pressed) || (left.pressed && cheeseSpeed.x > 0) || (right.pressed && cheeseSpeed.x < 0))
+		// Move player along the actual collision normal
+		if (penetration > 0.0001f)
 		{
-			cheeseSpeed.x -= cheeseSpeed.x * elapsed * 10;
+			cheese_pos += actualNormal * penetration;
 		}
 
-		cheeseSpeed.z -= gravity * elapsed;
+		// Cancel velocity component along the collision normal (world space)
+		float velocityAlongNormal = glm::dot(cheeseSpeed, actualNormal);
+		if (velocityAlongNormal < 0.0f)
+		{ // Only if moving into the surface
+			cheeseSpeed -= velocityAlongNormal * actualNormal;
+			cheeseSpeed.x = 0.0f;
+		}
 
-		//glm::mat4x3 frame = player->make_parent_from_local();
-		glm::mat4x3 frame = cheese_wheel->make_parent_from_local();
-		glm::vec3 frame_forward = -frame[0];
-		glm::vec3 frame_right = frame[1];
-
-		frame_forward.z = 0;
-		frame_forward = glm::normalize(frame_forward);
-		frame_right.z = 0;
-		frame_right = glm::normalize(frame_right);
-
-
-		//previous_player_pos = player->position;
-		previous_cheese_pos = cheese_wheel->position;
-
-		// y-axis is the forward/backward direction and the x-axis is the right/left direction
-		cheese_wheel->position += cheeseSpeed.x * frame_right * elapsed + cheeseSpeed.y * frame_forward * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
-
-		if (!noclip)
+		// Only set platform if the normal is pointing upward (player landed on top)
+		// Check if the world normal has a significant upward (positive Z) component
+		if (actualNormal.z > 0.7f)
+		{ // cos(45°) ≈ 0.707, so steeper than 45° upward
+			cheese_platform = object;
+		}
+		else
 		{
 			cheese_platform = nullptr;
+		}
+
+		return true;
+	}
+
+	cheese_platform = nullptr;
+
+	return false;
+}
+
+void PlayMode::update(float elapsed)
+{
+	// combine inputs into a move:
+	if (left.pressed && !right.pressed)
+		cheeseSpeed.y = std::max(cheeseSpeed.y - cheeseAcceleration * elapsed, -cheeseMaxSpeed);
+	if (!left.pressed && right.pressed)
+		cheeseSpeed.y = std::min(cheeseSpeed.y + cheeseAcceleration * elapsed, cheeseMaxSpeed);
+
+	// Apply inertia to get the player down to 0 speed.
+	if ((!left.pressed && !right.pressed) || (left.pressed && cheeseSpeed.y > 0) || (right.pressed && cheeseSpeed.y < 0))
+	{
+		cheeseSpeed.y -= cheeseSpeed.y * elapsed * 10;
+	}
+
+	// Apply gravity if the player is falling
+	if (cheese_platform == nullptr)
+		cheeseSpeed.z -= gravity * elapsed;
+
+	// previous_player_pos = player->position;
+	previous_cheese_pos = cheese_wheel->position;
+
+	// The y-axis is the right/left direction
+	cheese_wheel->position += cheeseSpeed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
+
+	if (!noclip)
+	{
 
 			// plate collision
 			for (Scene::Transform *plate : collision_plates) {
-				collide_platform_top(plate);
+				collide(plate);
 			}
 
-			for (Scene::Transform *platform : collision_platforms)
-			{
-				collide_platform_side(platform);
-				if (collide_platform_top(platform))
-				{
-					jumping = false;
-				}
-			}
-			collide_platform_side(gate);
-		}
-
-		// Melt Logic
+		for (Scene::Transform *platform : collision_platforms)
 		{
-
-			// DEBUG
-			if (debug_heat.pressed) {
-				melt_delta *= -1;
-				debug_heat.pressed = false;
+			if (collide(platform))
+			{
+				jumping = false;
+				break;
 			}
+		}
+	}
 
-			melt_level += melt_delta * elapsed;
-			melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
-			// std::cout << melt_level << std::endl;
+	if (jump.pressed && !jumping && cheese_platform != nullptr)
+	{
+		cheeseSpeed.z = jumpSpeed;
+		jump.pressed = false;
+		jumping = true;
+	}
+
+	// Melt Logic
+	{
+
+		// DEBUG
+		if (debug_heat.pressed)
+		{
+			melt_delta *= -1;
+			debug_heat.pressed = false;
 		}
 
-			//----------------------------------------
-		{ //generate some waves:
+		melt_level += melt_delta * elapsed;
+		melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+		// std::cout << melt_level << std::endl;
+	}
 
-			//advance wave animation:
-			// DEBUG: (speed based on melt level)
-			wave_acc += melt_level * elapsed / 5.0f; //5 second wave animation cycle
-			wave_acc -= std::floor(wave_acc);
+	//----------------------------------------
+	{ // generate some waves:
 
-			//make geometry:
-			size_t size = 100; //will use a size x size grid
-			std::vector< DynamicMeshBuffer::Vertex > vertices;
-			size_t expected_size = (size-1) * (2 * size) + (size - 2) * 2;
-			vertices.reserve(expected_size);
+		// advance wave animation:
+		//  DEBUG: (speed based on melt level)
+		wave_acc += melt_level * elapsed / 5.0f; // 5 second wave animation cycle
+		wave_acc -= std::floor(wave_acc);
 
-			auto attrib_at = [&](size_t xi, size_t yi) -> DynamicMeshBuffer::Vertex {
-				//rescale indices to a [-10,10]^2 grid:
-				glm::vec2 pos = (glm::vec2(xi, yi) / float(size-1) - 0.5f) * 20.0f;
+		// make geometry:
+		size_t size = 100; // will use a size x size grid
+		std::vector<DynamicMeshBuffer::Vertex> vertices;
+		size_t expected_size = (size - 1) * (2 * size) + (size - 2) * 2;
+		vertices.reserve(expected_size);
 
-				float r = std::hypot(pos.x, pos.y) + 0.01f; //never quite reach the center -- avoid divide-by-zero
-				float h = std::sin((r * 0.25f + wave_acc) * (2.0f * PI));
+		auto attrib_at = [&](size_t xi, size_t yi) -> DynamicMeshBuffer::Vertex
+		{
+			// rescale indices to a [-10,10]^2 grid:
+			glm::vec2 pos = (glm::vec2(xi, yi) / float(size - 1) - 0.5f) * 20.0f;
 
-				DynamicMeshBuffer::Vertex vertex;
-				vertex.Position = glm::vec3(pos, h);
+			float r = std::hypot(pos.x, pos.y) + 0.01f; // never quite reach the center -- avoid divide-by-zero
+			float h = std::sin((r * 0.25f + wave_acc) * (2.0f * PI));
 
-				// calculus :-/
-				// dh/dx = std::cos(...) * 0.25 * 2.0 * M_PI * dr/dx
-				// dr/dx = 
-				float dh_dr = 0.25f * 2.0f * PI * std::cos((r * 0.25f + wave_acc) * (2.0f * PI));
-				float dr_dx = 0.5f * (1.0f / r) * 2.0f * pos.x;
-				float dr_dy = 0.5f * (1.0f / r) * 2.0f * pos.y;
-				glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx);
-				glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy);
-				vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
+			DynamicMeshBuffer::Vertex vertex;
+			vertex.Position = glm::vec3(pos, h);
 
+			// calculus :-/
+			// dh/dx = std::cos(...) * 0.25 * 2.0 * M_PI * dr/dx
+			// dr/dx =
+			float dh_dr = 0.25f * 2.0f * PI * std::cos((r * 0.25f + wave_acc) * (2.0f * PI));
+			float dr_dx = 0.5f * (1.0f / r) * 2.0f * pos.x;
+			float dr_dy = 0.5f * (1.0f / r) * 2.0f * pos.y;
+			glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx);
+			glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy);
+			vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
 
-				vertex.Color = glm::u8vec4(0xff); //glm::u8vec4(0xff, std::clamp< int32_t >(256.0f * (h * 0.5f + 0.5f), 0, 255), 0xff, 0xff);
-				vertex.TexCoord = glm::vec2(xi, yi) / float(size-1);
+			vertex.Color = glm::u8vec4(0xff); // glm::u8vec4(0xff, std::clamp< int32_t >(256.0f * (h * 0.5f + 0.5f), 0, 255), 0xff, 0xff);
+			vertex.TexCoord = glm::vec2(xi, yi) / float(size - 1);
 
-				return vertex;
-			};
+			return vertex;
+		};
 
-			for (size_t yi = 0; yi + 1 < size; ++yi) {
-				for (size_t xi = 0; xi < size; ++xi) {
-					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
-					vertices.emplace_back(attrib_at(xi, yi));
-					if (xi == 0 && yi != 0) vertices.emplace_back(vertices.back());
-					vertices.emplace_back(attrib_at(xi, yi+1));
-				}
+		for (size_t yi = 0; yi + 1 < size; ++yi)
+		{
+			for (size_t xi = 0; xi < size; ++xi)
+			{
+				if (xi == 0 && yi != 0)
+					vertices.emplace_back(vertices.back());
+				vertices.emplace_back(attrib_at(xi, yi));
+				if (xi == 0 && yi != 0)
+					vertices.emplace_back(vertices.back());
+				vertices.emplace_back(attrib_at(xi, yi + 1));
 			}
-			assert(vertices.size() == expected_size);
-
-			//upload to the GPU:
-			wave.set(vertices, GL_STREAM_DRAW);
-
-			//make sure scene has the info to draw it:
-			wave_drawable->pipeline.count = wave.count;
-
-			//lift it up above the car:
-			wave_drawable->transform->position = cheese_wheel->position;
 		}
+		assert(vertices.size() == expected_size);
+
+		// upload to the GPU:
+		wave.set(vertices, GL_STREAM_DRAW);
+
+		// make sure scene has the info to draw it:
+		wave_drawable->pipeline.count = wave.count;
+
+		// lift it up above the car:
+		wave_drawable->transform->position = cheese_wheel->position;
+	}
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size)
