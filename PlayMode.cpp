@@ -559,8 +559,8 @@ void PlayMode::update(float elapsed)
 			debug_heat.pressed = false;
 		}
 
-		// melt_level += melt_delta * elapsed;
-		// melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+		melt_level += -0.1f *std::abs(melt_delta) * elapsed;
+		melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
 
 		//remove this code b
 		bool found = std::find(collision_platforms.begin(), collision_platforms.end(), gate)!= collision_platforms.end();
@@ -589,7 +589,9 @@ void PlayMode::update(float elapsed)
 		cheese_vertices_cpu = initial_cheese_vertices_cpu;
 		initial_cheese.set(initial_cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
 
-		float melt_percentage_level = (MELT_MAX - melt_level) / MELT_MAX;
+		float melt_percentage_level = 0.5f + (MELT_MAX - melt_level) / MELT_MAX;
+		melt_percentage_level = std::clamp(melt_percentage_level, 0.0f, 1.0f);
+
 		float melt_factor = (1.0f - melt_percentage_level);
 		float flow = (1.0f + melt_factor * cheese_spread);
 
