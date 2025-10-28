@@ -107,6 +107,11 @@ Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
+												if (transform->name.substr(0, 9) == "Collision") {
+												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
+												// The transforms will still be loaded into scene.transforms.
+												return; // Skip the rest of the function for this transform
+												}
 												 Mesh const &mesh = level_meshes->lookup(mesh_name);
 
 												 scene.drawables.emplace_back(transform);
@@ -136,15 +141,16 @@ PlayMode::PlayMode() : scene(*level_scene)
 			switch_1 = &transform;
 		else if (transform.name == "Switch2")
 			switch_2 = &transform;
+		else if (transform.name == "Gate") {
+				gate = &transform;
+			}
 		else if (transform.name.substr(0, 9) == "Collision")
 		{
 			collision_platforms.emplace_back(&transform);
 			if (transform.name == "Collision_CounterTop") {
 				counter_top = &transform;
 			}
-			else if (transform.name == "Collision_Gate") {
-				gate = &transform;
-			}
+			
 			else if (transform.name == "Collision_Hot_Plate" || transform.name == "Collision_Cold_Plate") {
 				collision_plates.emplace_back(&transform);
 			}
@@ -581,6 +587,15 @@ bool PlayMode::collide(Scene::Transform *object)
 			{
 				cheese_platform = nullptr;
 			}
+
+			if (actualNormal.x > 0.7f) // cos(45°) ≈ 0.707, so steeper than 45° upward
+			{ 
+				cheese_platform = object;
+			}
+			else
+			{
+				cheese_platform = nullptr;
+			}
 		} 
 		return true;
 	}
@@ -658,6 +673,7 @@ void PlayMode::update(float elapsed)
 			for (Scene::Transform *platform : collision_platforms)
 			{
 				if (collide(platform)){
+					std::cout << platform->name<< std::endl;
 					jumping = false;
 					break;
 				}
