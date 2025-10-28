@@ -67,7 +67,6 @@ struct PlayMode : Mode
 	bool noclip = false;
 	bool won = false;
 	bool dead = false;
-	bool inside_gate = false;
 
 	bool jumping = false;
 
