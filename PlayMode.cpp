@@ -1,5 +1,6 @@
 #include "PlayMode.hpp"
 #include "Mode.hpp"
+
 #include "LitColorTextureProgram.hpp"
 
 #include "DrawLines.hpp"
@@ -15,7 +16,8 @@
 #include <fstream>
 #include <cmath>
 #include <string>
-// code adapted from https://medium.com/@logandvllrd/how-to-pick-a-3d-object-using-raycasting-in-c-39112aed1987
+#include <algorithm>
+
 static PlayMode::Ray screen_point_to_world_ray(Scene::Camera *cam, glm::vec2 mouse_px, glm::uvec2 drawable_px)
 {
 	// NDC for the mouse
@@ -113,7 +115,7 @@ Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
-												if (transform->name.substr(0, 9) == "Collision") {
+												if ((transform->name.substr(0, 9) == "Collision"|| transform->name == "Cheese_Wheel")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
@@ -153,17 +155,22 @@ PlayMode::PlayMode() : scene(*level_scene)
 		}
 		else if (transform.name.substr(0, 9) == "Collision")
 		{
-			collision_platforms.emplace_back(&transform);
+			if (transform.name != "Collision_Hot_Plate" && transform.name != "Collision_Cold_Plate"&& transform.name != "Collision_Hot_Plate" && transform.name != "Collision_Cold_Plate")
+			{
+				collision_platforms.emplace_back(&transform);
+			}
+
 			if (transform.name == "Collision_CounterTop")
 			{
 				counter_top = &transform;
 			}
 
-			else if (transform.name == "Collision_Hot_Plate" || transform.name == "Collision_Cold_Plate")
+			
+		}
+		else if (transform.name == "Cube" || transform.name == "Cube.001")
 			{
 				collision_plates.emplace_back(&transform);
 			}
-		}
 	}
 	if (cheese_wheel == nullptr)
 		throw std::runtime_error("Cheese not found.");
@@ -443,9 +450,9 @@ bool PlayMode::collide(Scene::Transform *object)
 							   : glm::vec3(0.0f, 0.0f, 1.0f); // Default upward if all else fails
 		}
 
-		std::cout << "Cheese pos: " << cheese_pos.x << " " << cheese_pos.y << " " << cheese_pos.z << std::endl;
-		std::cout << "Cheese speed: " << cheeseSpeed.x << " " << cheeseSpeed.y << " " << cheeseSpeed.z << std::endl;
-		std::cout << "Actual Normal: " << actualNormal.x << " " << actualNormal.y << " " << actualNormal.z << std::endl;
+		// std::cout << "Cheese pos: " << cheese_pos.x << " " << cheese_pos.y << " " << cheese_pos.z << std::endl;
+		// std::cout << "Cheese speed: " << cheeseSpeed.x << " " << cheeseSpeed.y << " " << cheeseSpeed.z << std::endl;
+		// std::cout << "Actual Normal: " << actualNormal.x << " " << actualNormal.y << " " << actualNormal.z << std::endl;
 
 		// Move player along the actual collision normal
 		// Apply the advanced sliding resolution only if there is penetration
@@ -510,6 +517,8 @@ void PlayMode::update(float elapsed)
 	collision_cheese_wheel->position += cheeseSpeed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + cheeseSpeed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 
 	camera->transform->position += cheeseSpeed.y * glm::vec3(0.0f, 1.0f, 0.0f) * 0.9f * elapsed; // need to change this
+	camera->transform->position.z = collision_cheese_wheel->position.z + 30.0f; // need to change this
+
 
 	glm::quat rotation = glm::angleAxis(rotation_angle, glm::vec3(1, 0.0f, 0.0f));
 	theta = theta * rotation;
@@ -518,18 +527,22 @@ void PlayMode::update(float elapsed)
 	{
 		cheese_platform = nullptr;
 
-		// plate collision
+		// // plate collision
 		for (Scene::Transform *plate : collision_plates)
 		{
-			collide(plate);
+			if(collide(plate)){
+				melt_level += melt_delta * elapsed;
+				melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+			}
 		}
 
 		for (Scene::Transform *platform : collision_platforms)
 		{
+			
 			if (collide(platform))
 			{
-				std::cout << platform->name << std::endl;
-				if (platform->name == "Collision_Rat") {
+				std::cout<<platform->name<<std::endl;
+					if (platform->name == "Collision_Rat") {
 					Mode::set_current(std::make_shared<PlayMode>());
 					return;
 				}
@@ -548,8 +561,18 @@ void PlayMode::update(float elapsed)
 			debug_heat.pressed = false;
 		}
 
-		melt_level += melt_delta * elapsed;
+		melt_level += -0.1f *std::abs(melt_delta) * elapsed;
 		melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+
+		//remove this code b
+		bool found = std::find(collision_platforms.begin(), collision_platforms.end(), gate)!= collision_platforms.end();
+		
+		if (melt_level == MELT_MIN &&(!found)){
+				collision_platforms.push_back(gate);
+		}
+		else if (melt_level == MELT_MAX && found){
+			collision_platforms.pop_back();
+		}
 		// std::cout << melt_level << std::endl;
 	}
 
@@ -568,7 +591,9 @@ void PlayMode::update(float elapsed)
 		cheese_vertices_cpu = initial_cheese_vertices_cpu;
 		initial_cheese.set(initial_cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
 
-		float melt_percentage_level = (MELT_MAX - melt_level) / MELT_MAX;
+		float melt_percentage_level = 0.5f + (MELT_MAX - melt_level) / MELT_MAX;
+		melt_percentage_level = std::clamp(melt_percentage_level, 0.0f, 1.0f);
+
 		float melt_factor = (1.0f - melt_percentage_level);
 		float flow = (1.0f + melt_factor * cheese_spread);
 
