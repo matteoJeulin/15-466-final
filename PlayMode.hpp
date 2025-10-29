@@ -12,7 +12,7 @@
 #include "TextManager.hpp"
 #include "DynamicMeshBuffer.hpp"
 #include "Mesh.hpp"
-
+#include "RayCast.hpp"
 struct PlayMode : Mode
 {
 	PlayMode();
@@ -32,10 +32,10 @@ struct PlayMode : Mode
 		uint8_t pressed = 0;
 	} left, right, down, up, jump, mute, debug_heat; // debug_temp flips temp delta between -MELT_MAX and MELT_MAX
 
-	struct Ray {
-		glm::vec3 origin;
-		glm::vec3 dir; // normalized
-	};
+	//struct Ray {
+	//	glm::vec3 origin;
+	//	glm::vec3 dir; // normalized
+	//};
 
 	// local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
