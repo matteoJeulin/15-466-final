@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <deque>
+#include <cmath>
 
 #include "TextManager.hpp"
 #include "DynamicMeshBuffer.hpp"
@@ -66,18 +67,29 @@ struct PlayMode : Mode
 
 	//glm::vec3 playerSpeed = glm::vec3(0.0f);
 
-	glm::vec3 cheeseSpeed = glm::vec3(0.0f);
-	// Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
-	const float cheeseAcceleration = 7.5f;
 
-	// Player's maximum speed
-	const float cheeseMaxSpeed = 10.0f;
 
 	// Player and shark speeds have different units because of their scale in blender
-	float jumpSpeed = 20.0f;
+	// float jumpSpeed = 20.0f;
 
-	// Gravitational force
-	float gravity = 19.62f;
+	// Player physics
+	// Jumping
+	float cheeseHeight = 6.24f;
+	float jumpHeight = cheeseHeight * 2.0f;
+	float jumpAirTime = 0.8f;
+	// float gravity = 19.62f;
+	float gravity = (2 * jumpHeight) / (pow(jumpAirTime/2.0f, 2.0f));
+	// float jumpSpeed = (jumpHeight - (0.5f * (-gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
+	float jumpSpeed = gravity * (jumpAirTime / 2.0f);
+
+	// Moving
+	glm::vec3 cheeseSpeed = glm::vec3(0.0f);
+	// Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
+	const float cheeseAcceleration = 7.5f * 4.0f;
+
+	// Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction)
+	// const float cheeseMaxSpeed = 10.0f * 2.0f;
+	const float cheeseMaxSpeed = (jumpHeight * 2) / jumpAirTime;
 
 	bool noclip = false;
 	bool won = false;

@@ -509,7 +509,8 @@ void PlayMode::update(float elapsed)
 		cheeseSpeed.y -= cheeseSpeed.y * elapsed * 10;
 	}
 
-	cheeseSpeed.z -= gravity * elapsed;
+	if (cheese_platform == nullptr)
+		cheeseSpeed.z -= gravity * elapsed;
 
 	float rotation_angle = cheeseSpeed.y * elapsed;
 
@@ -520,7 +521,7 @@ void PlayMode::update(float elapsed)
 	camera->transform->position.z = collision_cheese_wheel->position.z + 30.0f; // need to change this
 
 
-	glm::quat rotation = glm::angleAxis(rotation_angle, glm::vec3(1, 0.0f, 0.0f));
+	glm::quat rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
 	theta = theta * rotation;
 
 	if (!noclip)
