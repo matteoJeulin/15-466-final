@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "TextManager.hpp"
+#include "UIElement.hpp"
 #include "DynamicMeshBuffer.hpp"
 #include "Mesh.hpp"
 
@@ -127,7 +128,7 @@ struct PlayMode : Mode
 	Mesh const *cheese_mesh = nullptr;
 	std::vector<DynamicMeshBuffer::Vertex> initial_cheese_vertices_cpu;
 	std::vector<DynamicMeshBuffer::Vertex> cheese_vertices_cpu;
-	glm::quat theta; 
+	glm::quat theta;
 
 	//vao mapping wave data for lit_color_texture_program:
 	GLuint cheese_lit_color_texture_program = 0;
@@ -135,4 +136,9 @@ struct PlayMode : Mode
 	//drawable (in scene) associated with the wave data:
 	Scene::Drawable *wave_drawable = nullptr;
 	float wave_acc = 0.0f;
+
+	// Game Timer (+UI)
+	float MAX_LEVEL_TIME = 120.0f; // TODO: A struct of some level class
+	float wine_remaining = MAX_LEVEL_TIME;
+	UIElement wine_bottle_ui;
 };

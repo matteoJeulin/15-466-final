@@ -577,6 +577,17 @@ void PlayMode::update(float elapsed)
 		// std::cout << melt_level << std::endl;
 	}
 
+	float last_wine = wine_remaining;
+	wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
+	
+	int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
+	int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
+
+
+	if (wine_rank != last_rank) {
+		wine_bottle_ui.load_image_data(data_path("TODO: Get Wine File Name " + std::to_string(wine_rank)));
+	}
+
 	//----------------------------------------
 	{ //
 		float cheese_base = cheese_mesh->min.z;
@@ -652,6 +663,7 @@ void PlayMode::update(float elapsed)
 		}
 		initial_cheese.set(cheese_vertices_cpu.data(), cheese_vertices_cpu.size(), GL_DYNAMIC_DRAW);
 	}
+
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size)
@@ -679,6 +691,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
 
 	scene.draw(*camera);
+
+	if (wine_bottle_ui.data_created)
+		wine_bottle_ui.draw_mesh();
 
 	GL_ERRORS();
 }
