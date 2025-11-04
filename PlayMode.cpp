@@ -80,6 +80,14 @@ PlayMode::PlayMode() : scene(*level_scene)
 				counter_top = &transform;
 			}
 		}
+		else if (transform.name.substr(0, 11) == "BounceWeak")
+		{
+			bouncy_weak_platforms.emplace_back(&transform);
+		}
+		else if (transform.name.substr(0, 13) == "BounceStrong")
+		{
+			bouncy_strong_platforms.emplace_back(&transform);
+		}
 		else if (transform.name == "Cube" || transform.name == "Cube.001")
 		{
 			collision_plates.emplace_back(&transform);
@@ -310,6 +318,18 @@ void PlayMode::update(float elapsed)
 		{
 			// Go throught the grate if melted enough
 			player->collide(grate, player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2);
+		}
+
+		for (Scene::Transform *bouncy : bouncy_weak_platforms) {
+			if (player->collide(bouncy, true)) {
+				player->playerJump(4.0f * player->height);
+			}
+		}
+
+		for (Scene::Transform *bouncy : bouncy_strong_platforms) {
+			if (player->collide(bouncy, true)) {
+				player->playerJump(8.5f * player->height);
+			}
 		}
 
 		for (Scene::Transform *platform : collision_platforms)
