@@ -48,14 +48,15 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 PlayMode::PlayMode() : scene(*level_scene)
 {
 
-	player = new Player();
+	player = new Player(this);
+
 	for (auto &transform : scene.transforms)
 	{
 		std::cout << transform.name << std::endl;
 		if (transform.name == "Wheel_Prototype")
-			player->player = &transform;
+			player->model = &transform;
 		else if (transform.name == "Cheese_Wheel")
-			player->playerCollision = &transform;
+			player->collision = &transform;
 		else if (transform.name == "Hot_Plate")
 			hot_plate = &transform;
 		else if (transform.name == "Cold_Plate")
@@ -80,6 +81,13 @@ PlayMode::PlayMode() : scene(*level_scene)
 				counter_top = &transform;
 			}
 		}
+		else if (transform.name == "Rat")
+		{
+			Rat *rat = new Rat(this);
+			rat->model = &transform;
+			rat->collision = &transform;
+			rats.emplace_back(rat);
+		}
 		else if (transform.name.substr(0, 11) == "BounceWeak")
 		{
 			bouncy_weak_platforms.emplace_back(&transform);
@@ -93,7 +101,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 			collision_plates.emplace_back(&transform);
 		}
 	}
-	if (player->player == nullptr)
+	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
 	if (hot_plate == nullptr)
 		throw std::runtime_error("Hot plate not found.");
@@ -107,7 +115,7 @@ PlayMode::PlayMode() : scene(*level_scene)
 
 	for (auto &drawable : scene.drawables)
 	{
-		if (drawable.transform == player->player)
+		if (drawable.transform == player->model)
 		{
 			player->drawable = &drawable;
 			break;
@@ -121,10 +129,12 @@ PlayMode::PlayMode() : scene(*level_scene)
 
 	player->mesh = &(level_meshes->lookup("Wheel_Prototype"));
 
-	player->theta = player->player->rotation;
+	player->theta = player->model->rotation;
 	const size_t vertex_stride = sizeof(DynamicMeshBuffer::Vertex);
 	const GLintptr offset_bytes = (GLintptr)player->mesh->start * vertex_stride;
 	const GLsizeiptr size_bytes = (GLsizeiptr)player->mesh->count * vertex_stride;
+
+	std::cout << player->collision->position.x <<" " << player->collision->position.y << " " << player->collision->position.z << std::endl;
 
 	std::vector<DynamicMeshBuffer::Vertex> initial_vertices(player->mesh->count);
 	glBindBuffer(GL_ARRAY_BUFFER, level_meshes->buffer);
@@ -296,56 +306,11 @@ void PlayMode::update(float elapsed)
 
 	player->update(elapsed);
 
-	camera->transform->position += player->speed.y * glm::vec3(0.0f, 1.0f, 0.0f) * 0.9f * elapsed; // need to change this
-	camera->transform->position.z = player->playerCollision->position.z + 30.0f;				   // need to change this
+	for (Rat *rat : rats)
+		rat->update(elapsed);
 
-	// Resolve collisions with the player
-	if (!player->noclip)
-	{
-		player->platform = nullptr;
-
-		// Plate collision
-		for (Scene::Transform *plate : collision_plates)
-		{
-			if (player->collide(plate, false))
-			{
-				player->melt_level += player->melt_delta * elapsed;
-				player->melt_level = std::clamp(player->melt_level, player->MELT_MIN, player->MELT_MAX);
-			}
-		}
-
-		for (Scene::Transform *grate : grates)
-		{
-			// Go throught the grate if melted enough
-			player->collide(grate, player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2);
-		}
-
-		for (Scene::Transform *bouncy : bouncy_weak_platforms) {
-			if (player->collide(bouncy, true)) {
-				player->playerJump(4.0f * player->height);
-			}
-		}
-
-		for (Scene::Transform *bouncy : bouncy_strong_platforms) {
-			if (player->collide(bouncy, true)) {
-				player->playerJump(8.5f * player->height);
-			}
-		}
-
-		for (Scene::Transform *platform : collision_platforms)
-		{
-
-			if (player->collide(platform, false))
-			{
-				if (platform->name == "Collision_Rat")
-				{
-					Mode::set_current(std::make_shared<PlayMode>());
-					return;
-				}
-				player->jumping = false;
-			}
-		}
-	}
+	camera->transform->position.y = player->collision->position.y; // need to change this
+	camera->transform->position.z = player->collision->position.z + 30.0f;						   // need to change this
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size)
@@ -375,4 +340,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	scene.draw(*camera);
 
 	GL_ERRORS();
+}
+
+void PlayMode::reset()
+{
+	player->collision->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
+	player->model->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
+	// Mode::set_current(std::make_shared<PlayMode>());
 }

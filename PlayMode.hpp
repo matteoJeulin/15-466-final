@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Mode.hpp"
 
 #include <glm/glm.hpp>
@@ -11,6 +13,7 @@
 #include "TextManager.hpp"
 #include "RayCast.hpp"
 #include "Player.hpp"
+#include "Rat.hpp"
 
 struct PlayMode : Mode
 {
@@ -21,6 +24,9 @@ struct PlayMode : Mode
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
+
+	// Resets the game state
+	void reset();
 
 	//----- game state -----
 
@@ -47,6 +53,8 @@ struct PlayMode : Mode
 	std::vector<Scene::Transform *> grates;
 	std::vector<Scene::Transform *> bouncy_weak_platforms;
 	std::vector<Scene::Transform *> bouncy_strong_platforms;
+	std::vector<Rat *> rats;
+
 
 	Player *player = nullptr;
 
