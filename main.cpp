@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
 		// create window:
 		Mode::window = SDL_CreateWindow(
-			"CHEESECHEESECHEESECHEESECHEESECHEESECHEESECHEESECHEESECHEESE",		 // TODO: remember to set a title for your game!
+			"Cheese On A Roll",		 // remember to set a title for your game!
 			1280, 720,								 // TODO: modify window size if you'd like
 			SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE // uncomment to allow resizing
 				| SDL_WINDOW_HIGH_PIXEL_DENSITY		 // uncomment for full resolution on high-DPI screens

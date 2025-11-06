@@ -45,9 +45,9 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 drawable.pipeline.start = mesh.start;
 												 drawable.pipeline.count = mesh.count; }); });
 
-PlayMode::PlayMode() : scene(*level_scene)
+PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
+											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
 {
-
 	player = new Player(this);
 
 	for (auto &transform : scene.transforms)
@@ -164,6 +164,10 @@ PlayMode::PlayMode() : scene(*level_scene)
 
 	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
 	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+
+	// kitchen_music = DynamicSoundLoop::DynamicSoundLoop();
+	kitchen_music.play(1.0f, 0.0f);
+	pause_music.play(0.0f, 0.0f);
 }
 
 PlayMode::~PlayMode()
@@ -327,6 +331,8 @@ void PlayMode::update(float elapsed)
 		wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
 		wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 	}
+
+	kitchen_music.update();
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size)

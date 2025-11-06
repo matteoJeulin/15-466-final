@@ -10,6 +10,7 @@
 
 #include "Scene.hpp"
 #include "Sound.hpp"
+#include "DynamicSoundLoop.hpp"
 #include "TextManager.hpp"
 #include "UIElement.hpp"
 #include "DynamicMeshBuffer.hpp"
@@ -84,4 +85,8 @@ struct PlayMode : Mode
 	float bottle_ui_pos_x = 0.9f;
 	float bottle_ui_pos_y = 0.6f;
 	float bottle_ui_height = 0.8f;
+
+	// Music
+	DynamicSoundLoop kitchen_music;
+	DynamicSoundLoop pause_music;
 };

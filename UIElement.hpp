@@ -18,7 +18,7 @@
 
 #include <vector>
 
- struct UIElement {
+struct UIElement {
 
     // Data
     std::vector< uint32_t > data = {}; // data that will be passed as OpenGL texture data
