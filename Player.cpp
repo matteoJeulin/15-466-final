@@ -68,15 +68,28 @@ void Player::update(float elapsed)
 				return;
 			}
 		}
+		bool on_any_plate = false;
+		int max_plate_level = 0;
 
 		// Plate collision
 		for (Scene::Transform *plate : game->collision_plates)
 		{
 			if (collide(plate, false))
 			{
-				melt_level += melt_delta * elapsed;
-				melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+				on_any_plate = true;
+
+				int level = game->stove.get_level_for_plate(plate);
+				max_plate_level = std::max(max_plate_level, level);
 			}
+		}
+
+		if (on_any_plate) {
+			set_heat_level(max_plate_level);
+			melt_level += melt_delta * elapsed;
+			melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+		}
+		else {
+			set_heat_level(0);
 		}
 
 		for (Scene::Transform *grate : game->grates)

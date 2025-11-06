@@ -18,22 +18,6 @@
 #include <string>
 #include <algorithm>
 
-// texture block set for stove, chatGPT
-static GLuint make_solid_tex(glm::u8vec4 rgba) {
-	GLuint tex = 0;
-	glGenTextures(1, &tex);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &rgba);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	return tex;
-}
-
-
 GLuint level_meshes_for_lit_color_texture_program = 0;
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 							  {
@@ -82,14 +66,6 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 			player->model = &transform;
 		else if (transform.name == "Cheese_Wheel")
 			player->collision = &transform;
-		else if (transform.name == "Plate_hot")
-			hot_plate = &transform;
-		else if (transform.name == "Plate_cold")
-			cold_plate = &transform;
-		else if (transform.name == "Switch")
-			switch_1 = &transform;
-		else if (transform.name == "Switch2")
-			switch_2 = &transform;
 		else if (transform.name.substr(0, 5) == "Grate")
 		{
 			grates.emplace_back(&transform);
@@ -115,17 +91,13 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		}
 		if (transform.name.substr(0, 5) == "Plate" )
 		{
-			if (transform.name == "Plate_hot") stove_1 = &transform;
-			if (transform.name == "Plate_cold") stove_2 = &transform;;
+			/*if (transform.name == "Plate_hot") stove_1 = &transform;
+			if (transform.name == "Plate_cold") stove_2 = &transform;;*/
 			collision_plates.emplace_back(&transform);
 		}
 	}
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
-	if (hot_plate == nullptr)
-		throw std::runtime_error("Hot plate not found.");
-	if (cold_plate == nullptr)
-		throw std::runtime_error("Cold plate not found.");
 
 	// get pointer to camera for convenience:
 	if (scene.cameras.size() != 1)
@@ -188,32 +160,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	kitchen_music.play(1.0f, 0.0f);
 	pause_music.play(0.0f, 0.0f);
 
-	// Find the stove drawable for stove_1
-	for (auto& d : scene.drawables) {
-		if (d.transform == stove_1) { stove_drawable = &d; break; }
-	}
-	if (!stove_drawable) throw std::runtime_error("Hot plate drawable not found.");
-
-	// ensure VAO is compatible with the lit program 
-	GLuint stove_vao = level_meshes->make_vao_for_program(lit_color_texture_program->program);
-	Mesh const& stove_mesh = level_meshes->lookup("Cube.001"); 
-	stove_drawable->pipeline = lit_color_texture_program_pipeline;
-	stove_drawable->pipeline.vao = stove_vao;
-	stove_drawable->pipeline.type = stove_mesh.type;
-	stove_drawable->pipeline.start = stove_mesh.start;
-	stove_drawable->pipeline.count = stove_mesh.count;
-
-	// 1�1 solid textures:
-	stove_tint_lvl0 = make_solid_tex({ 255,255,255,255 }); // off
-	stove_tint_lvl1 = make_solid_tex({ 255, 90, 60,255 }); // warm
-	stove_tint_lvl2 = make_solid_tex({ 255, 40, 15,255 }); // hot
-	stove_tint_lvl3 = make_solid_tex({ 255,  0,  0,255 }); // very hot
-
-	// start with no tint
-	stove_drawable->pipeline.textures[0].texture = stove_tint_lvl0;
-	stove_drawable->pipeline.textures[0].target = GL_TEXTURE_2D; // important
-
-
+	stove.init(scene);
 }
 
 PlayMode::~PlayMode()
@@ -314,14 +261,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		if (evt.button.button == SDL_BUTTON_LEFT)
 		{
 
-			auto tex_for = [&](int lvl)->GLuint {
+			/*auto tex_for = [&](int lvl)->GLuint {
 				switch (lvl) {
 				case 1: return stove_tint_lvl1;
 				case 2: return stove_tint_lvl2;
 				case 3: return stove_tint_lvl3;
 				default: return stove_tint_lvl0;
 				}
-				};
+				};*/
 
 			glm::vec2 mouse_win(float(evt.button.x), float(evt.button.y));
 			glm::vec2 scale = glm::vec2(last_drawable_px) / glm::vec2(window_size);
@@ -363,26 +310,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				}
 			};
 
-			try_hit(switch_1);
-			try_hit(switch_2);
-
-			if (hit)
-			{
-				// switch rotation
-				hit->rotation = hit->rotation * glm::angleAxis(glm::radians(90.f), glm::vec3(0, 0, 1));
-
-				int &knob_state = (hit == switch_1) ? knob_state_1 : knob_state_2;
-				knob_state = (knob_state + 1) % 4;
-				player->set_heat_level(knob_state);
-
-				if (hit == switch_1) {
-					stove_drawable->pipeline.textures[0].texture = tex_for(knob_state);
-					stove_drawable->pipeline.textures[0].target = GL_TEXTURE_2D;
-				}
-
-				std::cout << "Switch toggled:" << hit->name.c_str() << " heat level " << knob_state << " melt_delta now " << player->melt_delta << std::endl;
+			//int new_level = 0;
+			if (stove.try_toggle(r, nullptr)) {
+				//player->set_heat_level(new_level);
 				return true;
 			}
+
 
 			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
 				for (auto cracker : grapple_crackers) {

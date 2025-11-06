@@ -18,6 +18,7 @@
 #include "Player.hpp"
 #include "Rat.hpp"
 #include "Mesh.hpp"
+#include "Stove.hpp"
 
 struct PlayMode : Mode
 {
@@ -50,10 +51,10 @@ struct PlayMode : Mode
 	Scene::Transform* hot_plate = nullptr;
 	Scene::Transform* cold_plate = nullptr;
 	Scene::Transform* counter_top = nullptr;
-	Scene::Transform* switch_1 = nullptr;
-	Scene::Transform* switch_2 = nullptr;
-	Scene::Transform* stove_1 = nullptr;
-	Scene::Transform* stove_2 = nullptr;
+	//Scene::Transform* switch_1 = nullptr;
+	//Scene::Transform* switch_2 = nullptr;
+	//Scene::Transform* stove_1 = nullptr;
+	//Scene::Transform* stove_2 = nullptr;
 	std::vector<Scene::Transform *> collision_platforms;
 	std::vector<Scene::Transform *> collision_plates;
 	std::vector<Scene::Transform *> grates;
@@ -61,6 +62,7 @@ struct PlayMode : Mode
 	std::vector<Scene::Transform *> bouncy_strong_platforms;
 	std::vector<Scene::Transform *> grapple_crackers;
 	std::vector<Rat *> rats;
+	StoveSystem stove;
 
 	Player *player = nullptr;
 
