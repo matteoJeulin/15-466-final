@@ -65,6 +65,8 @@ struct PlayMode : Mode
 	// camera:
 	Scene::Camera *camera = nullptr;
 
+	bool paused = false;
+
 	// mouse:
 	glm::uvec2 last_drawable_px = glm::uvec2(1, 1);
 	Ray last_ray;
@@ -89,4 +91,6 @@ struct PlayMode : Mode
 	// Music
 	DynamicSoundLoop kitchen_music;
 	DynamicSoundLoop pause_music;
+	float pause_vol = 0.0f;
+	float vol_fade_rate = -2.0f; // per second
 };

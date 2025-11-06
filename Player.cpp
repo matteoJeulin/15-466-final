@@ -184,6 +184,8 @@ void Player::update(float elapsed)
 		}
 		initialMeshBuffer.set(verticesCpu.data(), verticesCpu.size(), GL_DYNAMIC_DRAW);
 	}
+
+	// pause.pressed = false;
 }
 
 void Player::set_heat_level(int level) {

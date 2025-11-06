@@ -63,4 +63,8 @@ struct DynamicSoundLoop {
         pan = new_pan;
         my_playing_sample->set_pan(new_pan, ramp);
     }
+
+    ~DynamicSoundLoop() {
+        my_playing_sample->stop();
+    }
 };
