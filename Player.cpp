@@ -13,21 +13,41 @@ Player::Player(PlayMode *_game) : Character(_game)
 void Player::update(float elapsed)
 {
 	// combine inputs into a move:
-	if (left.pressed && !right.pressed)
-		speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
-	if (!left.pressed && right.pressed)
-		speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
+	if (!(locomotionState & PlayerLocomotion::Grappling)) {
+		if (left.pressed && !right.pressed)
+			speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
+		if (!left.pressed && right.pressed)
+			speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
 
-	if (jump.pressed && !this->jumping && platform != nullptr)
-	{
-		jump.pressed = false;
-		charJump(jumpHeight, jumpAirTime, gravity);
+		if (jump.pressed && !this->jumping && platform != nullptr)
+		{
+			jump.pressed = false;
+			charJump(jumpHeight, jumpAirTime, gravity);
+			this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Jumping);
+		}
+
+		// Apply inertia to get the player down to 0 speed.
+		if ((!left.pressed && !right.pressed) || (left.pressed && speed.y > 0) || (right.pressed && speed.y < 0))
+		{
+			speed.y -= speed.y * elapsed * 10;
+		}
+
+		if (speed.y != 0.0f) this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Rolling);
+		else this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Rolling);
 	}
+	else if (this->grapple_point != nullptr) {
+		// get vector from cheese to grapple
+		glm::vec2 rope_vector = glm::normalize(glm::vec2(grapple_point->position.y - collision->position.y,
+										  				 grapple_point->position.z - collision->position.z));
 
-	// Apply inertia to get the player down to 0 speed.
-	if ((!left.pressed && !right.pressed) || (left.pressed && speed.y > 0) || (right.pressed && speed.y < 0))
-	{
-		speed.y -= speed.y * elapsed * 10;
+		// Get angle between gravity and rope
+		float angle = glm::angle(glm::vec2(0.0f, 1.0f), rope_vector);
+		float magnitude = std::abs(sin(angle)) * this->gravity;
+
+		// apply tension force
+		glm::vec2 tension = glm::vec2(rope_vector[0] * magnitude, rope_vector[1] * magnitude);
+		speed.y += tension[0];
+		speed.z += tension[1];
 	}
 
 	applySpeed(elapsed);
@@ -86,6 +106,7 @@ void Player::update(float elapsed)
 			if (collide(plat, false))
 			{
 				jumping = false;
+				this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Jumping);
 			}
 		}
 	}
@@ -105,8 +126,10 @@ void Player::update(float elapsed)
 			debug_heat.pressed = false;
 		}
 
-		melt_level += -0.1f * std::abs(melt_delta) * elapsed;
-		melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+		if (!(locomotionState & PlayerLocomotion::Grappling)) { // if grappling, don't cool down!
+			melt_level += -0.1f * std::abs(melt_delta) * elapsed;
+			melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
+		}
 	}
 
 	//----------------------------------------

@@ -373,7 +373,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				return true;
 			}
 
-			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2.0f) {
+			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
 				for (auto cracker : grapple_crackers) {
 					try_hit(cracker);
 

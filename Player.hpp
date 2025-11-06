@@ -34,6 +34,15 @@ struct Player : public Character
     bool won = false;
     bool dead = false;
 
+    enum PlayerLocomotion {
+        Rolling = 0b1,
+        Jumping = 0b10,
+        Grappling = 0b100
+    } locomotionState = (PlayerLocomotion)0;
+
+    // Grappling
+    Scene::Transform *grapple_point = nullptr;
+
     // Melt Properties
     const float MELT_MIN = 0;
     const float MELT_MAX = 5;
