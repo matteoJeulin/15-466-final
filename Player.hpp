@@ -40,6 +40,11 @@ struct Player : public Character
     float melt_level = 0;
     float melt_delta = MELT_MAX; // positive means melting, negative means cooling
 
+    // Stove Heat
+    void set_heat_level(int level);
+    int heat_level = 0;
+    float base_melt_rate = 2.0f;
+
     // Angle to rotate the player
 	glm::quat theta;
 

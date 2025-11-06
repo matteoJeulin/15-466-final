@@ -286,13 +286,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 			if (hit)
 			{
-				// Toggle stove state
-				player->melt_delta *= -1.0f;
-
 				// switch rotation
-				hit->rotation = hit->rotation * glm::angleAxis(0.2f, glm::vec3(0, 0, 1));
+				hit->rotation = hit->rotation * glm::angleAxis(glm::radians(90.f), glm::vec3(0, 0, 1));
 
-				std::cout << "Switch toggled:" << hit->name.c_str() << "melt_delta now " << player->melt_delta << std::endl;
+				int &knob_state = (hit == switch_1) ? knob_state_1 : knob_state_2;
+				knob_state = (knob_state + 1) % 4;
+				player->set_heat_level(knob_state);
+
+				std::cout << "Switch toggled:" << hit->name.c_str() << " heat level " << knob_state << " melt_delta now " << player->melt_delta << std::endl;
 				return true;
 			}
 		}

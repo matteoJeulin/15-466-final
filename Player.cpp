@@ -7,6 +7,7 @@
 Player::Player(PlayMode *_game) : Character(_game)
 {
 	drawable = nullptr;
+	set_heat_level(0);
 }
 
 void Player::update(float elapsed)
@@ -183,4 +184,11 @@ void Player::update(float elapsed)
 		}
 		initialMeshBuffer.set(verticesCpu.data(), verticesCpu.size(), GL_DYNAMIC_DRAW);
 	}
+}
+
+void Player::set_heat_level(int level) {
+	heat_level = std::clamp(level, 0, 3);
+	// knob to melt rate multipliers
+	float rate_by_level[4] = { -1.0f, 0.5f, 1.0f, 2.0f };
+	melt_delta = base_melt_rate * rate_by_level[heat_level];
 }
