@@ -345,5 +345,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 void PlayMode::reset()
 {
 	player->collision->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
+	player->model->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
 	// Mode::set_current(std::make_shared<PlayMode>());
 }
