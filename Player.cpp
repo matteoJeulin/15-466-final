@@ -1,12 +1,129 @@
 #include "Player.hpp"
-#include "PlayMode.hpp"
 
-#include "Mode.hpp"
-#include "iostream"
-
-Player::Player(PlayMode *_game) : Character(_game)
+Player::Player()
 {
 	drawable = nullptr;
+}
+
+bool Player::collide(Scene::Transform *object, bool isTrigger)
+{
+	glm::vec3 object_pos = glm::vec3(object->position);
+	object_pos.x = 0.0f;
+	glm::vec3 object_size = object->scale;
+
+	glm::vec3 &playerPos = playerCollision->position;
+	playerPos.x = 0.0f;
+	glm::vec3 playerSize = playerCollision->scale;
+
+	// Transform player position from world space to object's local space
+	glm::quat invRotation = glm::inverse(object->rotation);
+	glm::vec3 playerCenter = invRotation * (playerPos - object_pos);
+	playerCenter.x = 0.0f;
+
+	// Taken from https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+	// Check the collision between a circle and a bounding box
+	auto intersects = ([](glm::vec3 sphereCenter, float sphereRadius, glm::vec3 boxMin, glm::vec3 boxMax)
+					   {
+		// get box closest point to sphere center by clamping
+		float y = std::max(boxMin.y, std::min(sphereCenter.y, boxMax.y));
+		float z = std::max(boxMin.z, std::min(sphereCenter.z, boxMax.z));
+
+		float distance = std::sqrt(
+					(y - sphereCenter.y) * (y - sphereCenter.y) +
+					(z - sphereCenter.z) * (z - sphereCenter.z)
+				);
+
+		std::pair<bool, glm::vec3> solution(distance <= sphereRadius,
+											glm::vec3(0.0f, y, z));
+
+		return solution; });
+
+	// Bounding box of the object
+	glm::vec3 boxMin = glm::vec3(0.0f, -object_size.y, -object_size.z);
+	glm::vec3 boxMax = glm::vec3(0.0f, object_size.y, object_size.z);
+
+	std::pair<bool, glm::vec3> intersection = intersects(playerCenter, playerSize.y, boxMin, boxMax);
+
+	// If the collision box is only a trigger, do not change the position/speed of the player
+	if (isTrigger)
+	{
+		return intersection.first;
+	}
+
+	if (intersection.first)
+	{
+		// Inspiration taken from https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects
+		glm::vec3 closestPoint = intersection.second;
+
+		// Transform clamped point to world space - this is the actual collision point
+		glm::vec3 closestPointWorld = object->rotation * closestPoint + object_pos;
+
+		// Calculate vector from collision point to player center
+		// This is the correct direction for the collision normal
+		glm::vec3 collisionToPlayer = playerPos - closestPointWorld;
+		float distance = glm::length(collisionToPlayer);
+
+		// Calculate penetration and collision normal
+		float penetration = playerSize.y - distance;
+
+		// The collision normal points from the closest point toward the player center
+		// If distance is too small, we're at the center and need a fallback
+		glm::vec3 actualNormal;
+		if (distance > 0.0001f)
+		{
+			actualNormal = glm::normalize(collisionToPlayer);
+		}
+		else
+		{
+			// Fallback: use the direction from box center to player
+			glm::vec3 boxCenterWorld = object_pos;
+			boxCenterWorld.x = 0.0f;
+			glm::vec3 centerToPlayer = playerPos - boxCenterWorld;
+			actualNormal = (glm::length(centerToPlayer) > 0.0001f)
+							   ? glm::normalize(centerToPlayer)
+							   : glm::vec3(0.0f, 0.0f, 1.0f); // Default upward if all else fails
+		}
+
+		// Move player along the actual collision normal
+		// Apply the advanced sliding resolution only if there is penetration
+		if (penetration > 0.0001f)
+		{
+			playerPos += actualNormal * penetration;
+		}
+
+		// Cancel velocity component along the collision normal (world space)
+		float velocityAlongNormal = glm::dot(speed, actualNormal);
+
+		if (velocityAlongNormal < 0.0f)
+		{ // Only if moving into the surface
+			speed -= velocityAlongNormal * actualNormal;
+			speed.x = 0.0f;
+		}
+
+		// Only set platform if the normal is pointing upward (player landed on top)
+		// Check if the world normal has a significant upward (positive Z) component
+		if (actualNormal.z > 0.7f)
+		{ // cos(45°) ≈ 0.707, so steeper than 45° upward
+			platform = object;
+		}
+		else
+		{
+			platform = nullptr;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+void Player::playerJump(float jump_height)
+{
+	float jumpSpeed = (2 * jump_height) / (pow(jumpAirTime / 2.0f, 2.0f)) * (jumpAirTime / 2.0f);
+	
+	jump.pressed = false;
+	jumping = true;
+	speed.z = jumpSpeed;
 }
 
 void Player::update(float elapsed)
@@ -17,10 +134,9 @@ void Player::update(float elapsed)
 	if (!left.pressed && right.pressed)
 		speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
 
-	if (jump.pressed && !this->jumping && platform != nullptr)
+	if (jump.pressed && !jumping && platform != nullptr)
 	{
-		jump.pressed = false;
-		charJump(jumpHeight);
+		playerJump(jumpHeight);
 	}
 
 	// Apply inertia to get the player down to 0 speed.
@@ -29,67 +145,13 @@ void Player::update(float elapsed)
 		speed.y -= speed.y * elapsed * 10;
 	}
 
-	applySpeed(elapsed);
-
-	// Resolve collisions with the player
-	if (!noclip)
-	{
-		platform = nullptr;
-
-		for (Rat *rat : game->rats)
-		{
-			if (collide(rat->collision, true))
-			{
-				std::cout << "DEAD" << std::endl;
-				std::cout.flush();
-				game->reset();
-				return;
-			}
-		}
-
-		// Plate collision
-		for (Scene::Transform *plate : game->collision_plates)
-		{
-			if (collide(plate, false))
-			{
-				melt_level += melt_delta * elapsed;
-				melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
-			}
-		}
-
-		for (Scene::Transform *grate : game->grates)
-		{
-			// Go throught the grate if melted enough
-			collide(grate, melt_level > (MELT_MIN + MELT_MAX) / 2);
-		}
-
-		for (Scene::Transform *bouncy : game->bouncy_weak_platforms)
-		{
-			if (collide(bouncy, true))
-			{
-				charJump(4.0f * height);
-			}
-		}
-
-		for (Scene::Transform *bouncy : game->bouncy_strong_platforms)
-		{
-			if (collide(bouncy, true))
-			{
-				charJump(8.5f * height);
-			}
-		}
-
-		for (Scene::Transform *platform : game->collision_platforms)
-		{
-
-			if (collide(platform, false))
-			{
-				jumping = false;
-			}
-		}
-	}
+	if (platform == nullptr)
+		speed.z -= gravity * elapsed;
 
 	float rotation_angle = speed.y * elapsed;
+
+	// y-axis is the forward/backward direction and the x-axis is the right/left direction
+	playerCollision->position += speed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + speed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 
 	glm::quat rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
 	theta = theta * rotation;

@@ -1,10 +1,16 @@
-#pragma once
+#include <glm/glm.hpp>
 
-#include "Character.hpp"
+#include "Scene.hpp"
+#include "DynamicMeshBuffer.hpp"
+#include "Mesh.hpp"
 
-struct Player : public Character
+#include <vector>
+#include <deque>
+#include <cmath>
+
+struct Player
 {
-    Player(PlayMode* _game);
+    Player();
 
     // input tracking:
     struct Button
@@ -13,17 +19,23 @@ struct Player : public Character
         uint8_t pressed = 0;
     } left, right, down, up, jump, mute, debug_heat; // debug_temp flips temp delta between -MELT_MAX and MELT_MAX
 
+    Scene::Transform *player = nullptr;
+    Scene::Transform *playerCollision = nullptr;
 	Scene::Drawable *drawable = nullptr;
 
     // Player physics
     // Jumping
-    const float height = 6.24f;
-    const float jumpHeight = height * 2.0f;
-    const float jumpAirTime = 0.8f;
-    const float gravity = (2 * jumpHeight) / (pow(jumpAirTime / 2.0f, 2.0f));
+    float height = 6.24f;
+    float jumpHeight = height * 2.0f;
+    float jumpAirTime = 0.8f;
+    float gravity = (2 * jumpHeight) / (pow(jumpAirTime / 2.0f, 2.0f));
     // float jumpSpeed = (jumpHeight - (0.5f * (-gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
 
+    // Makes the player jump up to heightMultiplier * height
+    void playerJump(float heightMultiplier);
+
     // Moving
+    glm::vec3 speed = glm::vec3(0.0f);
     // Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
     const float acceleration = 7.5f * 4.0f;
 
@@ -31,8 +43,11 @@ struct Player : public Character
     // const float cheeseMaxSpeed = 10.0f * 2.0f;
     const float maxSpeed = (jumpHeight * 2) / jumpAirTime;
 
+    bool noclip = false;
     bool won = false;
     bool dead = false;
+
+    bool jumping = false;
 
     // Melt Properties
     const float MELT_MIN = 0;
@@ -42,6 +57,9 @@ struct Player : public Character
 
     // Angle to rotate the player
 	glm::quat theta;
+
+    // Platform on which the player is
+    Scene::Transform *platform = nullptr;
 
     //dynamic mesh data:
 	DynamicMeshBuffer initialMeshBuffer;
@@ -57,5 +75,8 @@ struct Player : public Character
 	Scene::Drawable *waveDrawable = nullptr;
 	float wave_acc = 0.0f;
 
-    void update(float elapsed) override;
+    // Checks the collision between the player and an object with a rectangular hitbox
+    bool collide(Scene::Transform *object, bool isTrigger);
+
+    void update(float elapsed);
 };
