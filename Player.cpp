@@ -4,6 +4,7 @@
 #include "Mode.hpp"
 #include "iostream"
 #include <algorithm>
+
 Player::Player(PlayMode *_game) : Character(_game)
 {
 	drawable = nullptr;
@@ -63,7 +64,7 @@ void Player::update(float elapsed)
 			{
 				std::cout << "DEAD" << std::endl;
 				std::cout.flush();
-				game->reset();
+				dead = true;
 				return;
 			}
 		}

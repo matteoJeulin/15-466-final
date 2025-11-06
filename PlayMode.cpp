@@ -44,7 +44,7 @@ Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
-												if ((transform->name.substr(0, 9) == "Collision"|| transform->name == "Cheese_Wheel")) {
+												if (( transform->name == "Cheese_Wheel")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
@@ -64,6 +64,8 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
 											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
 {
+	std::cout << "=============================================================================================" << std::endl;
+
 	player = new Player(this);
 
 	for (auto &transform : scene.transforms)
@@ -377,12 +379,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				for (auto cracker : grapple_crackers) {
 					try_hit(cracker);
 
-					if (hit) {
-						player->grapple_point = cracker;
-						player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
-					}
-				}
-			}
+			// 		if (hit) {
+			// 			player->grapple_point = cracker;
+			// 			player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
+			// 		}
+			// 	}
+			// }
 		}
 	}
 
@@ -403,6 +405,12 @@ void PlayMode::update(float elapsed)
 
 	if (!paused) {
 		player->update(elapsed);
+
+		if (player->dead) {
+			reset();
+			return;
+		}
+
 
 		for (Rat *rat : rats)
 			rat->update(elapsed);
@@ -469,6 +477,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 void PlayMode::reset()
 {
-	player->collision->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
-	// Mode::set_current(std::make_shared<PlayMode>());
+	// player->collision->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
+	Mode::set_current(std::make_shared<PlayMode>());
 }
