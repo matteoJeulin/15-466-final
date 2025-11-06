@@ -1,8 +1,7 @@
 #include "Player.hpp"
 
-Player::Player()
-{
-	drawable = nullptr;
+Player::Player() {
+    drawable = nullptr;
 }
 
 bool Player::collide(Scene::Transform *object, bool isTrigger)
@@ -36,7 +35,8 @@ bool Player::collide(Scene::Transform *object, bool isTrigger)
 		std::pair<bool, glm::vec3> solution(distance <= sphereRadius,
 											glm::vec3(0.0f, y, z));
 
-		return solution; });
+		return solution; 
+    });
 
 	// Bounding box of the object
 	glm::vec3 boxMin = glm::vec3(0.0f, -object_size.y, -object_size.z);
@@ -44,11 +44,10 @@ bool Player::collide(Scene::Transform *object, bool isTrigger)
 
 	std::pair<bool, glm::vec3> intersection = intersects(playerCenter, playerSize.y, boxMin, boxMax);
 
-	// If the collision box is only a trigger, do not change the position/speed of the player
-	if (isTrigger)
-	{
-		return intersection.first;
-	}
+    // If the collision box is only a trigger, do not change the position/speed of the player
+    if (isTrigger) {
+        return intersection.first; 
+    }
 
 	if (intersection.first)
 	{
@@ -117,18 +116,8 @@ bool Player::collide(Scene::Transform *object, bool isTrigger)
 	return false;
 }
 
-void Player::playerJump(float jump_height)
-{
-	float jumpSpeed = (2 * jump_height) / (pow(jumpAirTime / 2.0f, 2.0f)) * (jumpAirTime / 2.0f);
-	
-	jump.pressed = false;
-	jumping = true;
-	speed.z = jumpSpeed;
-}
-
-void Player::update(float elapsed)
-{
-	// combine inputs into a move:
+void Player::update(float elapsed) {
+    // combine inputs into a move:
 	if (left.pressed && !right.pressed)
 		speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
 	if (!left.pressed && right.pressed)
@@ -136,7 +125,9 @@ void Player::update(float elapsed)
 
 	if (jump.pressed && !jumping && platform != nullptr)
 	{
-		playerJump(jumpHeight);
+		speed.z = jumpSpeed;
+		jump.pressed = false;
+		jumping = true;
 	}
 
 	// Apply inertia to get the player down to 0 speed.
@@ -153,10 +144,11 @@ void Player::update(float elapsed)
 	// y-axis is the forward/backward direction and the x-axis is the right/left direction
 	playerCollision->position += speed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + speed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 
+
 	glm::quat rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
 	theta = theta * rotation;
 
-	// Melt Logic
+    // Melt Logic
 	{
 
 		// DEBUG
@@ -166,7 +158,7 @@ void Player::update(float elapsed)
 			debug_heat.pressed = false;
 		}
 
-		melt_level += -0.1f * std::abs(melt_delta) * elapsed;
+		melt_level += -0.1f *std::abs(melt_delta) * elapsed;
 		melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
 	}
 

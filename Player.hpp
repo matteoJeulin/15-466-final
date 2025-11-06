@@ -30,9 +30,7 @@ struct Player
     float jumpAirTime = 0.8f;
     float gravity = (2 * jumpHeight) / (pow(jumpAirTime / 2.0f, 2.0f));
     // float jumpSpeed = (jumpHeight - (0.5f * (-gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
-
-    // Makes the player jump up to heightMultiplier * height
-    void playerJump(float heightMultiplier);
+    float jumpSpeed = gravity * (jumpAirTime / 2.0f);
 
     // Moving
     glm::vec3 speed = glm::vec3(0.0f);
