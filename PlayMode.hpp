@@ -52,6 +52,8 @@ struct PlayMode : Mode
 	Scene::Transform* counter_top = nullptr;
 	Scene::Transform* switch_1 = nullptr;
 	Scene::Transform* switch_2 = nullptr;
+	Scene::Transform* stove_1 = nullptr;
+	Scene::Transform* stove_2 = nullptr;
 	std::vector<Scene::Transform *> collision_platforms;
 	std::vector<Scene::Transform *> collision_plates;
 	std::vector<Scene::Transform *> grates;
@@ -76,9 +78,11 @@ struct PlayMode : Mode
 	// Text to display on screen
 	std::string screen_text = "";
 
-	// stove knobs:
+	// stove:
 	int knob_state_1 = 0;
 	int knob_state_2 = 0;
+	GLuint stove_tint_lvl0 = 0, stove_tint_lvl1 = 0, stove_tint_lvl2 = 0, stove_tint_lvl3 = 0;
+	Scene::Drawable* stove_drawable = nullptr; 
 
 	// Game Timer (+UI)
 	float MAX_LEVEL_TIME = 120.0f; // TODO: A struct of some level class
