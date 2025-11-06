@@ -24,7 +24,7 @@ void Rat::update(float elapsed)
 
         // Jump if close to player
         if (deltaPos < jumpRange && playerPos.z - ratPos.z > 2 * height) 
-            charJump(jumpHeight);
+            charJump(jumpHeight, jumpAirTime, gravity);
 
     } else {
         // Slow down to a stop
@@ -42,7 +42,7 @@ void Rat::update(float elapsed)
         {
             if (collide(bouncy, true))
             {
-                charJump(4.0f * height);
+                charJump(4.0f * height, jumpAirTime, gravity);
             }
         }
 
@@ -50,7 +50,7 @@ void Rat::update(float elapsed)
         {
             if (collide(bouncy, true))
             {
-                charJump(8.5f * height);
+                charJump(8.5f * height, jumpAirTime, gravity);
             }
         }
 

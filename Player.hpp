@@ -11,7 +11,7 @@ struct Player : public Character
     {
         uint8_t downs = 0;
         uint8_t pressed = 0;
-    } left, right, down, up, jump, mute, debug_heat; // debug_temp flips temp delta between -MELT_MAX and MELT_MAX
+    } left, right, down, up, jump, mute, pause, debug_heat; // debug_temp flips temp delta between -MELT_MAX and MELT_MAX
 
 	Scene::Drawable *drawable = nullptr;
 

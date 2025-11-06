@@ -10,6 +10,7 @@
 
 #include "Scene.hpp"
 #include "Sound.hpp"
+#include "DynamicSoundLoop.hpp"
 #include "TextManager.hpp"
 #include "UIElement.hpp"
 #include "DynamicMeshBuffer.hpp"
@@ -64,6 +65,8 @@ struct PlayMode : Mode
 	// camera:
 	Scene::Camera *camera = nullptr;
 
+	bool paused = false;
+
 	// mouse:
 	glm::uvec2 last_drawable_px = glm::uvec2(1, 1);
 	Ray last_ray;
@@ -84,4 +87,10 @@ struct PlayMode : Mode
 	float bottle_ui_pos_x = 0.9f;
 	float bottle_ui_pos_y = 0.6f;
 	float bottle_ui_height = 0.8f;
+
+	// Music
+	DynamicSoundLoop kitchen_music;
+	DynamicSoundLoop pause_music;
+	float pause_vol = 0.0f;
+	float vol_fade_rate = -2.0f; // per second
 };

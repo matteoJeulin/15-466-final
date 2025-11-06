@@ -21,7 +21,7 @@ void Player::update(float elapsed)
 	if (jump.pressed && !this->jumping && platform != nullptr)
 	{
 		jump.pressed = false;
-		charJump(jumpHeight);
+		charJump(jumpHeight, jumpAirTime, gravity);
 	}
 
 	// Apply inertia to get the player down to 0 speed.
@@ -68,7 +68,7 @@ void Player::update(float elapsed)
 		{
 			if (collide(bouncy, true))
 			{
-				charJump(4.0f * height);
+				charJump(4.0f * height, jumpAirTime, gravity);
 			}
 		}
 
@@ -76,7 +76,7 @@ void Player::update(float elapsed)
 		{
 			if (collide(bouncy, true))
 			{
-				charJump(8.5f * height);
+				charJump(8.5f * height, jumpAirTime, gravity);
 			}
 		}
 
@@ -184,6 +184,8 @@ void Player::update(float elapsed)
 		}
 		initialMeshBuffer.set(verticesCpu.data(), verticesCpu.size(), GL_DYNAMIC_DRAW);
 	}
+
+	// pause.pressed = false;
 }
 
 void Player::set_heat_level(int level) {

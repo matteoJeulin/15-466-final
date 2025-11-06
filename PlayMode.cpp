@@ -45,9 +45,9 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 drawable.pipeline.start = mesh.start;
 												 drawable.pipeline.count = mesh.count; }); });
 
-PlayMode::PlayMode() : scene(*level_scene)
+PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
+											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
 {
-
 	player = new Player(this);
 
 	for (auto &transform : scene.transforms)
@@ -164,6 +164,10 @@ PlayMode::PlayMode() : scene(*level_scene)
 
 	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
 	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+
+	// kitchen_music = DynamicSoundLoop::DynamicSoundLoop();
+	kitchen_music.play(1.0f, 0.0f);
+	pause_music.play(0.0f, 0.0f);
 }
 
 PlayMode::~PlayMode()
@@ -205,6 +209,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			player->debug_heat.pressed = true;
 			return true;
 		}
+		else if (evt.key.key == SDLK_TAB)
+		{
+			player->pause.downs += 1;
+			player->pause.pressed = true;
+			return true;
+		}
 	}
 	else if (evt.type == SDL_EVENT_KEY_UP)
 	{
@@ -231,6 +241,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		else if (evt.key.key == SDLK_J)
 		{
 			player->debug_heat.pressed = false;
+			return true;
+		}
+		else if (evt.key.key == SDLK_TAB)
+		{
+			player->pause.pressed = false;
 			return true;
 		}
 	}
@@ -307,26 +322,47 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed)
 {
-
-	player->update(elapsed);
-
-	for (Rat *rat : rats)
-		rat->update(elapsed);
-
-	camera->transform->position.y = player->collision->position.y; // need to change this
-	camera->transform->position.z = player->collision->position.z + 30.0f;						   // need to change this
-	float last_wine = wine_remaining;
-	wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
-	
-	int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
-	int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
-
-	// std::cout << wine_rank << std::endl;
-
-	if (wine_rank != last_rank) {
-		wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
-		wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+	if (player->pause.downs > 0) {
+		paused = !paused;
+		if (paused) {
+			vol_fade_rate = 2.0f;
+		}
+		else {
+			vol_fade_rate = -2.0f;
+		}
 	}
+
+	if (!paused) {
+		player->update(elapsed);
+
+		for (Rat *rat : rats)
+			rat->update(elapsed);
+
+		camera->transform->position.y = player->collision->position.y; // need to change this
+		camera->transform->position.z = player->collision->position.z + 30.0f;						   // need to change this
+		float last_wine = wine_remaining;
+		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
+		
+		int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
+		int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
+
+		// std::cout << wine_rank << std::endl;
+
+		if (wine_rank != last_rank) {
+			wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
+			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+		}
+	}
+
+	player->pause.downs = 0;
+
+	// music
+	pause_vol = std::clamp(pause_vol + (vol_fade_rate * elapsed), 0.0f, 1.0f);
+	kitchen_music.set_volume(1.0f - pause_vol, 1.f / 60.f);
+	pause_music.set_volume(pause_vol * 2.0f, 1.f / 60.f);
+
+	kitchen_music.update();
+	pause_music.update();
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size)

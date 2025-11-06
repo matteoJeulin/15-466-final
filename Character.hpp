@@ -50,7 +50,7 @@ struct Character
     bool collide(Scene::Transform *object, bool isTrigger);
 
     // Make the character jump to jump_height
-    void charJump(float jump_height);
+    void charJump(float char_jump_height, float jump_time, float jump_grav);
 
     void applySpeed(float elapsed);
 };
