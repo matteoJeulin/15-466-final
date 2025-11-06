@@ -123,9 +123,10 @@ bool Character::collide(Scene::Transform *object, bool isTrigger)
     return false;
 }
 
-void Character::charJump(float jump_height)
+void Character::charJump(float char_jump_height, float jump_time, float jump_grav) // "jump_time" is up and down
 {
-    float jumpSpeed = (2 * jump_height) / (pow(jumpAirTime / 2.0f, 2.0f)) * (jumpAirTime / 2.0f);
+    // float jumpSpeed = (2 * jump_height) / (pow(jumpAirTime / 2.0f, 2.0f)) * (jumpAirTime / 2.0f);
+    float jumpSpeed = (char_jump_height + (0.5f * jump_grav * pow((jump_time / 2.0f), 2.0f))) / (jump_time / 2.0f); 
 
     jumping = true;
     speed.z = jumpSpeed;

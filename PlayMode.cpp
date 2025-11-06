@@ -18,6 +18,22 @@
 #include <string>
 #include <algorithm>
 
+// texture block set for stove, chatGPT
+static GLuint make_solid_tex(glm::u8vec4 rgba) {
+	GLuint tex = 0;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &rgba);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return tex;
+}
+
+
 GLuint level_meshes_for_lit_color_texture_program = 0;
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 							  {
@@ -45,9 +61,9 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 drawable.pipeline.start = mesh.start;
 												 drawable.pipeline.count = mesh.count; }); });
 
-PlayMode::PlayMode() : scene(*level_scene)
+PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
+											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
 {
-
 	player = new Player(this);
 
 	for (auto &transform : scene.transforms)
@@ -90,8 +106,9 @@ PlayMode::PlayMode() : scene(*level_scene)
 		}
 		else if (transform.name.substr(0, 5) == "Plate" )
 		{
+			if (transform.name == "Plate_hot") stove_1 = &transform;
+			if (transform.name == "Plate_cold") stove_2 = &transform;;
 			collision_plates.emplace_back(&transform);
-			std
 		}
 	}
 	if (player->model == nullptr)
@@ -154,12 +171,52 @@ PlayMode::PlayMode() : scene(*level_scene)
 	player->drawable->pipeline.type = player->mesh->type;
 	player->drawable->pipeline.start = 0; // Starts from 0 in the new buffer
 	player->drawable->pipeline.count = player->mesh->count;
+
+	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
+	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+
+	// kitchen_music = DynamicSoundLoop::DynamicSoundLoop();
+	kitchen_music.play(1.0f, 0.0f);
+	pause_music.play(0.0f, 0.0f);
+
+	// Find the stove drawable for stove_1
+	for (auto& d : scene.drawables) {
+		if (d.transform == stove_1) { stove_drawable = &d; break; }
+	}
+	if (!stove_drawable) throw std::runtime_error("Hot plate drawable not found.");
+
+	// ensure VAO is compatible with the lit program 
+	GLuint stove_vao = level_meshes->make_vao_for_program(lit_color_texture_program->program);
+	Mesh const& stove_mesh = level_meshes->lookup("Cube.001"); 
+	stove_drawable->pipeline = lit_color_texture_program_pipeline;
+	stove_drawable->pipeline.vao = stove_vao;
+	stove_drawable->pipeline.type = stove_mesh.type;
+	stove_drawable->pipeline.start = stove_mesh.start;
+	stove_drawable->pipeline.count = stove_mesh.count;
+
+	// 1�1 solid textures:
+	stove_tint_lvl0 = make_solid_tex({ 255,255,255,255 }); // off
+	stove_tint_lvl1 = make_solid_tex({ 255, 90, 60,255 }); // warm
+	stove_tint_lvl2 = make_solid_tex({ 255, 40, 15,255 }); // hot
+	stove_tint_lvl3 = make_solid_tex({ 255,  0,  0,255 }); // very hot
+
+	// start with no tint
+	stove_drawable->pipeline.textures[0].texture = stove_tint_lvl0;
+	stove_drawable->pipeline.textures[0].target = GL_TEXTURE_2D; // important
+
+
 }
 
 PlayMode::~PlayMode()
 {
 	glDeleteVertexArrays(1, &player->cheese_lit_color_texture_program);
 	player->cheese_lit_color_texture_program = 0;
+
+	if (stove_tint_lvl0) glDeleteTextures(1, &stove_tint_lvl0);
+	if (stove_tint_lvl1) glDeleteTextures(1, &stove_tint_lvl1);
+	if (stove_tint_lvl2) glDeleteTextures(1, &stove_tint_lvl2);
+	if (stove_tint_lvl3) glDeleteTextures(1, &stove_tint_lvl3);
+
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
@@ -195,6 +252,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			player->debug_heat.pressed = true;
 			return true;
 		}
+		else if (evt.key.key == SDLK_TAB)
+		{
+			player->pause.downs += 1;
+			player->pause.pressed = true;
+			return true;
+		}
 	}
 	else if (evt.type == SDL_EVENT_KEY_UP)
 	{
@@ -223,6 +286,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			player->debug_heat.pressed = false;
 			return true;
 		}
+		else if (evt.key.key == SDLK_TAB)
+		{
+			player->pause.pressed = false;
+			return true;
+		}
 	}
 	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
 	{
@@ -234,6 +302,16 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 		if (evt.button.button == SDL_BUTTON_LEFT)
 		{
+
+			auto tex_for = [&](int lvl)->GLuint {
+				switch (lvl) {
+				case 1: return stove_tint_lvl1;
+				case 2: return stove_tint_lvl2;
+				case 3: return stove_tint_lvl3;
+				default: return stove_tint_lvl0;
+				}
+				};
+
 			glm::vec2 mouse_win(float(evt.button.x), float(evt.button.y));
 			glm::vec2 scale = glm::vec2(last_drawable_px) / glm::vec2(window_size);
 			// glm::vec2 mouse_px = glm::vec2(float(evt.button.x), float(evt.button.y));
@@ -286,6 +364,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				knob_state = (knob_state + 1) % 4;
 				player->set_heat_level(knob_state);
 
+				if (hit == switch_1) {
+					stove_drawable->pipeline.textures[0].texture = tex_for(knob_state);
+					stove_drawable->pipeline.textures[0].target = GL_TEXTURE_2D;
+				}
+
 				std::cout << "Switch toggled:" << hit->name.c_str() << " heat level " << knob_state << " melt_delta now " << player->melt_delta << std::endl;
 				return true;
 			}
@@ -297,14 +380,47 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed)
 {
+	if (player->pause.downs > 0) {
+		paused = !paused;
+		if (paused) {
+			vol_fade_rate = 2.0f;
+		}
+		else {
+			vol_fade_rate = -2.0f;
+		}
+	}
 
-	player->update(elapsed);
+	if (!paused) {
+		player->update(elapsed);
 
-	for (Rat *rat : rats)
-		rat->update(elapsed);
+		for (Rat *rat : rats)
+			rat->update(elapsed);
 
-	camera->transform->position.y = player->collision->position.y; // need to change this
-	camera->transform->position.z = player->collision->position.z + 30.0f;						   // need to change this
+		camera->transform->position.y = player->collision->position.y; // need to change this
+		camera->transform->position.z = player->collision->position.z + 30.0f;						   // need to change this
+		float last_wine = wine_remaining;
+		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
+		
+		int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
+		int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
+
+		// std::cout << wine_rank << std::endl;
+
+		if (wine_rank != last_rank) {
+			wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
+			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+		}
+	}
+
+	player->pause.downs = 0;
+
+	// music
+	pause_vol = std::clamp(pause_vol + (vol_fade_rate * elapsed), 0.0f, 1.0f);
+	kitchen_music.set_volume(1.0f - pause_vol, 1.f / 60.f);
+	pause_music.set_volume(pause_vol * 2.0f, 1.f / 60.f);
+
+	kitchen_music.update();
+	pause_music.update();
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size)
@@ -332,6 +448,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
 
 	scene.draw(*camera);
+
+	assert(wine_bottle_ui.data_created);
+	if (wine_bottle_ui.data_created)
+		wine_bottle_ui.draw_mesh();
 
 	GL_ERRORS();
 }
