@@ -80,17 +80,18 @@ PlayMode::PlayMode() : scene(*level_scene)
 			rat->collision = &transform;
 			rats.emplace_back(rat);
 		}
-		else if (transform.name.substr(0, 11) == "BounceWeak")
+		else if (transform.name.substr(0, 10) == "BounceWeak")
 		{
 			bouncy_weak_platforms.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 13) == "BounceStrong")
+		else if (transform.name.substr(0, 12) == "BounceStrong")
 		{
 			bouncy_strong_platforms.emplace_back(&transform);
 		}
 		else if (transform.name.substr(0, 5) == "Plate" )
 		{
 			collision_plates.emplace_back(&transform);
+			std
 		}
 	}
 	if (player->model == nullptr)
