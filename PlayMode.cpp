@@ -104,7 +104,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_mus
 		{
 			bouncy_strong_platforms.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 5) == "Plate" )
+		if (transform.name.substr(0, 5) == "Plate" )
 		{
 			if (transform.name == "Plate_hot") stove_1 = &transform;
 			if (transform.name == "Plate_cold") stove_2 = &transform;;
