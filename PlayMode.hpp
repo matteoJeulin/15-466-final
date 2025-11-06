@@ -69,4 +69,8 @@ struct PlayMode : Mode
 
 	// Text to display on screen
 	std::string screen_text = "";
+
+	// stove knobs:
+	int knob_state_1 = 0;
+	int knob_state_2 = 0;
 };
