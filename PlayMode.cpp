@@ -161,6 +161,9 @@ PlayMode::PlayMode() : scene(*level_scene)
 	player->drawable->pipeline.type = player->mesh->type;
 	player->drawable->pipeline.start = 0; // Starts from 0 in the new buffer
 	player->drawable->pipeline.count = player->mesh->count;
+
+	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
+	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 }
 
 PlayMode::~PlayMode()
@@ -312,6 +315,18 @@ void PlayMode::update(float elapsed)
 
 	camera->transform->position.y = player->collision->position.y; // need to change this
 	camera->transform->position.z = player->collision->position.z + 30.0f;						   // need to change this
+	float last_wine = wine_remaining;
+	wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
+	
+	int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
+	int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
+
+	// std::cout << wine_rank << std::endl;
+
+	if (wine_rank != last_rank) {
+		wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
+		wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+	}
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size)
@@ -339,6 +354,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
 
 	scene.draw(*camera);
+
+	assert(wine_bottle_ui.data_created);
+	if (wine_bottle_ui.data_created)
+		wine_bottle_ui.draw_mesh();
 
 	GL_ERRORS();
 }
