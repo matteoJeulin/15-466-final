@@ -76,4 +76,12 @@ struct PlayMode : Mode
 	// stove knobs:
 	int knob_state_1 = 0;
 	int knob_state_2 = 0;
+
+	// Game Timer (+UI)
+	float MAX_LEVEL_TIME = 120.0f; // TODO: A struct of some level class
+	float wine_remaining = MAX_LEVEL_TIME;
+	UIElement wine_bottle_ui;
+	float bottle_ui_pos_x = 0.9f;
+	float bottle_ui_pos_y = 0.6f;
+	float bottle_ui_height = 0.8f;
 };
