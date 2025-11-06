@@ -232,6 +232,9 @@ PlayMode::PlayMode() : scene(*level_scene)
 	cheese_drawable->pipeline.type = cheese_mesh->type;
 	cheese_drawable->pipeline.start = 0; // Starts from 0 in the new buffer
 	cheese_drawable->pipeline.count = cheese_mesh->count;
+
+	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
+	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 }
 
 PlayMode::~PlayMode()
@@ -542,7 +545,7 @@ void PlayMode::update(float elapsed)
 			
 			if (collide(platform))
 			{
-				std::cout<<platform->name<<std::endl;
+				// std::cout<<platform->name<<std::endl;
 					if (platform->name == "Collision_Rat") {
 					Mode::set_current(std::make_shared<PlayMode>());
 					return;
@@ -583,9 +586,11 @@ void PlayMode::update(float elapsed)
 	int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
 	int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
 
+	// std::cout << wine_rank << std::endl;
 
 	if (wine_rank != last_rank) {
-		wine_bottle_ui.load_image_data(data_path("TODO: Get Wine File Name " + std::to_string(wine_rank)));
+		wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
+		wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 	}
 
 	//----------------------------------------
@@ -692,6 +697,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	scene.draw(*camera);
 
+	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)
 		wine_bottle_ui.draw_mesh();
 

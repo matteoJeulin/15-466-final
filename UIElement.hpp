@@ -5,9 +5,10 @@
  ************************************************************************************************************/
 #pragma once
 
+#include "Load.hpp"
 #include "LitColorTextureProgram.hpp"
 #include "ColorTextureProgram.hpp"
-#include "load_save_png.cpp"
+#include "load_save_png.hpp"
 
 #include "gl_errors.hpp"
 #include "data_path.hpp"
@@ -20,7 +21,7 @@
  struct UIElement {
 
     // Data
-    std::vector< gml::u8vec4 > data = {}; // data that will be passed as OpenGL texture data
+    std::vector< uint32_t > data = {}; // data that will be passed as OpenGL texture data
     int data_width = 0;
     int data_height = 0;
     bool data_created = false;
@@ -42,10 +43,27 @@
     // Calls load_png to get data
     void load_image_data(std::string filename, OriginLocation origin) {
         glm::uvec2 size;
-        load_png(filename, &size, data, origin);
+
+        std::vector<glm::u8vec4> vec_data;
+        load_png(filename, &size, &vec_data, origin);
 
         data_width = size.x;
         data_height = size.y;
+
+        data.clear();
+        for (int y = 0; y < data_height; y++) {
+            for (int x = 0; x < data_width; x++) {
+                int i = (data_height - y - 1) * data_width + x;
+                assert(i >= 0 && i < data_height * data_width);
+
+                data.emplace_back((((uint32_t)vec_data[i][0]) << 24) + // r
+                                  (((uint32_t)vec_data[i][1]) << 16) + // g
+                                  (((uint32_t)vec_data[i][2]) << 8)  + // b
+                                  (((uint32_t)vec_data[i][3]))         // a
+                                  );
+            }
+        }
+
         data_created = true;
     }
 
@@ -53,8 +71,8 @@
      * The next four functions are based on
      * Jim McCann's XOR/Circle Code
      *****************************************/
-    void create_mesh(SDL_Window *window, float clip_center_x, float clip_center_y, float clip_height,
-                     uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    void create_mesh(SDL_Window *window, float clip_center_x, float clip_center_y, float clip_height) {//,
+                    //  uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
         //---------------  create and upload texture data ----------------
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -68,7 +86,8 @@
         glTexImage2D(
             GL_TEXTURE_2D, //target -- the binding point this call is uploading to
             0, //level -- the mip level; 0 = the base level
-            GL_R8,  //internalformat -- channels and storage used on the GPU for the texture; GL_R8 means one channel, 8-bit fixed point
+            // GL_RGBA8,  //internalformat -- channels and storage used on the GPU for the texture; GL_R8 means one channel, 8-bit fixed point
+            GL_RGBA8,  //internalformat -- channels and storage used on the GPU for the texture; GL_RGBA8 means four channels, 8-bit fixed point
             data_width, //width of texture
             data_height, //height of texture
             0, //border -- must be 0
@@ -131,22 +150,25 @@
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
-
         //----------- create and upload a mesh that references the data -----------
 
         attribs.reserve(4);
         //if drawn as a triangle strip, this will be a square with the lower-left corner at (0,0) and the upper right at (1,1):
         
-        set_position(window, clip_center_x, clip_center_y, clip_height, r, g, b, a);
+        // set_position(window, clip_center_x, clip_center_y, clip_height, r, g, b, a);
+        set_position(window, clip_center_x, clip_center_y, clip_height);
+
+        GL_ERRORS();
+
     };
 
-    void set_position(SDL_Window *window, float clip_center_x, float clip_center_y, float clip_height,
-                         uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    void set_position(SDL_Window *window, float clip_center_x, float clip_center_y, float clip_height) { //,
+                        //  uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
         // get ratio
-        if (data_height == 0) {
-            printf("Glyphs of string %s all had height of 0! Don't try to print just an empty character, please.\n", mytext);
-            abort();
-        }
+        // if (data_height == 0) {
+        //     printf("Glyphs of string %s all had height of 0! Don't try to print just an empty character, please.\n", mytext);
+        //     abort();
+        // }
 
         assert(data_height != 0);
 
@@ -168,25 +190,29 @@
 
         attribs.emplace_back(Vertex {
             .Position = glm::vec2(left_clip, bottom_clip),
-            .Color = glm::u8vec4(r, g, b, a),
+            // .Color = glm::u8vec4(r, g, b, a),
+            .Color = glm::u8vec4(0xff, 0xff, 0xff, 0xff),
             .TexCoord = glm::vec2(0.0f, 0.0f),
         });
 
         attribs.emplace_back(Vertex {
             .Position = glm::vec2(left_clip, top_clip),
-            .Color = glm::u8vec4(r, g, b, a),
+            // .Color = glm::u8vec4(r, g, b, a),
+            .Color = glm::u8vec4(0xff, 0xff, 0xff, 0xff),
             .TexCoord = glm::vec2(0.0f, 1.0f),
         });
 
         attribs.emplace_back(Vertex {
             .Position = glm::vec2(right_clip, bottom_clip),
-            .Color = glm::u8vec4(r, g, b, a),
+            // .Color = glm::u8vec4(r, g, b, a),
+            .Color = glm::u8vec4(0xff, 0xff, 0xff, 0xff),
             .TexCoord = glm::vec2(1.0f, 0.0f),
         });
 
         attribs.emplace_back(Vertex {
             .Position = glm::vec2(right_clip, top_clip),
-            .Color = glm::u8vec4(r, g, b, a),
+            // .Color = glm::u8vec4(r, g, b, a),
+            .Color = glm::u8vec4(0xff, 0xff, 0xff, 0xff),
             .TexCoord = glm::vec2(1.0f, 1.0f),
         });
 
@@ -194,6 +220,9 @@
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glBufferData(GL_ARRAY_BUFFER, attribs.size() * sizeof((attribs)[0]), attribs.data(), GL_STREAM_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        GL_ERRORS();
+
     }
 
     void draw_mesh() {
@@ -203,7 +232,7 @@
 		//draw using texture stored in tex:
 		glBindTexture(GL_TEXTURE_2D, tex);
 		
-		//this particular shader program multiplies all positions by this matrix: (hmm, old naming style; I should have fixed that)
+		//this particular shader program multiplies all positions by this matrix: (Jim: hmm, old naming style; I should have fixed that)
 		// (just setting it to the identity, so Positions are directly in clip space)
 		glUniformMatrix4fv(color_texture_program->OBJECT_TO_CLIP_mat4, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0f)));
 
@@ -226,6 +255,9 @@
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glBindVertexArray(0);
 		glUseProgram(0);
+
+        GL_ERRORS();
+
     }
 
     ~UIElement() {
