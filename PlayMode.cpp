@@ -372,6 +372,17 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				std::cout << "Switch toggled:" << hit->name.c_str() << " heat level " << knob_state << " melt_delta now " << player->melt_delta << std::endl;
 				return true;
 			}
+
+			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
+				for (auto cracker : grapple_crackers) {
+					try_hit(cracker);
+
+					if (hit) {
+						player->grapple_point = cracker;
+						player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
+					}
+				}
+			}
 		}
 	}
 
