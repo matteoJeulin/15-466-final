@@ -73,55 +73,44 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_mus
 			player->model = &transform;
 		else if (transform.name == "Cheese_Wheel")
 			player->collision = &transform;
-		else if (transform.name == "Hot_Plate")
+		else if (transform.name == "Plate_hot")
 			hot_plate = &transform;
-		else if (transform.name == "Cold_Plate")
+		else if (transform.name == "Plate_cold")
 			cold_plate = &transform;
 		else if (transform.name == "Switch")
 			switch_1 = &transform;
 		else if (transform.name == "Switch2")
 			switch_2 = &transform;
-		else if (transform.name == "Gate")
+		else if (transform.name.substr(0, 5) == "Grate")
 		{
 			grates.emplace_back(&transform);
 		}
 		else if (transform.name.substr(0, 9) == "Collision")
 		{
-			if (transform.name != "Collision_Hot_Plate" && transform.name != "Collision_Cold_Plate")
-			{
-				collision_platforms.emplace_back(&transform);
-			}
-
-			if (transform.name == "Collision_CounterTop")
-			{
-				counter_top = &transform;
-			}
+			collision_platforms.emplace_back(&transform);
 		}
-		else if (transform.name == "Rat")
+		else if (transform.name.substr(0, 3) == "Rat")
 		{
 			Rat *rat = new Rat(this);
 			rat->model = &transform;
 			rat->collision = &transform;
 			rats.emplace_back(rat);
 		}
-		else if (transform.name.substr(0, 11) == "BounceWeak")
+		else if (transform.name.substr(0, 10) == "BounceWeak")
 		{
 			bouncy_weak_platforms.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 13) == "BounceStrong")
+		else if (transform.name.substr(0, 12) == "BounceStrong")
 		{
 			bouncy_strong_platforms.emplace_back(&transform);
 		}
 		else if (transform.name.substr(0, 16) == "GrapplingCracker") {
 			grapple_crackers.emplace_back(&transform);
 		}
-		else if (transform.name == "Cube.001")
+		else if (transform.name.substr(0, 5) == "Plate" )
 		{
-			stove_1 = &transform;
-			collision_plates.emplace_back(&transform);
-		}
-		else if (transform.name == "Cube"){
-			stove_2 = &transform;
+			if (transform.name == "Plate_hot") stove_1 = &transform;
+			if (transform.name == "Plate_cold") stove_2 = &transform;;
 			collision_plates.emplace_back(&transform);
 		}
 	}

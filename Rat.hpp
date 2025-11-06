@@ -23,5 +23,5 @@ struct Rat : public Character
 
     // Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction)
     // const float cheeseMaxSpeed = 10.0f * 2.0f;
-    const float maxSpeed = (jumpHeight * 2) / jumpAirTime;
+    const float maxSpeed = (jumpHeight * 2) / (jumpAirTime) ;
 };
