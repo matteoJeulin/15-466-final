@@ -112,6 +112,9 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_mus
 		{
 			bouncy_strong_platforms.emplace_back(&transform);
 		}
+		else if (transform.name.substr(0, 16) == "GrapplingCracker") {
+			grapple_crackers.emplace_back(&transform);
+		}
 		else if (transform.name == "Cube.001")
 		{
 			stove_1 = &transform;
@@ -205,7 +208,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_mus
 	stove_drawable->pipeline.start = stove_mesh.start;
 	stove_drawable->pipeline.count = stove_mesh.count;
 
-	// 1×1 solid textures:
+	// 1ï¿½1 solid textures:
 	stove_tint_lvl0 = make_solid_tex({ 255,255,255,255 }); // off
 	stove_tint_lvl1 = make_solid_tex({ 255, 90, 60,255 }); // warm
 	stove_tint_lvl2 = make_solid_tex({ 255, 40, 15,255 }); // hot
@@ -383,7 +386,22 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				std::cout << "Switch toggled:" << hit->name.c_str() << " heat level " << knob_state << " melt_delta now " << player->melt_delta << std::endl;
 				return true;
 			}
+
+			if (player->melt_level > (MELT_MIN + MELT_MAX) / 2) {}
+				for (auto cracker : grapple_crackers) {
+					try_hit(cracker);
+
+					if (hit) {
+						player->grapple_point = cracker;
+						player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
+					}
+				}
+			}
 		}
+	}
+	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+		player->grapple_point = nullptr;
+		player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState & ~Player::PlayerLocomotion::Grappling);
 	}
 
 	return false;
@@ -470,5 +488,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 void PlayMode::reset()
 {
 	player->collision->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
+	player->locomotionState = (Player::PlayerLocomotion)0;
+	player->grapple_point = nullptr;
 	// Mode::set_current(std::make_shared<PlayMode>());
 }

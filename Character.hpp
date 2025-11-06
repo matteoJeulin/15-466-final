@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/vector_angle.hpp>
 
 #include "Scene.hpp"
 #include "DynamicMeshBuffer.hpp"
