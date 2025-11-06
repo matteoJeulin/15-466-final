@@ -24,12 +24,12 @@ struct Player : public Character
     // float jumpSpeed = (jumpHeight - (0.5f * (-gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
 
     // Moving
-    // Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
-    const float acceleration = 7.5f * 4.0f;
 
     // Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction)
     // const float cheeseMaxSpeed = 10.0f * 2.0f;
     const float maxSpeed = (jumpHeight * 2) / jumpAirTime;
+    // Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
+    const float acceleration = maxSpeed * 4.0f;
 
     bool won = false;
     bool dead = false;

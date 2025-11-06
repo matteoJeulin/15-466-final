@@ -61,8 +61,15 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 drawable.pipeline.start = mesh.start;
 												 drawable.pipeline.count = mesh.count; }); });
 
-PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
-											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
+Sound::Sample kitchen_first = Sound::Sample(data_path("kitchen_music_first.wav"));
+Sound::Sample kitchen_loop = Sound::Sample(data_path("kitchen_music_loop.wav"));
+Sound::Sample kitchen_pause_first = Sound::Sample(data_path("kitchen_pause_music_loop.wav"));
+Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("kitchen_pause_music_loop.wav"));
+
+// PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
+// 											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
+PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
+											pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
 	std::cout << "=============================================================================================" << std::endl;
 
@@ -218,6 +225,8 @@ PlayMode::~PlayMode()
 	if (stove_tint_lvl1) glDeleteTextures(1, &stove_tint_lvl1);
 	if (stove_tint_lvl2) glDeleteTextures(1, &stove_tint_lvl2);
 	if (stove_tint_lvl3) glDeleteTextures(1, &stove_tint_lvl3);
+
+	Sound::stop_all_samples();
 
 }
 
@@ -477,6 +486,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 void PlayMode::reset()
 {
-	// player->collision->position = glm::vec3(0.0f, -27.2722f, 11.0663f);
-	Mode::set_current(std::make_shared<PlayMode>());
+	player->collision->position = glm::vec3(0.0f, 77.41f, 30.301f);
+	player->locomotionState = (Player::PlayerLocomotion)0;
+	player->dead = false;
+	// Mode::set_current(std::make_shared<PlayMode>());
 }

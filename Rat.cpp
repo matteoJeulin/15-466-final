@@ -38,21 +38,21 @@ void Rat::update(float elapsed)
     {
         platform = nullptr;
 
-        for (Scene::Transform *bouncy : game->bouncy_weak_platforms)
-        {
-            if (collide(bouncy, true))
-            {
-                charJump(4.0f * height, jumpAirTime, gravity);
-            }
-        }
+        // for (Scene::Transform *bouncy : game->bouncy_weak_platforms)
+        // {
+        //     if (collide(bouncy, true))
+        //     {
+        //         charJump(4.0f * height, jumpAirTime, gravity);
+        //     }
+        // }
 
-        for (Scene::Transform *bouncy : game->bouncy_strong_platforms)
-        {
-            if (collide(bouncy, true))
-            {
-                charJump(8.5f * height, jumpAirTime, gravity);
-            }
-        }
+        // for (Scene::Transform *bouncy : game->bouncy_strong_platforms)
+        // {
+        //     if (collide(bouncy, true))
+        //     {
+        //         charJump(8.5f * height, jumpAirTime, gravity);
+        //     }
+        // }
 
         for (Scene::Transform *plat : game->collision_platforms)
         {
