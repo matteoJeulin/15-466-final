@@ -59,6 +59,7 @@ struct PlayMode : Mode
 	std::vector<Scene::Transform *> grates;
 	std::vector<Scene::Transform *> bouncy_weak_platforms;
 	std::vector<Scene::Transform *> bouncy_strong_platforms;
+	std::vector<Scene::Transform *> grapple_crackers;
 	std::vector<Rat *> rats;
 
 
