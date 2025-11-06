@@ -1,7 +1,6 @@
-#include "Mode.hpp"
+#pragma once
 
-#include "Scene.hpp"
-#include "Sound.hpp"
+#include "Mode.hpp"
 
 #include <glm/glm.hpp>
 
@@ -9,9 +8,14 @@
 #include <deque>
 #include <cmath>
 
+#include "Scene.hpp"
+#include "Sound.hpp"
 #include "TextManager.hpp"
 #include "UIElement.hpp"
 #include "DynamicMeshBuffer.hpp"
+#include "RayCast.hpp"
+#include "Player.hpp"
+#include "Rat.hpp"
 #include "Mesh.hpp"
 
 struct PlayMode : Mode
@@ -24,19 +28,15 @@ struct PlayMode : Mode
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
+	// Resets the game state
+	void reset();
+
 	//----- game state -----
 
-	// input tracking:
-	struct Button
-	{
-		uint8_t downs = 0;
-		uint8_t pressed = 0;
-	} left, right, down, up, jump, mute, debug_heat; // debug_temp flips temp delta between -MELT_MAX and MELT_MAX
-
-	struct Ray {
-		glm::vec3 origin;
-		glm::vec3 dir; // normalized
-	};
+	//struct Ray {
+	//	glm::vec3 origin;
+	//	glm::vec3 dir; // normalized
+	//};
 
 	// local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
@@ -46,16 +46,20 @@ struct PlayMode : Mode
 	Scene::Transform *deathPlane = nullptr;
 	std::vector<Scene::Transform *> platforms;*/
 
-	Scene::Transform* cheese_wheel = nullptr;
-	Scene::Transform* collision_cheese_wheel = nullptr;
 	Scene::Transform* hot_plate = nullptr;
 	Scene::Transform* cold_plate = nullptr;
 	Scene::Transform* counter_top = nullptr;
-	Scene::Transform* gate = nullptr;
 	Scene::Transform* switch_1 = nullptr;
 	Scene::Transform* switch_2 = nullptr;
 	std::vector<Scene::Transform *> collision_platforms;
 	std::vector<Scene::Transform *> collision_plates;
+	std::vector<Scene::Transform *> grates;
+	std::vector<Scene::Transform *> bouncy_weak_platforms;
+	std::vector<Scene::Transform *> bouncy_strong_platforms;
+	std::vector<Rat *> rats;
+
+
+	Player *player = nullptr;
 
 	// camera:
 	Scene::Camera *camera = nullptr;
@@ -66,82 +70,10 @@ struct PlayMode : Mode
 	bool has_last_ray = false;
 	//static Ray screen_point_to_world_ray(Scene::Camera* cam, glm::vec2 mouse_px, glm::uvec2 window_size);
 
-	//glm::vec3 playerSpeed = glm::vec3(0.0f);
-
-
-
-	// Player and shark speeds have different units because of their scale in blender
-	// float jumpSpeed = 20.0f;
-
-	// Player physics
-	// Jumping
-	float cheeseHeight = 6.24f;
-	float jumpHeight = cheeseHeight * 2.0f;
-	float jumpAirTime = 0.8f;
-	// float gravity = 19.62f;
-	float gravity = (2 * jumpHeight) / (pow(jumpAirTime/2.0f, 2.0f));
-	// float jumpSpeed = (jumpHeight - (0.5f * (-gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
-	float jumpSpeed = gravity * (jumpAirTime / 2.0f);
-
-	// Moving
-	glm::vec3 cheeseSpeed = glm::vec3(0.0f);
-	// Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
-	const float cheeseAcceleration = 7.5f * 4.0f;
-
-	// Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction)
-	// const float cheeseMaxSpeed = 10.0f * 2.0f;
-	const float cheeseMaxSpeed = (jumpHeight * 2) / jumpAirTime;
-
-	bool noclip = false;
-	bool won = false;
-	bool dead = false;
-
-	bool jumping = false;
-
-	// Platform on which the player is
-	Scene::Transform *cheese_platform = nullptr;
-
-	// Melt Properties
-	const float MELT_MIN = 0;
-	const float MELT_MAX = 5;
-	float melt_level = 0;
-	float melt_delta = MELT_MAX; // positive means melting, negative means cooling
-
+	// Text to display on screen
 	std::string screen_text = "";
 
-	// Checks if the player is colliding with the top of a given platform and applies collision
-	bool collide_platform_top(Scene::Transform *platform);
-
-	// Checks if the player is colliding with the side of a given platform and applies collision
-	bool collide_platform_side(Scene::Transform *platform);
-
-		// Checks the collision between the player and an object with a rectangular hitbox
-	bool collide(Scene::Transform *object);
-
-	void ResolveCollisionAndSlide(Scene::Transform *object, glm::vec3& position, glm::vec3& current_velocity, 
-                             const glm::vec3& collision_normal, float penetration_depth);
-
-
-	//dynamic mesh data:
-	DynamicMeshBuffer initial_cheese;
-	DynamicMeshBuffer melted_cheese;
-	Mesh const *cheese_mesh = nullptr;
-	std::vector<DynamicMeshBuffer::Vertex> initial_cheese_vertices_cpu;
-	std::vector<DynamicMeshBuffer::Vertex> cheese_vertices_cpu;
-	glm::quat theta;
-
-	//vao mapping wave data for lit_color_texture_program:
-	GLuint cheese_lit_color_texture_program = 0;
-	GLuint melted_cheese_lit_color_texture_program = 0;
-	//drawable (in scene) associated with the wave data:
-	Scene::Drawable *wave_drawable = nullptr;
-	float wave_acc = 0.0f;
-
-	// Game Timer (+UI)
-	float MAX_LEVEL_TIME = 120.0f; // TODO: A struct of some level class
-	float wine_remaining = MAX_LEVEL_TIME;
-	UIElement wine_bottle_ui;
-	float bottle_ui_pos_x = 0.9f;
-	float bottle_ui_pos_y = 0.6f;
-	float bottle_ui_height = 0.8f;
+	// stove knobs:
+	int knob_state_1 = 0;
+	int knob_state_2 = 0;
 };
