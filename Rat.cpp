@@ -54,9 +54,9 @@ void Rat::update(float elapsed)
             }
         }
 
-        for (Scene::Transform *platform : game->collision_platforms)
+        for (Scene::Transform *plat : game->collision_platforms)
         {
-            if (collide(platform, false))
+            if (collide(plat, false))
             {
                 jumping = false;
             }

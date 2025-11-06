@@ -3,7 +3,7 @@
 
 #include "Mode.hpp"
 #include "iostream"
-
+#include <algorithm>
 Player::Player(PlayMode *_game) : Character(_game)
 {
 	drawable = nullptr;
@@ -79,10 +79,10 @@ void Player::update(float elapsed)
 			}
 		}
 
-		for (Scene::Transform *platform : game->collision_platforms)
+		for (Scene::Transform *plat : game->collision_platforms)
 		{
 
-			if (collide(platform, false))
+			if (collide(plat, false))
 			{
 				jumping = false;
 			}
@@ -141,11 +141,11 @@ void Player::update(float elapsed)
 			float melt_z_percent = ((pos.z - cheese_base) / (height_range));
 
 			float r = std::hypot(pos.x, pos.y) + 0.01f;
-			float sin_arg = (r * 0.25f + wave_acc) * (2.0f * M_PI);
+			float sin_arg = float((r * 0.25f + wave_acc) * (2.0f * M_PI));
 			float h = std::sin(sin_arg);
 			float wave_amplitude = 0.00f; // Adjust this value to change the wave height
 
-			float dh_dr = 0.25f * 2.0f * M_PI * std::cos(sin_arg);
+			float dh_dr = float(0.25f * 2.0f * M_PI * std::cos(sin_arg));
 			if (melt_z_percent < melt_factor)
 			{
 				vertex.Position.x = (1.0f + flow) * vertex.Position.x;
