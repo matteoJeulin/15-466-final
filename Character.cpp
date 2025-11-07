@@ -111,6 +111,7 @@ bool Character::collide(Scene::Transform *object, bool isTrigger)
         if (actualNormal.z > 0.7f)
         { // cos(45°) ≈ 0.707, so steeper than 45° upward
             platform = object;
+            jumping = false;
         }
         else
         {

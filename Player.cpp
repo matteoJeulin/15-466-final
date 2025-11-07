@@ -119,7 +119,6 @@ void Player::update(float elapsed)
 
 			if (collide(plat, false))
 			{
-				jumping = false;
 				this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Jumping);
 			}
 		}

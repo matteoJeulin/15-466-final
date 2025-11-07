@@ -419,8 +419,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 void PlayMode::reset()
 {
-	player->collision->position = glm::vec3(0.0f, 77.41f, 30.301f);
-	player->locomotionState = (Player::PlayerLocomotion)0;
-	player->dead = false;
-	// Mode::set_current(std::make_shared<PlayMode>());
+	// player->collision->position = glm::vec3(0.0f, 77.41f, 30.301f);
+	// player->locomotionState = (Player::PlayerLocomotion)0;
+	// player->dead = false;
+	Mode::set_current(std::make_shared<PlayMode>());
 }
