@@ -87,7 +87,7 @@ struct UIElement {
             GL_TEXTURE_2D, //target -- the binding point this call is uploading to
             0, //level -- the mip level; 0 = the base level
             // GL_RGBA8,  //internalformat -- channels and storage used on the GPU for the texture; GL_R8 means one channel, 8-bit fixed point
-            GL_RGBA8,  //internalformat -- channels and storage used on the GPU for the texture; GL_RGBA8 means four channels, 8-bit fixed point
+            GL_SRGB_ALPHA,// SRGB_ALPHA reset the gamma, internalformat -- channels and storage used on the GPU for the texture; GL_RGBA8 means four channels, 8-bit fixed point
             data_width, //width of texture
             data_height, //height of texture
             0, //border -- must be 0
@@ -231,6 +231,7 @@ struct UIElement {
 		glBindVertexArray(buffer_for_color_texture_program);
 		//draw using texture stored in tex:
 		glBindTexture(GL_TEXTURE_2D, tex);
+
 		
 		//this particular shader program multiplies all positions by this matrix: (Jim: hmm, old naming style; I should have fixed that)
 		// (just setting it to the identity, so Positions are directly in clip space)
@@ -238,7 +239,7 @@ struct UIElement {
 
 		//draw without depth testing (so will draw atop everything else):
 		glDisable(GL_DEPTH_TEST);
-		//draw with alpha blending (so transparent parts of the texture look transparent):
+		// //draw with alpha blending (so transparent parts of the texture look transparent):
 		glEnable(GL_BLEND);
 		//standard 'over' blending:
 		glBlendEquation(GL_FUNC_ADD);

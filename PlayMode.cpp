@@ -414,6 +414,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	if (wine_bottle_ui.data_created)
 		wine_bottle_ui.draw_mesh();
 
+
+
 	GL_ERRORS();
 }
 
