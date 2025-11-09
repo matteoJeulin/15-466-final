@@ -1,6 +1,7 @@
 #include "Rat.hpp"
 #include "PlayMode.hpp"
 #include "Player.hpp"
+#include <algorithm>
 
 Rat::Rat(PlayMode *_game) : Character(_game)
 {
