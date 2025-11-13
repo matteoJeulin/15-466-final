@@ -28,7 +28,7 @@ Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
-												if (( transform->name == "Cheese_Wheel")) {
+												if (( transform->name == "Cheese_Wheel")||transform->name.substr(0, 3) == "Rat") {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
@@ -76,10 +76,20 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		}
 		else if (transform.name.substr(0, 3) == "Rat")
 		{
-			Rat *rat = new Rat(this);
-			rat->model = &transform;
-			rat->collision = &transform;
-			rats.emplace_back(rat);
+				Rat *rat = new Rat(this);
+				rat_map[&transform] = rat;
+				rat->model = &transform;
+				rat->collision = &transform;
+				rats.emplace_back(rat);
+		
+		
+		}
+		else if (transform.name.substr(0, 9) == "Model_Rat"){
+				auto it = rat_map.find((transform.parent));
+				if (it != rat_map.end()) {
+					Rat* found_rat = it->second;
+					found_rat->model = &transform;
+				}
 		}
 		else if (transform.name.substr(0, 10) == "BounceWeak")
 		{
@@ -91,8 +101,6 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		}
 		if (transform.name.substr(0, 5) == "Plate" )
 		{
-			/*if (transform.name == "Plate_hot") stove_1 = &transform;
-			if (transform.name == "Plate_cold") stove_2 = &transform;;*/
 			collision_plates.emplace_back(&transform);
 		}
 	}

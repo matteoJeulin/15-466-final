@@ -7,6 +7,7 @@
 #include <vector>
 #include <deque>
 #include <cmath>
+#include <unordered_map>
 
 #include "Scene.hpp"
 #include "Sound.hpp"
@@ -19,6 +20,7 @@
 #include "Rat.hpp"
 #include "Mesh.hpp"
 #include "Stove.hpp"
+
 
 struct PlayMode : Mode
 {
@@ -62,6 +64,7 @@ struct PlayMode : Mode
 	std::vector<Scene::Transform *> bouncy_strong_platforms;
 	std::vector<Scene::Transform *> grapple_crackers;
 	std::vector<Rat *> rats;
+	std::unordered_map<Scene::Transform*, Rat*> rat_map;
 	StoveSystem stove;
 
 	Player *player = nullptr;
