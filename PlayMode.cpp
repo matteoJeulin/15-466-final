@@ -125,8 +125,6 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	const GLintptr offset_bytes = (GLintptr)player->mesh->start * vertex_stride;
 	const GLsizeiptr size_bytes = (GLsizeiptr)player->mesh->count * vertex_stride;
 
-	std::cout << player->collision->position.x <<" " << player->collision->position.y << " " << player->collision->position.z << std::endl;
-
 	std::vector<DynamicMeshBuffer::Vertex> initial_vertices(player->mesh->count);
 	glBindBuffer(GL_ARRAY_BUFFER, level_meshes->buffer);
 
@@ -352,7 +350,6 @@ void PlayMode::update(float elapsed)
 			reset();
 			return;
 		}
-
 
 		for (Rat *rat : rats)
 			rat->update(elapsed);
