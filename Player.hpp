@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Character.hpp"
+#include "RayCast.hpp"
+#include "DrawLines.hpp"
+#include <numbers>
 
 struct Player : public Character
 {
@@ -49,6 +52,11 @@ struct Player : public Character
     float melt_level = 0;
     float melt_delta = MELT_MAX; // positive means melting, negative means cooling
 
+    const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to pass through
+    const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
+    const float MELT_FOR_CLING = 0.7f; // >=70% melt to pass through
+
+
     // Stove Heat
     void set_heat_level(int level);
     int heat_level = 0;
@@ -72,4 +80,5 @@ struct Player : public Character
 	float wave_acc = 0.0f;
 
     void update(float elapsed) override;
+    bool try_grapple(const Ray& ray, std::vector<Scene::Transform*> points);
 };

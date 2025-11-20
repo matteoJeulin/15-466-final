@@ -39,17 +39,18 @@ void Player::update(float elapsed)
 	}
 	else if (this->grapple_point != nullptr) {
 		// get vector from cheese to grapple
-		glm::vec2 rope_vector = glm::normalize(glm::vec2(grapple_point->position.y - collision->position.y,
+		glm::vec2 rope_dir = glm::normalize(glm::vec2(grapple_point->position.y - collision->position.y,
 										  				 grapple_point->position.z - collision->position.z));
 
 		// Get angle between gravity and rope
-		float angle = glm::angle(glm::vec2(0.0f, 1.0f), rope_vector);
-		float magnitude = std::abs(sin(angle)) * this->gravity;
+		float angle = glm::angle(glm::vec2(0.0f, -1.0f), -rope_dir);
+		float magnitude = std::max(cos(angle) * this->gravity, 0.0f);
+		glm::vec2 tension_force = rope_dir * magnitude;
+		std::cout << "(" << tension_force[0] << ", " << tension_force[1] << ")\n";
 
 		// apply tension force
-		glm::vec2 tension = glm::vec2(rope_vector[0] * magnitude, rope_vector[1] * magnitude);
-		speed.y += tension[0];
-		speed.z += tension[1];
+		speed.y += tension_force[0] * elapsed;
+		speed.z += tension_force[1] * elapsed;
 	}
 
 	applySpeed(elapsed);
@@ -232,4 +233,38 @@ void Player::set_heat_level(int level) {
 	// knob to melt rate multipliers
 	float rate_by_level[4] = { -1.0f, 0.5f, 1.0f, 2.0f };
 	melt_delta = base_melt_rate * rate_by_level[heat_level];
+}
+
+// Based on try_toggle from Stove.cpp
+bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) {
+    // if (!scene_) return false;
+	std::cout << "Checking grapple...\n";
+
+    // Find nearest Grapple Point* AABB hit
+    Scene::Transform* best_point = nullptr;
+    float best_t = std::numeric_limits<float>::max();
+
+    for (auto& p : points) {
+		// std::cout << "Checking point " << p->name << "...\n";
+        glm::vec3 c, h;
+        world_box(p, c, h);
+        float tval;
+        if (ray_box_intersect(ray, c, h, &tval) && tval < best_t) {
+            best_t = tval;
+            best_point = p;
+        }
+    }
+    if (!best_point) {
+		return false;
+		locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::Grappling);
+	}
+
+	std::cout << "Found grapple_point " << best_point->name << "!\n";
+
+    // Set grapple_point
+	grapple_point = best_point;
+	locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Grappling);
+
+    std::cout << "[Grappling] Attached to Grapple " << best_point->name << " (updated best point)\n";
+    return true;
 }
