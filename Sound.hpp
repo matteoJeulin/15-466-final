@@ -87,6 +87,27 @@ struct PlayingSample {
 		: data(sample_.data), loop(loop_), volume(volume_), position(position_), half_volume_radius(half_volume_radius_) { }
 };
 
+// a container that allows playing randomized samples 
+struct RandomSamples {
+	// can add sample to the random container
+	void add(Sample const& sample) {
+		samples.emplace_back(&sample);
+	}
+
+	std::shared_ptr<PlayingSample> play(float volume = 1.0f, float pan = 0.0f);
+
+	std::shared_ptr<PlayingSample> play_3D(
+		float volume,
+		glm::vec3 const& position,
+		float half_volume_radius = std::numeric_limits< float >::infinity()
+	);
+
+private:
+	std::vector<Sample const*> samples;
+	mutable int last_index = -1;
+
+};
+
 // ------- global functions -------
 
 void init(); //call Sound::init() from main.cpp before using any member functions

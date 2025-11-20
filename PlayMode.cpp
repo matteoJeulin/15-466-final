@@ -9,6 +9,7 @@
 #include "gl_errors.hpp"
 #include "data_path.hpp"
 #include "read_write_chunk.hpp"
+#include "AudioManager.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -56,6 +57,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 											pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
 	std::cout << "=============================================================================================" << std::endl;
+	AudioManager::init();
 
 	player = new Player(this);
 
