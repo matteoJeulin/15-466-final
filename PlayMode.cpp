@@ -53,7 +53,7 @@ Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("kitchen_pause_music_
 // PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
 // 											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
-											pause_music(&kitchen_pause_first, &kitchen_pause_loop)
+					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
 	player = new Player(this);
 
@@ -87,7 +87,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		{
 			bouncy_strong_platforms.emplace_back(&transform);
 		}
-		if (transform.name.substr(0, 5) == "Plate" )
+		if (transform.name.substr(0, 5) == "Plate")
 		{
 			/*if (transform.name == "Plate_hot") stove_1 = &transform;
 			if (transform.name == "Plate_cold") stove_2 = &transform;;*/
@@ -164,13 +164,16 @@ PlayMode::~PlayMode()
 	glDeleteVertexArrays(1, &player->cheese_lit_color_texture_program);
 	player->cheese_lit_color_texture_program = 0;
 
-	if (stove_tint_lvl0) glDeleteTextures(1, &stove_tint_lvl0);
-	if (stove_tint_lvl1) glDeleteTextures(1, &stove_tint_lvl1);
-	if (stove_tint_lvl2) glDeleteTextures(1, &stove_tint_lvl2);
-	if (stove_tint_lvl3) glDeleteTextures(1, &stove_tint_lvl3);
+	if (stove_tint_lvl0)
+		glDeleteTextures(1, &stove_tint_lvl0);
+	if (stove_tint_lvl1)
+		glDeleteTextures(1, &stove_tint_lvl1);
+	if (stove_tint_lvl2)
+		glDeleteTextures(1, &stove_tint_lvl2);
+	if (stove_tint_lvl3)
+		glDeleteTextures(1, &stove_tint_lvl3);
 
 	Sound::stop_all_samples();
-
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
@@ -306,18 +309,21 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				}
 			};
 
-			//int new_level = 0;
-			if (stove.try_toggle(r, nullptr)) {
-				//player->set_heat_level(new_level);
+			// int new_level = 0;
+			if (stove.try_toggle(r, nullptr))
+			{
+				// player->set_heat_level(new_level);
 				return true;
 			}
 
-
-			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
-				for (auto cracker : grapple_crackers) {
+			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2)
+			{
+				for (auto cracker : grapple_crackers)
+				{
 					try_hit(cracker);
 
-					if (hit) {
+					if (hit)
+					{
 						player->grapple_point = cracker;
 						player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
 					}
@@ -331,20 +337,25 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed)
 {
-	if (player->pause.downs > 0) {
+	if (player->pause.downs > 0)
+	{
 		paused = !paused;
-		if (paused) {
+		if (paused)
+		{
 			vol_fade_rate = 2.0f;
 		}
-		else {
+		else
+		{
 			vol_fade_rate = -2.0f;
 		}
 	}
 
-	if (!paused) {
+	if (!paused)
+	{
 		player->update(elapsed);
 
-		if (player->dead) {
+		if (player->dead)
+		{
 			reset();
 			return;
 		}
@@ -352,17 +363,18 @@ void PlayMode::update(float elapsed)
 		for (Rat *rat : rats)
 			rat->update(elapsed);
 
-		camera->transform->position.y = player->collision->position.y; // need to change this
-		camera->transform->position.z = player->collision->position.z + 30.0f;						   // need to change this
+		camera->transform->position.y = player->collision->position.y;		   // need to change this
+		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
 		float last_wine = wine_remaining;
 		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
-		
+
 		int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
 		int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
 
 		// std::cout << wine_rank << std::endl;
 
-		if (wine_rank != last_rank) {
+		if (wine_rank != last_rank)
+		{
 			wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
 			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 		}
@@ -409,7 +421,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	if (wine_bottle_ui.data_created)
 		wine_bottle_ui.draw_mesh();
 
-
+	background.draw_mesh();
 
 	GL_ERRORS();
 }

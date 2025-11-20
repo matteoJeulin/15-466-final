@@ -94,6 +94,8 @@ struct PlayMode : Mode
 	float bottle_ui_pos_y = 0.6f;
 	float bottle_ui_height = 0.8f;
 
+	UIElement background;
+
 	// Music
 	DynamicSoundLoop kitchen_music;
 	DynamicSoundLoop pause_music;

@@ -25,28 +25,28 @@ void playGame()
     Mode::set_current(std::make_shared<PlayMode>());
 }
 
-Load<void> createButtons(LoadTagDefault, []() -> void {
-    UIElement resumeButton = UIElement();
+Load<void> createButtons(LoadTagDefault, []() -> void
+                         {
+    UIElement resumeButton;
     resumeButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
-    resumeButton.create_mesh(Mode::window, 300.0f + float(resumeButton.data_width) / 2.0f, 200.0f + float(resumeButton.data_height) / 2.0f, float(resumeButton.data_height));
+    resumeButton.create_mesh(Mode::window, 1.0f, 0.7f, 1.0f);
 
-    UIElement quitButton = UIElement();
+    UIElement quitButton;
     quitButton.load_image_data(data_path("quit_button.png"), OriginLocation::UpperLeftOrigin);
-    quitButton.create_mesh(Mode::window, 300.0f + float(quitButton.data_width) / 2.0f, 100.0f + float(quitButton.data_height) / 2.0f, float(quitButton.data_height));
+    quitButton.create_mesh(Mode::window, 1.0f, 0.6f, 1.0f);
 
-    UIElement startButton = UIElement();
+    UIElement startButton;
     startButton.load_image_data(data_path("start_button.png"), OriginLocation::UpperLeftOrigin);
-    startButton.create_mesh(Mode::window, 300.0f + float(startButton.data_width) / 2.0f, 300.0f + float(startButton.data_height) / 2.0f, float(startButton.data_height));
+    startButton.create_mesh(Mode::window, 1.0f, 0.5f, 1.0f);
 
-    UIElement mainMenuButton = UIElement();
-    mainMenuButton.load_image_data(data_path("start_button.png"), OriginLocation::UpperLeftOrigin); // TODO: change to proper asset
-    mainMenuButton.create_mesh(Mode::window, 300.0f + float(mainMenuButton.data_width) / 2.0f, 400.0f + float(mainMenuButton.data_height) / 2.0f, float(mainMenuButton.data_height));
+    UIElement mainMenuButton;
+    mainMenuButton.load_image_data(data_path("back_to_menu_button.png"), OriginLocation::UpperLeftOrigin);
+    mainMenuButton.create_mesh(Mode::window, 1.0f, 0.4f, 1.0f);
 
-    Button::Resume = Button(&backToMainMenu, resumeButton, glm::vec2(300.0f, 200.0f));
-    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(300.0f, 100.0f));
-    Button::Play = Button(&playGame, startButton, glm::vec2(300.0f, 300.0f));
-    Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(300.0f, 400.0f));
-});
+    Button::Resume = Button(&backToMainMenu, resumeButton, glm::vec2(1.0f, 0.7f));
+    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(1.0f, 0.6f));
+    Button::Play = Button(&playGame, startButton, glm::vec2(1.0f, 0.5f));
+    Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(1.0f, 0.4f)); });
 
 Button::Button(void (*_callback)(void), UIElement _button, glm::vec2 _position)
 {
@@ -57,7 +57,7 @@ Button::Button(void (*_callback)(void), UIElement _button, glm::vec2 _position)
     width = float(button.data_width);
     height = float(button.data_height);
 
-    button.create_mesh(Mode::window, position.x + width / 2.0f, position.y + height / 2.0f, height);
+    button.create_mesh(Mode::window, position.x, position.y, 1.0f);
 };
 
 bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size)
@@ -66,8 +66,7 @@ bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size)
     {
         if (evt.button.button == SDL_BUTTON_LEFT)
         {
-            glm::uvec2 last_drawable_px = glm::uvec2(1, 1);
-
+            std::cout << "Cool" << std::endl;
             glm::vec2 mouse_win(float(evt.button.x), float(evt.button.y));
             glm::vec2 scale = glm::vec2(last_drawable_px) / glm::vec2(window_size);
             glm::vec2 mouse_px = mouse_win * scale;
@@ -84,8 +83,15 @@ bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size)
     return false;
 }
 
+void Button::update(float elapsed)
+{
+    button.create_mesh(Mode::window, position.x, position.y, 1.0f);
+}
+
 void Button::draw(glm::uvec2 const &drawable_size)
 {
+    last_drawable_px = drawable_size;
+
     if (button.data_created)
     {
         button.draw_mesh();
