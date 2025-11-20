@@ -13,13 +13,14 @@
 #include <deque>
 #include <cmath>
 
-struct Button {
-    glm::vec2 position;
-    float width, height;
+struct Button
+{
+    glm::vec2 position = glm::vec2(0.0f);
+    float width = 0.0f, height = 0.0f;
 
     UIElement button;
 
-    void (*callback)(void);
+    void (*callback)(void) = nullptr;
 
     bool handle_click(SDL_Event const &, glm::uvec2 const &window_size);
 
@@ -30,5 +31,6 @@ struct Button {
     static Button Play;
     static Button QuitGame;
 
-    Button(void (*_callback)(void), UIElement _button);
+    Button() = default; // Default constructor
+    Button(void (*_callback)(void), UIElement _button, glm::vec2 position);
 };

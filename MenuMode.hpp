@@ -28,6 +28,8 @@ struct MenuMode : Mode
     virtual void update(float elapsed) override;
     virtual void draw(glm::uvec2 const &drawable_size) override;
 
+    std::shared_ptr< Mode > lastMode;
+
     std::vector<Button> buttons;
     UIElement background;
 };

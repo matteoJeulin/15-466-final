@@ -55,8 +55,6 @@ Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("kitchen_pause_music_
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
 											pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
-	std::cout << "=============================================================================================" << std::endl;
-
 	player = new Player(this);
 
 	for (auto &transform : scene.transforms)
