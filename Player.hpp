@@ -45,6 +45,10 @@ struct Player : public Character
 
     // Grappling
     Scene::Transform *grapple_point = nullptr;
+    float grapple_angle = 0.0f;
+    float grapple_angular_velocity = 0.0f;
+    float grapple_length = 0.0f;
+    const float MIN_ROPE_LENGTH = height * 2;
 
     // Melt Properties
     const float MELT_MIN = 0;
@@ -55,7 +59,6 @@ struct Player : public Character
     const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to pass through
     const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
     const float MELT_FOR_CLING = 0.7f; // >=70% melt to pass through
-
 
     // Stove Heat
     void set_heat_level(int level);
@@ -81,4 +84,5 @@ struct Player : public Character
 
     void update(float elapsed) override;
     bool try_grapple(const Ray& ray, std::vector<Scene::Transform*> points);
+    void release_grapple();
 };

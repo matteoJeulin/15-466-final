@@ -36,34 +36,56 @@ void Player::update(float elapsed)
 
 		if (speed.y != 0.0f) this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Rolling);
 		else this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Rolling);
+		applySpeed(elapsed);
 	}
 	else if (this->grapple_point != nullptr) {
 		// get vector from cheese to grapple
 		glm::vec2 rope_vector = glm::vec2(grapple_point->position.y - collision->position.y,
 										  grapple_point->position.z - collision->position.z);
 
-		float rope_length = glm::length(rope_vector);
-		if (rope_length > 0) {
-			// Thanks to Grace Daja (MCS '28) and this PhysicsStackExchange thread
+		float grapple_distance = glm::length(rope_vector);
+		if (grapple_distance >= MIN_ROPE_LENGTH) {
+			// Thanks to Grace Daja (MCS '28), this PhysicsStackExchange thread
 			// (https://physics.stackexchange.com/questions/469046/how-does-tension-work-for-a-simple-pendulum-what-force-is-at-play-to-keep-a-rig)
+			// and this simulation (https://www.myphysicslab.com/pendulum/pendulum-en.html)
 			// for helping me figure out the tension acceleration here
-			// (T = ((v^2)/L) + gcos(theta))
+			// (T = (w^2 * L + gcos(theta))
 
-			glm::vec2 rope_dir = glm::normalize(rope_vector);
-			float vel_squared = std::powf(glm::length(speed), 2.0f);
-			float swing_theta = glm::angle(glm::vec2(0.0, 1.0f), rope_dir);
-			float tension_strength = (vel_squared / rope_length) + (gravity * std::cos(swing_theta));
-			glm::vec2 tension_accel = rope_dir * tension_strength;
+			// glm::vec2 rope_dir = glm::normalize(rope_vector);
+			// float vel_squared = std::powf(glm::length(speed), 2.0f);
+			// float swing_theta = glm::angle(glm::vec2(0.0, 1.0f), rope_dir);
+			// float tension_strength = (vel_squared / grapple_length) + (gravity * std::cos(swing_theta));
+			// glm::vec2 tension_accel = rope_dir * tension_strength;
 
-			std::cout << "Angle: " << swing_theta << "\n";
+			grapple_length = std::max(grapple_distance, MIN_ROPE_LENGTH);
+
+			float angular_accel = -gravity/grapple_length * std::sin(grapple_angle);
+			grapple_angular_velocity += angular_accel * elapsed;
+			grapple_angle += grapple_angular_velocity * elapsed;
+
+			glm::vec2 hook_to_cheese = grapple_length * glm::vec2(std::sin(grapple_angle),
+																  std::cos(grapple_angle));
+			collision->position = glm::vec3(collision->position.x,
+											grapple_point->position.y + hook_to_cheese[0],
+											grapple_point->position.z + hook_to_cheese[1]);
+
+			// std::cout << "L: " << rope_length << "\n";
 
 			// apply tension force
-			speed.y += tension_accel[0] * elapsed;
-			speed.z += tension_accel[1] * elapsed;
+			// speed.y += tension_accel[0] * elapsed;
+			// speed.z += tension_accel[1] * elapsed;
+		}
+		else {
+			// grapple_length = std::max(grapple_distance, MIN_ROPE_LENGTH);
+			// glm::vec2 rope_dir = grapple_length > 0 ? glm::normalize(rope_vector) : glm::vec2(0.0f, 1.0f);
+			// grapple_angle = glm::angle(glm::vec2(0.0f, 1.0f), rope_dir);
+			// std::cout << "Extend angle = " << grapple_angle << "\n";
+			// grapple_angular_velocity = glm::length(speed) / grapple_length;
+
+			std::cout << "extending..." << "\n";
+			applySpeed(elapsed);
 		}
 	}
-
-	applySpeed(elapsed);
 
 	// Resolve collisions with the player
 	if (!noclip)
@@ -274,8 +296,66 @@ bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) 
     // Set grapple_point
 	grapple_point = best_point;
 	locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Grappling);
-	speed.y = 0.0f;
+
+	glm::vec2 rope_vector = glm::vec2(grapple_point->position.y - collision->position.y,
+									  grapple_point->position.z - collision->position.z);
+	grapple_length = std::max(glm::length(rope_vector), MIN_ROPE_LENGTH);
+	glm::vec2 rope_dir = grapple_length > 0 ? glm::normalize(rope_vector) : glm::vec2(0.0f, 1.0f);
+	grapple_angle = -glm::angle(glm::vec2(0.0f, 1.0f), rope_dir);
+	grapple_angular_velocity = -glm::length(speed) / grapple_length;
+
+	// For each quadrant of the circle, consider the tangent line, and imagine you're applying negative torque
+	// Is my speed within 90 degrees of that angle?
+	// if (rope_vector[0] > 0 && rope_vector[1] > 0) { // bottom left
+	// 	if (glm::angle(glm::vec2(-1.0f, 1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
+	// 		grapple_angle *= -1;
+	// 		grapple_angular_velocity *= -1;
+	// 	}
+	// }
+	// else if (rope_vector[0] < 0 && rope_vector[1] > 0) { // bottom right
+	// 	if (glm::angle(glm::vec2(-1.0f, -1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
+	// 		grapple_angle *= -1;
+	// 		grapple_angular_velocity *= -1;
+	// 	}
+	// }
+	// else if (rope_vector[0] < 0 && rope_vector[1] < 0) { // top right
+	// 	if (glm::angle(glm::vec2(1.0f, -1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
+	// 		grapple_angle *= -1;
+	// 		grapple_angular_velocity *= -1;
+	// 	}
+	// }
+	// else if (rope_vector[0] > 0 && rope_vector[1] < 0) { // top left
+	// 	if (glm::angle(glm::vec2(1.0f, 1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
+	// 		grapple_angle *= -1;
+	// 		grapple_angular_velocity *= -1;
+	// 	}
+	// }
+
+	std::cout << "Attach angle = " << grapple_angle << "\n";
+	std::cout << "Attach ang. vel = " << grapple_angular_velocity << "\n";
+
+
+	// speed.y = 0.0f;
 
     std::cout << "[Grappling] Attached to Grapple " << best_point->name << " (updated best point)\n";
     return true;
+}
+
+// // Give the player some speed
+void Player::release_grapple() {
+	float lin_speed = grapple_angular_velocity * grapple_length;
+	speed.y = std::cos(grapple_angle) * lin_speed;
+	speed.z = std::sin(grapple_angle) * lin_speed;
+
+	if (grapple_angular_velocity > 0) {
+		if (collision->position.z > grapple_point->position.z) speed.y *= -1;
+		if (collision->position.y < grapple_point->position.y) speed.z *= -1;
+	}
+	else {
+		if (collision->position.z < grapple_point->position.z) speed.y *= -1;
+		if (collision->position.y > grapple_point->position.y) speed.z *= -1;
+	}
+
+	grapple_point = nullptr;
+	locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::Grappling);
 }

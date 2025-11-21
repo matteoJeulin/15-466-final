@@ -309,8 +309,10 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		}
 	}
 	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-		player->grapple_point = nullptr;
-		player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState & ~Player::PlayerLocomotion::Grappling);
+		if (evt.button.button == SDL_BUTTON_LEFT)
+		{
+			if (player->grapple_point) player->release_grapple();
+		}
 	}
 
 	return false;
