@@ -39,18 +39,28 @@ void Player::update(float elapsed)
 	}
 	else if (this->grapple_point != nullptr) {
 		// get vector from cheese to grapple
-		glm::vec2 rope_dir = glm::normalize(glm::vec2(grapple_point->position.y - collision->position.y,
-										  				 grapple_point->position.z - collision->position.z));
+		glm::vec2 rope_vector = glm::vec2(grapple_point->position.y - collision->position.y,
+										  grapple_point->position.z - collision->position.z);
 
-		// Get angle between gravity and rope
-		float angle = glm::angle(glm::vec2(0.0f, -1.0f), -rope_dir);
-		float magnitude = std::max(cos(angle) * this->gravity, 0.0f);
-		glm::vec2 tension_force = rope_dir * magnitude;
-		std::cout << "(" << tension_force[0] << ", " << tension_force[1] << ")\n";
+		float rope_length = glm::length(rope_vector);
+		if (rope_length > 0) {
+			// Thanks to Grace Daja (MCS '28) and this PhysicsStackExchange thread
+			// (https://physics.stackexchange.com/questions/469046/how-does-tension-work-for-a-simple-pendulum-what-force-is-at-play-to-keep-a-rig)
+			// for helping me figure out the tension acceleration here
+			// (T = ((v^2)/L) + gcos(theta))
 
-		// apply tension force
-		speed.y += tension_force[0] * elapsed;
-		speed.z += tension_force[1] * elapsed;
+			glm::vec2 rope_dir = glm::normalize(rope_vector);
+			float vel_squared = std::powf(glm::length(speed), 2.0f);
+			float swing_theta = glm::angle(glm::vec2(0.0, 1.0f), rope_dir);
+			float tension_strength = (vel_squared / rope_length) + (gravity * std::cos(swing_theta));
+			glm::vec2 tension_accel = rope_dir * tension_strength;
+
+			std::cout << "Angle: " << swing_theta << "\n";
+
+			// apply tension force
+			speed.y += tension_accel[0] * elapsed;
+			speed.z += tension_accel[1] * elapsed;
+		}
 	}
 
 	applySpeed(elapsed);
@@ -264,6 +274,7 @@ bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) 
     // Set grapple_point
 	grapple_point = best_point;
 	locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Grappling);
+	speed.y = 0.0f;
 
     std::cout << "[Grappling] Attached to Grapple " << best_point->name << " (updated best point)\n";
     return true;
