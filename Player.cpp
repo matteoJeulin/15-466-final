@@ -63,17 +63,18 @@ void Player::update(float elapsed)
 			grapple_angular_velocity += angular_accel * elapsed;
 			grapple_angle += grapple_angular_velocity * elapsed;
 
+			// std::cout << "Current angle = " << grapple_angle << "\n";
+			// std::cout << "Current ang. vel = " << grapple_angular_velocity << "\n";
+
+			// cheese directly below hook = grapple_angle is 0
+			// counterclockwise = positive angle 
 			glm::vec2 hook_to_cheese = grapple_length * glm::vec2(std::sin(grapple_angle),
-																  std::cos(grapple_angle));
+																  -std::cos(grapple_angle));
 			collision->position = glm::vec3(collision->position.x,
 											grapple_point->position.y + hook_to_cheese[0],
 											grapple_point->position.z + hook_to_cheese[1]);
 
-			// std::cout << "L: " << rope_length << "\n";
-
 			// apply tension force
-			// speed.y += tension_accel[0] * elapsed;
-			// speed.z += tension_accel[1] * elapsed;
 		}
 		else {
 			// grapple_length = std::max(grapple_distance, MIN_ROPE_LENGTH);
@@ -82,7 +83,7 @@ void Player::update(float elapsed)
 			// std::cout << "Extend angle = " << grapple_angle << "\n";
 			// grapple_angular_velocity = glm::length(speed) / grapple_length;
 
-			std::cout << "extending..." << "\n";
+			// std::cout << "extending..." << "\n";
 			applySpeed(elapsed);
 		}
 	}
@@ -270,7 +271,7 @@ void Player::set_heat_level(int level) {
 // Based on try_toggle from Stove.cpp
 bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) {
     // if (!scene_) return false;
-	std::cout << "Checking grapple...\n";
+	// std::cout << "Checking grapple...\n";
 
     // Find nearest Grapple Point* AABB hit
     Scene::Transform* best_point = nullptr;
@@ -301,37 +302,19 @@ bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) 
 									  grapple_point->position.z - collision->position.z);
 	grapple_length = std::max(glm::length(rope_vector), MIN_ROPE_LENGTH);
 	glm::vec2 rope_dir = grapple_length > 0 ? glm::normalize(rope_vector) : glm::vec2(0.0f, 1.0f);
-	grapple_angle = -glm::angle(glm::vec2(0.0f, 1.0f), rope_dir);
-	grapple_angular_velocity = -glm::length(speed) / grapple_length;
+	grapple_angle = glm::angle(glm::vec2(0.0f, -1.0f), -rope_dir);
+	grapple_angular_velocity = glm::length(speed) / grapple_length;
 
-	// For each quadrant of the circle, consider the tangent line, and imagine you're applying negative torque
-	// Is my speed within 90 degrees of that angle?
-	// if (rope_vector[0] > 0 && rope_vector[1] > 0) { // bottom left
-	// 	if (glm::angle(glm::vec2(-1.0f, 1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
-	// 		grapple_angle *= -1;
-	// 		grapple_angular_velocity *= -1;
-	// 	}
-	// }
-	// else if (rope_vector[0] < 0 && rope_vector[1] > 0) { // bottom right
-	// 	if (glm::angle(glm::vec2(-1.0f, -1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
-	// 		grapple_angle *= -1;
-	// 		grapple_angular_velocity *= -1;
-	// 	}
-	// }
-	// else if (rope_vector[0] < 0 && rope_vector[1] < 0) { // top right
-	// 	if (glm::angle(glm::vec2(1.0f, -1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
-	// 		grapple_angle *= -1;
-	// 		grapple_angular_velocity *= -1;
-	// 	}
-	// }
-	// else if (rope_vector[0] > 0 && rope_vector[1] < 0) { // top left
-	// 	if (glm::angle(glm::vec2(1.0f, 1.0f), glm::vec2(speed.y, speed.z)) <= std::numbers::pi / 2) {
-	// 		grapple_angle *= -1;
-	// 		grapple_angular_velocity *= -1;
-	// 	}
-	// }
+	assert(grapple_angle >= 0.0f && grapple_angle <= std::numbers::pi);
+	assert(grapple_angular_velocity >= 0.0f);
 
-	std::cout << "Attach angle = " << grapple_angle << "\n";
+	// determine which side I'm on so I know if my angle is positive or negative
+	if (rope_dir[0] > 0) grapple_angle *= -1;
+
+	// likewise, is my speed giving me positive or negative torque
+	if ((speed.y * rope_vector[1]) - (speed.z * rope_vector[0]) < 0) grapple_angular_velocity *= -1;
+
+	std::cout << "Attach angle = " << grapple_angle * 180.0f / std::numbers::pi << "\n";
 	std::cout << "Attach ang. vel = " << grapple_angular_velocity << "\n";
 
 
