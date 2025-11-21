@@ -9,6 +9,7 @@
 #include <exception>
 #include <iostream>
 #include <algorithm>
+#include <random>
 
 //local (to this file) data used by the audio system:
 namespace {
@@ -22,6 +23,13 @@ namespace {
 	//list of all currently playing samples:
 	std::list< std::shared_ptr< Sound::PlayingSample > > playing_samples;
 
+	std::mt19937 rng(std::random_device{}());
+
+	std::size_t random_index(std::size_t count) {
+		assert(count > 0);
+		std::uniform_int_distribution<std::size_t> dist(0, count - 1);
+		return dist(rng);
+	}
 }
 
 //public-facing data:
@@ -140,6 +148,43 @@ void Sound::set_volume(float new_volume, float ramp) {
 }
 
 //------------------
+
+std::shared_ptr<Sound::PlayingSample> Sound::RandomSamples::play(float play_volume, float pan) {
+	if (samples.empty()) return nullptr;
+
+	// pick random index and avoid repeating the last one  
+	std::size_t idx = random_index(samples.size());
+	if (samples.size() > 1 && last_index >= 0) {
+		while (idx == size_t(last_index)) {
+			idx = random_index(samples.size());
+		}
+	}
+
+	last_index = int(idx);
+
+	return Sound::play(*samples[idx], play_volume, pan);
+}
+
+std::shared_ptr<Sound::PlayingSample> Sound::RandomSamples::play_3D(
+	float play_volume,
+	glm::vec3 const& position,
+	float half_volume_radius
+) {
+	if (samples.empty()) return nullptr;
+
+	std::size_t idx = random_index(samples.size());
+	if (samples.size() > 1 && last_index >= 0) {
+		while (idx == size_t(last_index)) {
+			idx = random_index(samples.size());
+		}
+	}
+
+	last_index = int(idx);
+	std::cout << "the current index is " << idx << std::endl;
+
+	return Sound::play_3D(*samples[idx], play_volume, position, half_volume_radius);
+}
+
 
 void Sound::PlayingSample::set_volume(float new_volume, float ramp) {
 	Sound::lock();

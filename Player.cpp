@@ -4,6 +4,7 @@
 #include "Mode.hpp"
 #include "iostream"
 #include <algorithm>
+#include "AudioManager.hpp"
 
 Player::Player(PlayMode *_game) : Character(_game)
 {
@@ -103,6 +104,8 @@ void Player::update(float elapsed)
 			if (collide(bouncy, true))
 			{
 				charJump(4.0f * height, jumpAirTime, gravity);
+				//AudioManager::play_cheese_jump_3D(collision->position, 2.0f, 3.0f);
+				AudioManager::play_cheese_jump(2.0f, 0.0f);
 			}
 		}
 
