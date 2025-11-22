@@ -1,4 +1,5 @@
 #include "PlayMode.hpp"
+#include "MenuMode.hpp"
 #include "Mode.hpp"
 #include "RayCast.hpp"
 #include "LitColorTextureProgram.hpp"
@@ -52,10 +53,23 @@ Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("kitchen_pause_music_
 
 // PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
 // 											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
+
+void resume(void)
+{
+	((PlayMode *)Mode::current.get())->paused = false;
+}
+
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
 					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
 	player = new Player(this);
+
+	UIElement resumeButton;
+	resumeButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+
+	buttons.push_back(Button(&resume, resumeButton, glm::vec2(0.0f, 0.7f), 0.2f));
+	buttons.push_back(Button::MainMenu);
+	buttons.push_back(Button::QuitGame);
 
 	for (auto &transform : scene.transforms)
 	{
@@ -178,6 +192,7 @@ PlayMode::~PlayMode()
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
+
 	if (evt.type == SDL_EVENT_KEY_DOWN)
 	{
 		if (evt.key.key == SDLK_ESCAPE)
@@ -259,6 +274,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 		if (evt.button.button == SDL_BUTTON_LEFT)
 		{
+			if (paused)
+			{
+				for (Button &button : buttons)
+				{
+					if (button.handle_click(evt, window_size))
+						return true;
+				}
+			}
 
 			/*auto tex_for = [&](int lvl)->GLuint {
 				switch (lvl) {
@@ -419,9 +442,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)
+	{
+		wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 		wine_bottle_ui.draw_mesh();
-
-	background.draw_mesh();
+	}
+	if (paused)
+	{
+		for (auto &button : buttons)
+		{
+			button.draw(drawable_size);
+		}
+	}
 
 	GL_ERRORS();
 }

@@ -1,9 +1,4 @@
 #pragma once
-
-#include "Mode.hpp"
-#include "PlayMode.hpp"
-#include "MenuMode.hpp"
-
 #include "UIElement.hpp"
 
 #include <glm/glm.hpp>
@@ -37,4 +32,6 @@ struct Button
 
     Button() = default; // Default constructor
     Button(void (*_callback)(void), UIElement _button, glm::vec2 position, float height);
+
+    ~Button();
 };

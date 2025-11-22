@@ -1,6 +1,10 @@
 #include "Button.hpp"
 
 #include "Load.hpp"
+#include "Mode.hpp"
+#include "PlayMode.hpp"
+#include "MenuMode.hpp"
+
 
 #include <cassert>
 
@@ -25,6 +29,11 @@ void playGame()
     Mode::set_current(std::make_shared<PlayMode>());
 }
 
+void resumeGame()
+{
+    Mode::set_current(Mode::previous);
+}
+
 Load<void> createButtons(LoadTagDefault, []() -> void
                          {
     UIElement resumeButton;
@@ -39,9 +48,9 @@ Load<void> createButtons(LoadTagDefault, []() -> void
     UIElement mainMenuButton;
     mainMenuButton.load_image_data(data_path("back_to_menu_button.png"), OriginLocation::UpperLeftOrigin);
 
-    Button::Resume = Button(&backToMainMenu, resumeButton, glm::vec2(0.0f, 0.7f), 0.2f);
-    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, 0.6f), 0.2f);
-    Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.5f), 0.2f);
+    Button::Resume = Button(&resumeGame, resumeButton, glm::vec2(0.0f, 0.7f), 0.2f);
+    Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.5f), 0.4f);
+    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, 0.0f), 0.2f);
     Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(0.0f, 0.4f), 0.2f); 
 });
 
@@ -55,6 +64,10 @@ Button::Button(void (*_callback)(void), UIElement _button, glm::vec2 _position, 
     width = _height * float(button.data_width) / float(button.data_height);
     std::cout << "Button created at position (" << position.x << ", " << position.y << ") with size (" << width << ", " << height << ")" << std::endl;
 };
+
+Button::~Button()
+{
+}
 
 bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
