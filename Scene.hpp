@@ -93,6 +93,12 @@ struct Scene {
 		float near = 0.01f; //near plane
 		//computed from the above:
 		glm::mat4 make_projection() const;
+
+		float radius = 20.0f;
+		float azimuth = 0.5f * 3.1415926f; //angle ccw of -y axis, in radians, [-pi,pi]
+		float elevation = 0.2f * 3.1415926f; //angle above ground, in radians, [-pi,pi]
+		glm::vec3 target = glm::vec3(0.0f);
+		bool flip_x = false;
 	};
 
 	struct Light {
