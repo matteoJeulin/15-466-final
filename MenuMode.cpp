@@ -12,21 +12,18 @@ MenuMode::MenuMode(MenuType menu)
         buttons.push_back(Button::MainMenu);
         buttons.push_back(Button::QuitGame);
         background.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
-        background.create_mesh(Mode::window, 0.0f, 0.0f, 1.0f);
         break;
 
     case MenuType::PauseMenu:
         buttons.push_back(Button::Resume);
         buttons.push_back(Button::MainMenu);
         background.load_image_data(data_path("TitleSlide3.png"), OriginLocation::UpperLeftOrigin);
-        background.create_mesh(Mode::window, 0.0f, 0.0f, 1.0f);
         break;
 
     case MenuType::StartMenu:
         buttons.push_back(Button::Play);
         buttons.push_back(Button::QuitGame);
         background.load_image_data(data_path("TitleSlide2.png"), OriginLocation::UpperLeftOrigin);
-        background.create_mesh(Mode::window, 0.8f, 0.9f, 0.8f);
         break;
 
     default:
@@ -52,8 +49,6 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void MenuMode::update(float elapsed)
 {
-    background.create_mesh(Mode::window, 0.0f, 0.0f, 1.0f);
-
     for (Button &b : buttons)
     {
         b.update(elapsed);
@@ -77,6 +72,7 @@ void MenuMode::draw(glm::uvec2 const &drawable_size)
 
     if (background.data_created)
     {
+        background.create_mesh(Mode::window, 0.0f, 0.0f, 2.0f);
         background.draw_mesh();
     }
 

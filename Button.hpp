@@ -36,5 +36,5 @@ struct Button
     glm::uvec2 last_drawable_px = glm::uvec2(1, 1);
 
     Button() = default; // Default constructor
-    Button(void (*_callback)(void), UIElement _button, glm::vec2 position);
+    Button(void (*_callback)(void), UIElement _button, glm::vec2 position, float height);
 };
