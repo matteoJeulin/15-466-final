@@ -17,18 +17,15 @@ struct Button
 
     void (*callback)(void) = nullptr;
 
-    bool handle_click(SDL_Event const &, glm::uvec2 const &window_size);
+    bool handle_click(SDL_Event const &, glm::uvec2 const &window_size, glm::uvec2 const &drawable_size);
 
     void draw(glm::uvec2 const &drawable_size);
 
     void update(float elapsed);
 
     static Button MainMenu;
-    static Button Resume;
     static Button Play;
     static Button QuitGame;
-
-    glm::uvec2 last_drawable_px = glm::uvec2(1, 1);
 
     Button() = default; // Default constructor
     Button(void (*_callback)(void), UIElement _button, glm::vec2 position, float height);

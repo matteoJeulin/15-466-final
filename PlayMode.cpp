@@ -57,6 +57,8 @@ Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("kitchen_pause_music_
 void resume(void)
 {
 	((PlayMode *)Mode::current.get())->paused = false;
+	((PlayMode *)Mode::current.get())->vol_fade_rate = -2.0f;
+
 }
 
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
@@ -278,7 +280,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			{
 				for (Button &button : buttons)
 				{
-					if (button.handle_click(evt, window_size))
+					if (button.handle_click(evt, window_size, last_drawable_px))
 						return true;
 				}
 			}

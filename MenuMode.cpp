@@ -14,12 +14,6 @@ MenuMode::MenuMode(MenuType menu)
         background.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
         break;
 
-    case MenuType::PauseMenu:
-        buttons.push_back(Button::Resume);
-        buttons.push_back(Button::MainMenu);
-        background.load_image_data(data_path("TitleSlide3.png"), OriginLocation::UpperLeftOrigin);
-        break;
-
     case MenuType::StartMenu:
         buttons.push_back(Button::Play);
         buttons.push_back(Button::QuitGame);
@@ -40,7 +34,7 @@ bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
     for (Button b : buttons)
     {
-        if (b.handle_click(evt, window_size))
+        if (b.handle_click(evt, window_size, last_drawable_size))
             return true;
     }
 
@@ -57,6 +51,8 @@ void MenuMode::update(float elapsed)
 
 void MenuMode::draw(glm::uvec2 const &drawable_size)
 {
+    last_drawable_size = drawable_size;
+    
     glUseProgram(lit_color_texture_program->program);
     glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
     glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, -1.0f)));

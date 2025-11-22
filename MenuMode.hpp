@@ -16,8 +16,7 @@ struct MenuMode : Mode
     enum MenuType
     {
         StartMenu,
-        EndMenu,
-        PauseMenu
+        EndMenu
     };
 
     MenuMode(MenuType menu);
@@ -32,4 +31,5 @@ struct MenuMode : Mode
 
     std::vector<Button> buttons;
     UIElement background;
+    glm::uvec2 last_drawable_size = glm::uvec2(0, 0);
 };
