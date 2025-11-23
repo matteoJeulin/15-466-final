@@ -16,12 +16,12 @@ void Player::update(float elapsed)
 {
 	// combine inputs into a move:
 	if (!(locomotionState & PlayerLocomotion::Grappling)) {
-		if (abs(speed.y) <= maxSpeed) {
+		// if (abs(speed.y) <= maxSpeed) {
 			if (left.pressed && !right.pressed && speed.y > -maxSpeed)
 				speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
 			if (!left.pressed && right.pressed && speed.y < maxSpeed)
 				speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
-		}
+		// }
 
 		if (jump.pressed && !this->jumping && platform != nullptr)
 		{
