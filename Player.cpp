@@ -16,10 +16,12 @@ void Player::update(float elapsed)
 {
 	// combine inputs into a move:
 	if (!(locomotionState & PlayerLocomotion::Grappling)) {
-		if (left.pressed && !right.pressed)
-			speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
-		if (!left.pressed && right.pressed)
-			speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
+		if (abs(speed.y) <= maxSpeed) {
+			if (left.pressed && !right.pressed && speed.y > -maxSpeed)
+				speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
+			if (!left.pressed && right.pressed && speed.y < maxSpeed)
+				speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
+		}
 
 		if (jump.pressed && !this->jumping && platform != nullptr)
 		{
@@ -330,14 +332,7 @@ void Player::release_grapple() {
 	speed.y = std::cos(grapple_angle) * lin_speed; // 
 	speed.z = std::sin(grapple_angle) * lin_speed;
 
-	// if (grapple_angular_velocity > 0) {
-	// 	if (collision->position.z > grapple_point->position.z) speed.y *= -1;
-	// 	if (collision->position.y < grapple_point->position.y) speed.z *= -1;
-	// }
-	// else {
-	// 	if (collision->position.z < grapple_point->position.z) speed.y *= -1;
-	// 	if (collision->position.y > grapple_point->position.y) speed.z *= -1;
-	// }
+	std::cout << "Release horizontal speed: " << speed.y << "/" << maxSpeed << "\n";
 
 	grapple_point = nullptr;
 	locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::Grappling);
