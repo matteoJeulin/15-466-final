@@ -16,10 +16,28 @@ void Rat::update(float elapsed)
     float deltaPos = playerPos.y - ratPos.y;
 
     // Only move if in range
-    if (glm::distance(playerPos, ratPos) < aggroRange)
-    {
+    if (!game->player->chomped) {
+        if (glm::distance(playerPos, ratPos) < aggroRange)
+        {
+            // Direction the rat should move in
+            float dir = copysign(1.0f, deltaPos);
+
+            speed.y += dir * acceleration * elapsed;
+            speed.y = std::clamp(speed.y, -maxSpeed, maxSpeed);
+
+            // // Jump if close to player
+            // if (deltaPos < jumpRange && playerPos.z - ratPos.z > 2 * height) 
+            //     charJump(jumpHeight);
+
+        } else {
+            // Slow down to a stop
+            speed.y -= speed.y * elapsed * 10;
+        }
+    }
+    else {
+        // move away
         // Direction the rat should move in
-        float dir = copysign(1.0f, deltaPos);
+        float dir = copysign(1.0f, -deltaPos);
 
         speed.y += dir * acceleration * elapsed;
         speed.y = std::clamp(speed.y, -maxSpeed, maxSpeed);
@@ -27,10 +45,6 @@ void Rat::update(float elapsed)
         // // Jump if close to player
         // if (deltaPos < jumpRange && playerPos.z - ratPos.z > 2 * height) 
         //     charJump(jumpHeight);
-
-    } else {
-        // Slow down to a stop
-        speed.y -= speed.y * elapsed * 10;
     }
 
     applySpeed(elapsed);

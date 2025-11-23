@@ -135,8 +135,9 @@ void Character::charJump(float char_jump_height, float jump_time, float jump_gra
 
 void Character::applySpeed(float elapsed)
 {
-    if (platform == nullptr)
+    if (platform == nullptr) {
         speed.z -= gravity * elapsed;
+    }
 
     // y-axis is the forward/backward direction and the x-axis is the right/left direction
     collision->position += speed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + speed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;

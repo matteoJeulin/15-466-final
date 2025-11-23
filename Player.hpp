@@ -24,7 +24,7 @@ struct Player : public Character
     const float jumpHeight = height * 2.0f;
     const float jumpAirTime = 0.8f;
     const float gravity = (2 * jumpHeight) / (pow(jumpAirTime / 2.0f, 2.0f));
-    // float jumpSpeed = (jumpHeight - (0.5f * (-gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
+    // float jumpSpeed = (jumpHeight - (0.5f * (gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
 
     // Moving
 
@@ -36,6 +36,21 @@ struct Player : public Character
 
     bool won = false;
     bool dead = false;
+
+    // Rat interactions (getting chomped sends the cheese wheel up)
+    bool chomped = false;
+    float chompedTimer = 0.0f;
+    const float CHOMP_VERT_KB = height * 2.5f; // knocks the cheese wheel upwards
+    const float CHOMP_AIR_TIME = jumpAirTime * 1.5f;
+    const float CHOMP_GRAVITY = (2 * CHOMP_VERT_KB) / (pow(CHOMP_AIR_TIME / 2.0f, 2.0f));
+    const float CHOMP_VERT_KB_SPEED = CHOMP_GRAVITY * CHOMP_AIR_TIME * 0.5f;
+    // const float CHOMP_KB_SPEED = (CHOMP_KB - (0.5f * (-CHOMP_GRAVITY) * pow(CHOMP_AIR_TIME / 2.0f, 2.0f)))/(CHOMP_AIR_TIME/2);
+    
+    // const float CHOMP_HORI_KB = maxSpeed * CHOMP_AIR_TIME;
+    
+    const float MERCY_INVINC = 1.0f;
+    float mercyInvincTimer = 0.0f;
+    void applyKnockbackSpeed(float elapsed);
 
     enum PlayerLocomotion {
         Rolling = 0b1,
@@ -49,6 +64,9 @@ struct Player : public Character
     float grapple_angular_velocity = 0.0f;
     float grapple_length = 0.0f;
     const float MIN_ROPE_LENGTH = height * 2;
+    bool wasGrappling = false; // allows me to maintain momentum while preventing weird things when bonking on a corner
+    bool try_grapple(const Ray& ray, std::vector<Scene::Transform*> points);
+    void release_grapple();
 
     // Melt Properties
     const float MELT_MIN = 0;
@@ -59,8 +77,6 @@ struct Player : public Character
     const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to pass through
     const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
     const float MELT_FOR_CLING = 0.7f; // >=70% melt to pass through
-
-    //
 
     // Stove Heat
     void set_heat_level(int level);
@@ -85,6 +101,4 @@ struct Player : public Character
 	float wave_acc = 0.0f;
 
     void update(float elapsed) override;
-    bool try_grapple(const Ray& ray, std::vector<Scene::Transform*> points);
-    void release_grapple();
 };
