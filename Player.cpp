@@ -149,7 +149,7 @@ void Player::update(float elapsed)
 		{
 			if (collide(bouncy, true))
 			{
-				charJump(8.5f * height, jumpAirTime, gravity);
+				charJump(8.0f * height, jumpAirTime, gravity);
 			}
 		}
 

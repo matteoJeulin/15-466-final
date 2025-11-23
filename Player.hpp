@@ -28,7 +28,7 @@ struct Player : public Character
 
     // Moving
 
-    // Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction)
+    // Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction in a single bound)
     // const float cheeseMaxSpeed = 10.0f * 2.0f;
     const float maxSpeed = (jumpHeight * 2) / jumpAirTime;
     // Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
@@ -59,6 +59,8 @@ struct Player : public Character
     const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to pass through
     const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
     const float MELT_FOR_CLING = 0.7f; // >=70% melt to pass through
+
+    //
 
     // Stove Heat
     void set_heat_level(int level);
