@@ -105,9 +105,6 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		{
 			collision_plates.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 16) == "GrapplingCracker") {
-			grapple_crackers.emplace_back(&transform);
-		}
 	}
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
@@ -291,10 +288,37 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			Ray r = screen_point_to_world_ray(camera, mouse_px, last_drawable_px);
 			/*	std::cout << "[Sizes] window=(" << window_size.x << "," << window_size.y
 					<< ") drawable=(" << last_drawable_px.x << "," << last_drawable_px.y << ")\n";*/
-			// std::cout << "[Ray] O=(" << r.origin.x << "," << r.origin.y << "," << r.origin.z
-			// 		  << ") D=(" << r.dir.x << "," << r.dir.y << "," << r.dir.z << ")\n";
+			std::cout << "[Ray] O=(" << r.origin.x << "," << r.origin.y << "," << r.origin.z
+					  << ") D=(" << r.dir.x << "," << r.dir.y << "," << r.dir.z << ")\n";
 			last_ray = r;
 			has_last_ray = true;
+
+			Scene::Transform *hit = nullptr;
+			float best_t = std::numeric_limits<float>::max();
+
+			auto try_hit = [&](Scene::Transform *t)
+			{
+				if (!t)
+					return;
+				glm::vec3 c, h;
+				world_box(t, c, h);
+				/*std::cout << "[bounding box] " << t->name << " C=(" << c.x << "," << c.y << "," << c.z
+					<< ") H=(" << h.x << "," << h.y << "," << h.z << ")\n";*/
+				float tval;
+				if (ray_box_intersect(r, c, h, &tval) && tval < best_t)
+				{
+					std::cout << "  -> HIT at t=" << tval << "\n";
+					if (tval < best_t)
+					{
+						best_t = tval;
+						hit = t;
+					}
+				}
+				else
+				{
+					std::cout << "  -> miss\n";
+				}
+			};
 
 			//int new_level = 0;
 			if (stove.try_toggle(r, nullptr)) {
@@ -304,22 +328,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 
 			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
-				// for (auto cracker : grapple_crackers) {
-				// 	try_hit(cracker);
+				for (auto cracker : grapple_crackers) {
+					try_hit(cracker);
 
-				// 	if (hit) {
-				// 		player->grapple_point = cracker;
-				// 		player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
-				// 	}
-				// }
-				player->try_grapple(r, grapple_crackers);
+					if (hit) {
+						player->grapple_point = cracker;
+						player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
+					}
+				}
 			}
-		}
-	}
-	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-		if (evt.button.button == SDL_BUTTON_LEFT)
-		{
-			if (player->grapple_point) player->release_grapple();
 		}
 	}
 
@@ -407,29 +424,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	if (wine_bottle_ui.data_created)
 		wine_bottle_ui.draw_mesh();
 
-	{
-		if (player->grapple_point) {
-			// DEBUG
-			float aspect = float(drawable_size.x) / float(drawable_size.y);
-			float scale = std::min(
-				// 2.0f * aspect / (Game::ArenaMax.x - Game::ArenaMin.x + 2.0f * Game::PlayerRadius),
-				// 2.0f / (Game::ArenaMax.y - Game::ArenaMin.y + 2.0f * Game::PlayerRadius)
-				2.0f * aspect, 2.0f * aspect
-			);
-			// glm::vec2 offset = -0.5f * (Game::ArenaMax + Game::ArenaMin);
 
-			glm::mat4 world_to_clip = glm::mat4(
-				scale / aspect, 0.0f, 0.0f, player->collision->position.x,
-				0.0f, scale, 0.0f, player->collision->position.y,
-				0.0f, 0.0f, 1.0f, player->collision->position.z,
-				0.0f, 0.0f, 0.0f, 1.0f
-			);
-
-			DrawLines lines(world_to_clip);
-			lines.draw(player->collision->position, player->grapple_point->position, glm::u8vec4(0xff, 0xff, 0x00, 0xff));
-			// lines.draw(glm::vec3(0, 0, 0), glm::vec3(1, 1, 0), glm::u8vec4(0xff, 0xff, 0x00, 0xff));
-		}
-	}
 
 	GL_ERRORS();
 }

@@ -1,9 +1,6 @@
 #pragma once
 
 #include "Character.hpp"
-#include "RayCast.hpp"
-#include "DrawLines.hpp"
-#include <numbers>
 
 struct Player : public Character
 {
@@ -28,7 +25,7 @@ struct Player : public Character
 
     // Moving
 
-    // Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction in a single bound)
+    // Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction)
     // const float cheeseMaxSpeed = 10.0f * 2.0f;
     const float maxSpeed = (jumpHeight * 2) / jumpAirTime;
     // Acceleration and max speed of the player, accounting for the smaller parent node of the mesh
@@ -45,22 +42,12 @@ struct Player : public Character
 
     // Grappling
     Scene::Transform *grapple_point = nullptr;
-    float grapple_angle = 0.0f;
-    float grapple_angular_velocity = 0.0f;
-    float grapple_length = 0.0f;
-    const float MIN_ROPE_LENGTH = height * 2;
 
     // Melt Properties
     const float MELT_MIN = 0;
     const float MELT_MAX = 5;
     float melt_level = 0;
     float melt_delta = MELT_MAX; // positive means melting, negative means cooling
-
-    const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to pass through
-    const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
-    const float MELT_FOR_CLING = 0.7f; // >=70% melt to pass through
-
-    //
 
     // Stove Heat
     void set_heat_level(int level);
@@ -85,6 +72,4 @@ struct Player : public Character
 	float wave_acc = 0.0f;
 
     void update(float elapsed) override;
-    bool try_grapple(const Ray& ray, std::vector<Scene::Transform*> points);
-    void release_grapple();
 };
