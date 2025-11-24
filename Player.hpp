@@ -105,6 +105,7 @@ struct Player : public Character
     void wall_cling(Scene::Transform *target);
     void applySlideSpeed(float elapsed);
     void wall_jump();
+    void release_wall();
 
     // Angle to rotate the player
 	glm::quat theta;

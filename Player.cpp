@@ -71,6 +71,7 @@ void Player::update(float elapsed)
 			}
 		}
 		else if (locomotionState & PlayerLocomotion::WallClinging) {
+			std::cout << "Direction = " << wallDir << "\n";
 			if (jump.pressed) { // wall jump
 				wall_jump();
 				applySpeed(elapsed);
@@ -78,8 +79,7 @@ void Player::update(float elapsed)
 			else if ((wallDir < 0 && !left.pressed) ||
 					 (wallDir > 0 && !right.pressed) ||
 					 melt_level / MELT_MAX < MELT_FOR_CLING) { // let go
-				locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::WallClinging);
-				speed.z = -slideSpeed;
+				release_wall();
 				applySpeed(elapsed);
 			}
 			else {
@@ -106,7 +106,7 @@ void Player::update(float elapsed)
 			{
 				jump.pressed = false;
 				charJump(jumpHeight, jumpAirTime, gravity);
-				this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Jumping);
+				locomotionState = (PlayerLocomotion)(locomotionState | PlayerLocomotion::Jumping);
 			}
 
 			// Apply inertia to get the player down to 0 speed.
@@ -186,7 +186,9 @@ void Player::update(float elapsed)
 		{
 			if (collide(bouncy, true))
 			{
+				release_wall();
 				charJump(4.0f * height, jumpAirTime, gravity);
+				locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Jumping);
 				//AudioManager::play_cheese_jump_3D(collision->position, 2.0f, 3.0f);
 				AudioManager::play_cheese_jump(2.0f, 0.0f);
 				chomped = false;
@@ -198,7 +200,9 @@ void Player::update(float elapsed)
 		{
 			if (collide(bouncy, true))
 			{
+				release_wall();
 				charJump(8.0f * height, jumpAirTime, gravity);
+				locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Jumping);
 				chomped = false;
 				mercyInvincTimer = 0.0f;
 			}
@@ -426,7 +430,7 @@ void Player::wall_cling(Scene::Transform *target) {
 	stickTimer = STICK_TIME;
 
 	assert(wall->position.y - collision->position.y != 0.0f);
-	wallDir = copysign(wallDir, wall->position.y - collision->position.y);
+	wallDir = copysign(1.0f, wall->position.y - collision->position.y);
 }
 
 void Player::applySlideSpeed(float elapsed) {
@@ -452,4 +456,11 @@ void Player::wall_jump() // "jump_time" is up and down
 
 	locomotionState = (Player::PlayerLocomotion)((locomotionState & ~Player::PlayerLocomotion::WallClinging) |
 												  PlayerLocomotion::WallJumping);
+}
+
+void Player::release_wall()
+{
+	locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::WallClinging);
+	// collision->position.y += copysign(RELEASE_DIST, -wallDir); // nope lol
+	speed.z = -slideSpeed;
 }
