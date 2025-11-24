@@ -8,6 +8,7 @@
 #include "DynamicMeshBuffer.hpp"
 #include "Mesh.hpp"
 
+
 #include <vector>
 #include <deque>
 #include <cmath>
@@ -55,4 +56,11 @@ struct Character
     void charJump(float char_jump_height, float jump_time, float jump_grav);
 
     void applySpeed(float elapsed);
+
+    //blob shadow
+    Scene::Transform *shadow_form = nullptr;
+    bool shadow_valid = false;
+
+    void createBlobShadow(PlayMode *_game);
+    void applyBlobShadow(PlayMode *_game)
 };

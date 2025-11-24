@@ -1,5 +1,10 @@
 #include "Character.hpp"
 #include "PlayMode.hpp"
+#include "RayCast.hpp"
+#include "BlobShadowPipeline.hpp"
+#include "DynamicMeshBuffer.hpp"
+#include "LitColorTextureProgram.hpp"
+
 
 Character::Character(PlayMode *_game) : game(_game)
 {
@@ -141,3 +146,104 @@ void Character::applySpeed(float elapsed)
     // y-axis is the forward/backward direction and the x-axis is the right/left direction
     collision->position += speed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + speed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 }
+
+
+void Character::createBlobShadow(PlayMode *game){
+
+    // Static storage for blob mesh:
+    DynamicMeshBuffer blob_mesh = game->blob_mesh;
+    static GLuint blob_vao = 0;
+
+    // Make VAO for the *lit_color_texture_program* 
+    blob_vao = blob_mesh.make_vao_for_program(lit_color_texture_program->program);
+
+    //2. Create a transform for the shadow:
+    game->scene.transforms.emplace_back();
+    shadow_form = &game->scene.transforms.back();
+    shadow_form->name = "BlobShadow_" + collision->name;
+
+    // initial placement; will be overwritten each frame by applyBlobShadow:
+    shadow_form->position = collision->position;
+    shadow_form->rotation = glm::quat();
+    shadow_form->scale    = glm::vec3(2.0f, 2.0f, 1.0f); // blob radius in world units
+
+    // 3. Create a drawable attached to that transform:
+    game->scene.drawables.emplace_back(shadow_form);
+    Scene::Drawable &drawable = game->scene.drawables.back();
+    drawable.pipeline[0] = blob_shadow_program;
+    drawable.pipeline[0].vao   = blob_vao;
+    drawable.pipeline[0].type  = GL_TRIANGLES;
+    drawable.pipeline[0].start = 0;
+    drawable.pipeline[0].count = 6;
+
+    drawable.pipeline[0].set_uniforms = []() {
+        glUniform1f(lit_color_texture_program->ROUGHNESS_float, 1.0f);
+    };
+
+    shadow_valid = false;
+}
+void Character::applyBlobShadow(PlayMode *game)
+{
+
+    glm::vec3 &origin = collision->position + glm::vec3(0.0f, 0.0f, 1.0f);;
+    glm::vec3 dir = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    Ray r;
+    r.origin = origin;
+    r.dir = dir;
+
+    float best_t = std::numeric_limits<float>::max();
+    bool found = false;
+    Scene::Transform *hit_transform = nullptr;
+    glm::vec3 hit_pos;
+
+    //loop through all collison objects and check what objects we are hitting: 
+    auto test_transform = [&](Scene::Transform *t) {
+            if (found )return; // already found a closer hit
+            if (!t) return;
+            glm::vec3 c, h;
+            world_box(t, c, h); // your existing helper: center + half-extents
+            float tval;
+            if (ray_box_intersect(r, c, h, &tval) && tval < best_t) {
+                best_t = tval;
+                found = true;
+                hit_transform = t;
+            }
+        };
+
+    // test against collision platforms + grates + plates etc:
+    for (auto *t : game->collision_platforms) test_transform(t);
+    for (auto *t : game->bouncy_weak_platforms) test_transform(t);
+    for (auto *t : game->bouncy_strong_platforms) test_transform(t);
+    for (auto *t : game->collision_plates) test_transform(t);
+    for (auto *t : game->grates) test_transform(t);
+
+    if (found && shadow_form) {
+
+        // local normal on the mesh:
+        glm::vec3 local_normal(0.0f, 0.0f, 1.0f);
+        glm::mat4x3 world_from_local = hit_transform->make_world_from_local();
+        glm::mat3 M = glm::mat3(world_from_local);
+        glm::mat3 normal_matrix = glm::transpose(glm::inverse(M));
+        glm::vec3 world_normal = glm::normalize(normal_matrix * local_normal);
+
+        hit_pos = origin + best_t * dir;
+
+        // assume ground normal is roughly +Z (0,0,1) for now
+        glm::vec3 normal = world_normal;
+
+        // place the shadow just above the ground:
+        shadow_form->position = hit_pos + normal * 0.01f;
+
+        // orient so its local +Z points along the normal:
+        shadow_form->rotation = glm::rotation(glm::vec3(0,0,1), world_normal);
+        // scale blob size:
+        shadow_form->scale = glm::vec3(2.0f, 2.0f, 1.0f); // tweak radius
+
+        shadow_valid = true;
+    } else if (shadow_form) {
+        shadow_valid = false;
+    }
+}
+
+

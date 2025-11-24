@@ -2,6 +2,9 @@
 #include "Mode.hpp"
 #include "RayCast.hpp"
 #include "LitColorTextureProgram.hpp"
+#include "ShadowedColorTextureProgram.hpp"
+#include "DepthOnlyProgram.hpp"
+#include "BlobShadowPipeline.hpp"
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -20,11 +23,26 @@
 #include <algorithm>
 
 GLuint level_meshes_for_lit_color_texture_program = 0;
+
+
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 							  {
 	MeshBuffer const *ret = new MeshBuffer(data_path("Cheese.pnct"));
 	level_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret; });
+
+Load< GLuint > meshes_for_shadowed_color_texture_program(LoadTagDefault, [](){
+	return new GLuint(level_meshes->make_vao_for_program(shadowed_color_texture_program->program));
+});
+
+Load< GLuint > meshes_for_depth_only_program(LoadTagDefault, [](){
+	return new GLuint(level_meshes->make_vao_for_program(depth_only_program->program));
+});
+
+Load< GLuint > meshes_for_blob_shadow_program(LoadTagDefault, [](){
+	return new GLuint(level_meshes->make_vao_for_program(blob_shadow_program->program));
+});
+
 
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
@@ -39,15 +57,15 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 scene.drawables.emplace_back(transform);
 												 Scene::Drawable &drawable = scene.drawables.back();
 
-												 drawable.pipeline = lit_color_texture_program_pipeline;
+												 drawable.pipeline[0] = lit_color_texture_program_pipeline;
 
-												 drawable.pipeline.vao = level_meshes_for_lit_color_texture_program;
-												 drawable.pipeline.type = mesh.type;
-												 drawable.pipeline.start = mesh.start;
-												 drawable.pipeline.count = mesh.count; 
+												 drawable.pipeline[0].vao = level_meshes_for_lit_color_texture_program;
+												 drawable.pipeline[0].type = mesh.type;
+												 drawable.pipeline[0].start = mesh.start;
+												 drawable.pipeline[0].count = mesh.count; 
 
 												 float roughness = 1.0f; //where can we get roughness of the material 
-												 drawable.pipeline.set_uniforms = [roughness](){
+												 drawable.pipeline[0].set_uniforms = [roughness](){
 													glUniform1f(lit_color_texture_program->ROUGHNESS_float, roughness);
 		};
 												
@@ -92,7 +110,6 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 				rat->model = &transform;
 				rat->collision = &transform;
 				rats.emplace_back(rat);
-		
 		
 		}
 		else if (transform.name.substr(0, 9) == "Model_Rat"){
@@ -175,11 +192,45 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	// change static to dynamic mesh
 	player->cheese_lit_color_texture_program = player->initialMeshBuffer.make_vao_for_program(lit_color_texture_program->program);
 	player->melted_cheese_lit_color_texture_program = player->initialMeshBuffer.make_vao_for_program(lit_color_texture_program->program);
-	player->drawable->pipeline.vao = player->cheese_lit_color_texture_program;
-	player->drawable->pipeline.type = player->mesh->type;
-	player->drawable->pipeline.start = 0; // Starts from 0 in the new buffer
-	player->drawable->pipeline.count = player->mesh->count;
+	player->drawable->pipeline[0].vao = player->cheese_lit_color_texture_program;
+	player->drawable->pipeline[0].type = player->mesh->type;
+	player->drawable->pipeline[0].start = 0; // Starts from 0 in the new buffer
+	player->drawable->pipeline[0].count = player->mesh->count;
 
+	//blob shadow mesh
+	 // Build a unit quad in the XY plane at z = 0, centered at origin.
+    // Local +Z is up (0,0,1) so your rotation-from-normal logic works.
+    std::vector<DynamicMeshBuffer::Vertex> verts;
+    verts.reserve(6);
+
+    auto make_vertex = [](float x, float y, float u, float v) -> DynamicMeshBuffer::Vertex {
+        DynamicMeshBuffer::Vertex vert;
+        vert.Position = glm::vec3(x, y, 0.0f);          // in X-Y plane
+        vert.Normal   = glm::vec3(0.0f, 0.0f, 1.0f);    // up
+        vert.Color    = glm::u8vec4(0xff, 0xff, 0xff, 0xff); // white (ignored by blob branch if you want)
+        vert.TexCoord = glm::vec2(u, v);                // [0,1] range
+        return vert;
+    };
+
+    // Quad corners: (-1,-1), (1,-1), (1,1), (-1,1)
+    DynamicMeshBuffer::Vertex v0 = make_vertex(-1.0f, -1.0f, 0.0f, 0.0f);
+    DynamicMeshBuffer::Vertex v1 = make_vertex( 1.0f, -1.0f, 1.0f, 0.0f);
+    DynamicMeshBuffer::Vertex v2 = make_vertex( 1.0f,  1.0f, 1.0f, 1.0f);
+    DynamicMeshBuffer::Vertex v3 = make_vertex(-1.0f,  1.0f, 0.0f, 1.0f);
+
+    // Two triangles: (0,1,2) and (0,2,3)
+    verts.push_back(v0);
+    verts.push_back(v1);
+    verts.push_back(v2);
+
+    verts.push_back(v0);
+    verts.push_back(v2);
+    verts.push_back(v3);
+
+    // Upload once:
+    blob_mesh.set(verts.data(), verts.size(), GL_STATIC_DRAW);
+
+	//UI seteup 
 	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
 	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 
@@ -420,6 +471,35 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	// for mouse
 	last_drawable_px = drawable_size;
 
+
+	// fbs.allocate(drawable_size, glm::uvec2(512, 512));
+
+	// //Draw scene to shadow map for spotlight:
+	// glBindFramebuffer(GL_FRAMEBUFFER, fbs.shadow_fb);
+	// glViewport(0,0,fbs.shadow_size.x, fbs.shadow_size.y);
+
+	// glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+	// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// glEnable(GL_DEPTH_TEST);
+	// glDisable(GL_BLEND);
+
+	// //render only back faces to shadow map (prevent shadow speckles on fronts of objects):
+	// glCullFace(GL_FRONT);
+	// glEnable(GL_CULL_FACE);
+
+	// scene.draw(*spot, Scene::Drawable::PipelineTypeShadow);
+
+	// glDisable(GL_CULL_FACE);
+
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// GL_ERRORS();
+
+	/* Utilied boilerplate code for forwardlighting materials 
+	FowardDrawMode
+	https://github.com/15-466/15-466-lighting
+	*/
+
 	// set light camera transform and aspect ratio
 	glm::vec3 eye = camera->transform->make_world_from_local()[3];
 	glm::mat4 world_to_clip = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
@@ -471,6 +551,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//upload light uniforms:
 	glUseProgram(lit_color_texture_program->program);
