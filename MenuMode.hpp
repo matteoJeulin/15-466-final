@@ -16,7 +16,8 @@ struct MenuMode : Mode
     enum MenuType
     {
         StartMenu,
-        EndMenu
+        WinMenu,
+        LoseMenu
     };
 
     MenuMode(MenuType menu);

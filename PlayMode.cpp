@@ -417,6 +417,13 @@ void PlayMode::update(float elapsed)
 			wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
 			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 		}
+
+		if (wine_remaining <= 0.0f) 
+		{
+			Mode::set_current(std::make_shared<MenuMode>(MenuMode::LoseMenu));
+			return;
+		}
+
 	}
 
 	player->pause.downs = 0;

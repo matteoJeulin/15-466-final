@@ -8,10 +8,16 @@ MenuMode::MenuMode(MenuType menu)
     std::cout << "MenuMode created! " << menu << std::endl;
     switch (menu)
     {
-    case MenuType::EndMenu:
+    case MenuType::WinMenu:
         buttons.push_back(Button::MainMenu);
         buttons.push_back(Button::QuitGame);
         background.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
+        break;
+    
+    case MenuType::LoseMenu:
+        buttons.push_back(Button::MainMenu);
+        buttons.push_back(Button::QuitGame);
+        background.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
         break;
 
     case MenuType::StartMenu:
