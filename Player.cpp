@@ -15,6 +15,7 @@ Player::Player(PlayMode *_game) : Character(_game)
 void Player::update(float elapsed)
 {
 	// combine inputs into a move:
+	std::cout << chomped << std::endl;
 	if (chomped) {
 		if (platform == nullptr || chompedTimer >= 0) {
 			applyKnockbackSpeed(elapsed);
@@ -136,7 +137,7 @@ void Player::update(float elapsed)
 					// std::cout << "DEAD" << std::endl;
 					// std::cout.flush();
 					// dead = true;
-
+					std::cout << rat->collision->name << std::endl;
 					std::cout << "CHOMPED" << std::endl;
 					chomped = true;
 					speed.y = copysign(maxSpeed / 2.0f, collision->position.y - rat->collision->position.y);
