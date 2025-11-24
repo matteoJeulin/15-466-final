@@ -1,4 +1,5 @@
 #include "PlayMode.hpp"
+#include "MenuMode.hpp"
 #include "Mode.hpp"
 #include "RayCast.hpp"
 #include "LitColorTextureProgram.hpp"
@@ -53,13 +54,27 @@ Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("kitchen_pause_music_
 
 // PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
 // 											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
+
+void resume(void)
+{
+	((PlayMode *)Mode::current.get())->paused = false;
+	((PlayMode *)Mode::current.get())->vol_fade_rate = -2.0f;
+}
+
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
-											pause_music(&kitchen_pause_first, &kitchen_pause_loop)
+					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
 	std::cout << "=============================================================================================" << std::endl;
 	AudioManager::init();
 
 	player = new Player(this);
+
+	UIElement resumeButton;
+	resumeButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+
+	buttons.push_back(Button(&resume, resumeButton, glm::vec2(0.0f, 0.7f), 0.2f));
+	buttons.push_back(Button::MainMenu);
+	buttons.push_back(Button::QuitGame);
 
 	for (auto &transform : scene.transforms)
 	{
@@ -78,20 +93,20 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		}
 		else if (transform.name.substr(0, 3) == "Rat")
 		{
-				Rat *rat = new Rat(this);
-				rat_map[&transform] = rat;
-				rat->model = &transform;
-				rat->collision = &transform;
-				rats.emplace_back(rat);
-		
-		
+			Rat *rat = new Rat(this);
+			rat_map[&transform] = rat;
+			rat->model = &transform;
+			rat->collision = &transform;
+			rats.emplace_back(rat);
 		}
-		else if (transform.name.substr(0, 9) == "Model_Rat"){
-				auto it = rat_map.find((transform.parent));
-				if (it != rat_map.end()) {
-					Rat* found_rat = it->second;
-					found_rat->model = &transform;
-				}
+		else if (transform.name.substr(0, 9) == "Model_Rat")
+		{
+			auto it = rat_map.find((transform.parent));
+			if (it != rat_map.end())
+			{
+				Rat *found_rat = it->second;
+				found_rat->model = &transform;
+			}
 		}
 		else if (transform.name.substr(0, 10) == "BounceWeak")
 		{
@@ -101,11 +116,12 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		{
 			bouncy_strong_platforms.emplace_back(&transform);
 		}
-		if (transform.name.substr(0, 5) == "Plate" )
+		if (transform.name.substr(0, 5) == "Plate")
 		{
 			collision_plates.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 16) == "GrapplingCracker") {
+		else if (transform.name.substr(0, 16) == "GrapplingCracker")
+		{
 			grapple_crackers.emplace_back(&transform);
 		}
 		else if (transform.name.substr(0, 11) == "Slider_start") {
@@ -148,8 +164,6 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	const GLintptr offset_bytes = (GLintptr)player->mesh->start * vertex_stride;
 	const GLsizeiptr size_bytes = (GLsizeiptr)player->mesh->count * vertex_stride;
 
-	std::cout << player->collision->position.x <<" " << player->collision->position.y << " " << player->collision->position.z << std::endl;
-
 	std::vector<DynamicMeshBuffer::Vertex> initial_vertices(player->mesh->count);
 	glBindBuffer(GL_ARRAY_BUFFER, level_meshes->buffer);
 
@@ -191,17 +205,21 @@ PlayMode::~PlayMode()
 	glDeleteVertexArrays(1, &player->cheese_lit_color_texture_program);
 	player->cheese_lit_color_texture_program = 0;
 
-	if (stove_tint_lvl0) glDeleteTextures(1, &stove_tint_lvl0);
-	if (stove_tint_lvl1) glDeleteTextures(1, &stove_tint_lvl1);
-	if (stove_tint_lvl2) glDeleteTextures(1, &stove_tint_lvl2);
-	if (stove_tint_lvl3) glDeleteTextures(1, &stove_tint_lvl3);
+	if (stove_tint_lvl0)
+		glDeleteTextures(1, &stove_tint_lvl0);
+	if (stove_tint_lvl1)
+		glDeleteTextures(1, &stove_tint_lvl1);
+	if (stove_tint_lvl2)
+		glDeleteTextures(1, &stove_tint_lvl2);
+	if (stove_tint_lvl3)
+		glDeleteTextures(1, &stove_tint_lvl3);
 
 	Sound::stop_all_samples();
-
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
+
 	if (evt.type == SDL_EVENT_KEY_DOWN)
 	{
 		if (evt.key.key == SDLK_ESCAPE)
@@ -284,6 +302,14 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 		if (evt.button.button == SDL_BUTTON_LEFT)
 		{
+			if (paused)
+			{
+				for (Button &button : buttons)
+				{
+					if (button.handle_click(evt, window_size, last_drawable_px))
+						return true;
+				}
+			}
 
 			/*auto tex_for = [&](int lvl)->GLuint {
 				switch (lvl) {
@@ -307,22 +333,26 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			last_ray = r;
 			has_last_ray = true;
 
-			//int new_level = 0;
-			if (stove.try_toggle(r, nullptr)) {
-				//player->set_heat_level(new_level);
+			// int new_level = 0;
+			if (stove.try_toggle(r, nullptr))
+			{
+				// player->set_heat_level(new_level);
 				return true;
 			}
 
 			// if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
-			if (player->melt_level / player->MELT_MAX > player->MELT_FOR_GRAPPLE) {
+			if (player->melt_level / player->MELT_MAX > player->MELT_FOR_GRAPPLE)
+			{
 				player->try_grapple(r, grapple_crackers);
 			}
 		}
 	}
-	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_UP)
+	{
 		if (evt.button.button == SDL_BUTTON_LEFT)
 		{
-			if (player->grapple_point) player->release_grapple();
+			if (player->grapple_point)
+				player->release_grapple();
 		}
 	}
 
@@ -331,24 +361,28 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed)
 {
-	if (player->pause.downs > 0) {
+	if (player->pause.downs > 0)
+	{
 		paused = !paused;
-		if (paused) {
+		if (paused)
+		{
 			vol_fade_rate = 2.0f;
 		}
-		else {
+		else
+		{
 			vol_fade_rate = -2.0f;
 		}
 	}
 
-	if (!paused) {
+	if (!paused)
+	{
 		player->update(elapsed);
 
-		if (player->dead) {
+		if (player->dead)
+		{
 			reset();
 			return;
 		}
-
 
 		for (Rat *rat : rats)
 			rat->update(elapsed);
@@ -357,13 +391,14 @@ void PlayMode::update(float elapsed)
 		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
 		float last_wine = wine_remaining;
 		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
-		
+
 		int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
 		int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
 
 		// std::cout << wine_rank << std::endl;
 
-		if (wine_rank != last_rank) {
+		if (wine_rank != last_rank)
+		{
 			wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
 			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 		}
@@ -408,25 +443,32 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)
-		wine_bottle_ui.draw_mesh();
-
 	{
-		if (player->grapple_point) {
+		wine_bottle_ui.draw_mesh();
+	}
+	if (paused)
+	{
+		for (auto &button : buttons)
+		{
+			button.draw(drawable_size);
+		}
+	}
+	{
+		if (player->grapple_point)
+		{
 			// DEBUG
 			float aspect = float(drawable_size.x) / float(drawable_size.y);
 			float scale = std::min(
 				// 2.0f * aspect / (Game::ArenaMax.x - Game::ArenaMin.x + 2.0f * Game::PlayerRadius),
 				// 2.0f / (Game::ArenaMax.y - Game::ArenaMin.y + 2.0f * Game::PlayerRadius)
-				2.0f * aspect, 2.0f * aspect
-			);
+				2.0f * aspect, 2.0f * aspect);
 			// glm::vec2 offset = -0.5f * (Game::ArenaMax + Game::ArenaMin);
 
 			glm::mat4 world_to_clip = glm::mat4(
 				scale / aspect, 0.0f, 0.0f, player->collision->position.x,
 				0.0f, scale, 0.0f, player->collision->position.y,
 				0.0f, 0.0f, 1.0f, player->collision->position.z,
-				0.0f, 0.0f, 0.0f, 1.0f
-			);
+				0.0f, 0.0f, 0.0f, 1.0f);
 
 			DrawLines lines(world_to_clip);
 			lines.draw(player->collision->position, player->grapple_point->position, glm::u8vec4(0xff, 0xff, 0x00, 0xff));
