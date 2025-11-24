@@ -448,7 +448,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	// set light camera transform and aspect ratio
 	glm::vec3 eye = camera->transform->make_world_from_local()[3];
-	glm::mat4 world_to_clip = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
+	glm::mat4 light_camera_view = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
 
 	//compute light uniforms:
 	uint32_t lights = uint32_t(scene.lights.size());
@@ -515,7 +515,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 
 
-	scene.draw(world_to_clip);
+	scene.draw(light_camera_view);
 
 	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)

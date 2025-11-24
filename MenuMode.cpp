@@ -60,9 +60,22 @@ void MenuMode::draw(glm::uvec2 const &drawable_size)
     last_drawable_size = drawable_size;
     
     glUseProgram(lit_color_texture_program->program);
-    glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
-    glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, -1.0f)));
-    glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
+
+    GLuint lights = 1u; // number of lights
+    glUniform1ui(lit_color_texture_program->LIGHTS_uint, lights);
+    //glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
+
+    int type = 3;
+    glUniform1iv(lit_color_texture_program->LIGHT_TYPE_int_array, 1, &type);
+
+    glm::vec3 dir(0.0f, 0.0f, -1.0f);
+    glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3_array, 1, glm::value_ptr(dir));
+
+    glm::vec3 energy(1.0f, 1.0f, 0.95f);
+    glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3_array, 1, glm::value_ptr(energy));
+
+   /* glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, -1.0f)));
+    glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));*/
     glUseProgram(0);
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
