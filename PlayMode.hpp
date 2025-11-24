@@ -20,6 +20,7 @@
 #include "Rat.hpp"
 #include "Mesh.hpp"
 #include "Stove.hpp"
+#include "MovingWall.hpp"
 #include "Button.hpp"
 
 
@@ -64,6 +65,7 @@ struct PlayMode : Mode
 	std::vector<Scene::Transform *> bouncy_weak_platforms;
 	std::vector<Scene::Transform *> bouncy_strong_platforms;
 	std::vector<Scene::Transform *> grapple_crackers;
+	std::vector<MovingWall *> moving_walls;
 	std::vector<Rat *> rats;
 	std::unordered_map<Scene::Transform*, Rat*> rat_map;
 	StoveSystem stove;

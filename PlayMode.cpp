@@ -124,6 +124,16 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		{
 			grapple_crackers.emplace_back(&transform);
 		}
+		else if (transform.name.substr(0, 11) == "Slider_start") {
+			MovingWall *wall = nullptr;
+			if (transform.name.substr(17, 19) == "up")
+				wall = new MovingWall(-player->height * 5, 1.0f, transform.position.z);
+			else
+				wall = new MovingWall(player->height * 5, 1.0f, transform.position.z);
+			assert (wall != nullptr);
+			wall->collision = &transform;
+			moving_walls.emplace_back(wall);
+		}
 	}
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
@@ -377,7 +387,7 @@ void PlayMode::update(float elapsed)
 		for (Rat *rat : rats)
 			rat->update(elapsed);
 
-		camera->transform->position.y = player->collision->position.y;		   // need to change this
+		camera->transform->position.y = player->collision->position.y; // need to change this
 		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
 		float last_wine = wine_remaining;
 		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
