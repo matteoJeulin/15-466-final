@@ -45,7 +45,14 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 drawable.pipeline.vao = level_meshes_for_lit_color_texture_program;
 												 drawable.pipeline.type = mesh.type;
 												 drawable.pipeline.start = mesh.start;
-												 drawable.pipeline.count = mesh.count; }); });
+												 drawable.pipeline.count = mesh.count; 
+
+												 float roughness = 1.0f; //where can we get roughness of the material 
+												 drawable.pipeline.set_uniforms = [roughness](){
+													glUniform1f(lit_color_texture_program->ROUGHNESS_float, roughness);
+		};
+												
+												}); });
 
 Sound::Sample kitchen_first = Sound::Sample(data_path("kitchen_music_first.wav"));
 Sound::Sample kitchen_loop = Sound::Sample(data_path("kitchen_music_loop.wav"));
@@ -142,6 +149,14 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	if (scene.cameras.size() != 1)
 		throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
+
+	//shadow map camera
+	// scene.transforms.emplace_back();
+	// scene.cameras.emplace_back(&scene.transforms.back());
+	// light_camera = &scene.cameras.back();
+	// light_camera->fovy = 60.0f / 180.0f * 3.1415926f;
+	// light_camera->near = 0.01f;
+
 
 	for (auto &drawable : scene.drawables)
 	{
@@ -424,22 +439,76 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	// for mouse
 	last_drawable_px = drawable_size;
 
-	// set up light type and position for lit_color_texture_program:
-	//  TODO: consider using the Light(s) in the scene to do this
-	glUseProgram(lit_color_texture_program->program);
-	glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
-	glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f, -1.0f)));
-	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
-	glUseProgram(0);
+	// set light camera transform and aspect ratio
+	glm::vec3 eye = camera->transform->make_world_from_local()[3];
+	glm::mat4 world_to_clip = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
 
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClearDepth(1.0f); // 1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
+	//compute light uniforms:
+	uint32_t lights = uint32_t(scene.lights.size());
+
+	//clamp lights to maximum lights allowed by shader:
+	lights = std::min< uint32_t >(lights, LitColorTextureProgram::MaxLights);
+
+	// std::cout << "Number of lights: " << lights << std::endl;
+
+	std::vector< int32_t > light_type; light_type.reserve(lights);
+	std::vector< glm::vec3 > light_location; light_location.reserve(lights);
+	std::vector< glm::vec3 > light_direction; light_direction.reserve(lights);
+	std::vector< glm::vec3 > light_energy; light_energy.reserve(lights);
+	std::vector< float > light_cutoff; light_cutoff.reserve(lights);
+
+	for (auto const &light : scene.lights) {
+		glm::mat4 light_to_world = light.transform->make_world_from_local();
+		//set up lighting information for this light:
+		light_location.emplace_back(glm::vec3(light_to_world[3]));
+		light_direction.emplace_back(glm::vec3(-light_to_world[2]));
+		light_energy.emplace_back(light.energy);
+
+		if (light.type == Scene::Light::Point) {
+			light_type.emplace_back(0);
+			light_cutoff.emplace_back(1.0f);
+		} else if (light.type == Scene::Light::Hemisphere) {
+			light_type.emplace_back(1);
+			light_cutoff.emplace_back(1.0f);
+		} else if (light.type == Scene::Light::Spot) {
+			light_type.emplace_back(2);
+			light_cutoff.emplace_back(std::cos(0.5f * light.spot_fov));
+		} else if (light.type == Scene::Light::Directional) {
+			light_type.emplace_back(3);
+			light_cutoff.emplace_back(1.0f);
+		}
+
+		//skip remaining lights if maximum light count reached:
+		if (light_type.size() == lights) break;
+	}
+
+	GL_ERRORS();
+	
+	//--- actual drawing ---
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS); // this is the default depth comparison function, but FYI you can change it.
+	glDepthFunc(GL_LEQUAL);
 
-	scene.draw(*camera);
+	//upload light uniforms:
+	glUseProgram(lit_color_texture_program->program);
+
+	glUniform3fv(lit_color_texture_program->EYE_vec3, 1, glm::value_ptr(eye));
+
+	glUniform1ui(lit_color_texture_program->LIGHTS_uint, lights);
+
+	if (lights > 0) {
+		glUniform1iv(lit_color_texture_program->LIGHT_TYPE_int_array, lights, light_type.data());
+		glUniform3fv(lit_color_texture_program->LIGHT_LOCATION_vec3_array, lights, glm::value_ptr(light_location[0]));
+		glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3_array, lights, glm::value_ptr(light_direction[0]));
+		glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3_array, lights, glm::value_ptr(light_energy[0]));
+		glUniform1fv(lit_color_texture_program->LIGHT_CUTOFF_float_array, lights, light_cutoff.data());
+	}
+
+
+
+	scene.draw(world_to_clip);
 
 	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)

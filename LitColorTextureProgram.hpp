@@ -22,12 +22,23 @@ struct LitColorTextureProgram {
 	GLuint LIGHT_FROM_OBJECT_mat4x3 = -1U;
 	GLuint LIGHT_FROM_NORMAL_mat3 = -1U;
 
+	
+	//  material uniforms:
+	GLuint ROUGHNESS_float = -1U;
+
+	//  lighting uniforms:
+	GLuint EYE_vec3 = -1U; //camera position in lighting space
+
+	GLuint LIGHTS_uint = -1U;
+
 	//lighting:
-	GLuint LIGHT_TYPE_int = -1U;
-	GLuint LIGHT_LOCATION_vec3 = -1U;
-	GLuint LIGHT_DIRECTION_vec3 = -1U;
-	GLuint LIGHT_ENERGY_vec3 = -1U;
-	GLuint LIGHT_CUTOFF_float = -1U;
+	GLuint LIGHT_TYPE_int_array = -1U;
+	GLuint LIGHT_LOCATION_vec3_array = -1U;
+	GLuint LIGHT_DIRECTION_vec3_array = -1U;
+	GLuint LIGHT_ENERGY_vec3_array = -1U;
+	GLuint LIGHT_CUTOFF_float_array = -1U;
+
+	enum : uint32_t { MaxLights = 40 };
 	
 	//Textures:
 	//TEXTURE0 - texture that is accessed by TexCoord

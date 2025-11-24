@@ -74,6 +74,7 @@ struct PlayMode : Mode
 
 	// camera:
 	Scene::Camera *camera = nullptr;
+	Scene::Camera *light_camera = nullptr;
 
 	bool paused = false;
 
