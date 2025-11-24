@@ -20,6 +20,7 @@
 #include "Rat.hpp"
 #include "Mesh.hpp"
 #include "Stove.hpp"
+#include "Button.hpp"
 
 
 struct PlayMode : Mode
@@ -96,6 +97,8 @@ struct PlayMode : Mode
 	float bottle_ui_pos_x = 0.9f;
 	float bottle_ui_pos_y = 0.6f;
 	float bottle_ui_height = 0.8f;
+
+	std::vector<Button> buttons;
 
 	// Music
 	DynamicSoundLoop kitchen_music;
