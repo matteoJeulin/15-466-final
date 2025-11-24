@@ -26,33 +26,8 @@ void Player::update(float elapsed)
 		}
 	}
 	else {
-		if (!(locomotionState & PlayerLocomotion::Grappling)) {
-			// if (abs(speed.y) <= maxSpeed) {
-			if (left.pressed && !right.pressed && speed.y > -maxSpeed)
-				speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
-			if (!left.pressed && right.pressed && speed.y < maxSpeed)
-				speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
-			// }
-
-			if (jump.pressed && !this->jumping && platform != nullptr)
-			{
-				jump.pressed = false;
-				charJump(jumpHeight, jumpAirTime, gravity);
-				this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Jumping);
-			}
-
-			// Apply inertia to get the player down to 0 speed.
-			if ((!left.pressed && !right.pressed) || (left.pressed && speed.y > 0) || (right.pressed && speed.y < 0))
-			{
-				speed.y -= speed.y * elapsed * 10;
-				if (abs(speed.y) < maxSpeed) wasGrappling = false;
-			}
-
-			if (speed.y != 0.0f) this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Rolling);
-			else this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Rolling);
-			applySpeed(elapsed);
-		}
-		else if (this->grapple_point != nullptr) {
+		if (locomotionState & PlayerLocomotion::Grappling) {
+			assert(this->grapple_point != nullptr);
 			// get vector from cheese to grapple
 			glm::vec2 rope_vector = glm::vec2(grapple_point->position.y - collision->position.y,
 											grapple_point->position.z - collision->position.z);
@@ -92,9 +67,58 @@ void Player::update(float elapsed)
 			}
 			else {
 				// TODO: change angle as I fall
-
 				applySpeed(elapsed);
 			}
+		}
+		else if (locomotionState & PlayerLocomotion::WallClinging) {
+			if (jump.pressed) { // wall jump
+				wall_jump();
+				applySpeed(elapsed);
+			}
+			else if ((wallDir < 0 && !left.pressed) ||
+					 (wallDir > 0 && !right.pressed) ||
+					 melt_level / MELT_MAX < MELT_FOR_CLING) { // let go
+				locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::WallClinging);
+				speed.z = -slideSpeed;
+				applySpeed(elapsed);
+			}
+			else {
+				applySlideSpeed(elapsed);
+				stickTimer = std::clamp(stickTimer - elapsed, 0.0f, STICK_TIME);
+			}
+		}
+		else if (locomotionState & PlayerLocomotion::WallJumping) {
+			// no inertia from lack of input until the wall cling is over
+			if (speed.y != 0.0f) this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Rolling);
+			else this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Rolling);
+			applySpeed(elapsed);
+
+			if (wallJumpTimer <= 0.0f) locomotionState = (PlayerLocomotion)(locomotionState & ~PlayerLocomotion::WallJumping);
+			wallJumpTimer -= elapsed;
+		}
+		else {
+			if (left.pressed && !right.pressed && speed.y > -maxSpeed)
+				speed.y = std::max(speed.y - acceleration * elapsed, -maxSpeed);
+			if (!left.pressed && right.pressed && speed.y < maxSpeed)
+				speed.y = std::min(speed.y + acceleration * elapsed, maxSpeed);
+
+			if (jump.pressed && !this->jumping && platform != nullptr)
+			{
+				jump.pressed = false;
+				charJump(jumpHeight, jumpAirTime, gravity);
+				this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Jumping);
+			}
+
+			// Apply inertia to get the player down to 0 speed.
+			if ((!left.pressed && !right.pressed) || (left.pressed && speed.y > 0) || (right.pressed && speed.y < 0))
+			{
+				speed.y -= speed.y * elapsed * 10;
+				if (abs(speed.y) < maxSpeed) wasGrappling = false;
+			}
+
+			if (speed.y != 0.0f) this->locomotionState = (PlayerLocomotion)(this->locomotionState | PlayerLocomotion::Rolling);
+			else this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Rolling);
+			applySpeed(elapsed);
 		}
 	}
 
@@ -185,12 +209,17 @@ void Player::update(float elapsed)
 			if (collide(plat, false))
 			{
 				// std::cout << "Landed\n";
-				this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~PlayerLocomotion::Jumping);
-
-				if (chomped && platform != nullptr) {
-					speed.y = 0.0f;
-					mercyInvincTimer = MERCY_INVINC;
-					chomped = false;
+				if (platform != nullptr)
+				{
+					this->locomotionState = (PlayerLocomotion)(this->locomotionState & ~(PlayerLocomotion::Jumping | PlayerLocomotion::WallJumping));
+					if (chomped) {
+						speed.y = 0.0f;
+						mercyInvincTimer = MERCY_INVINC;
+						chomped = false;
+					}
+				}
+				else if (wall && (melt_level / MELT_MAX > MELT_FOR_CLING)) {
+					wall_cling(wall);
 				}
 			}
 		}
@@ -211,7 +240,7 @@ void Player::update(float elapsed)
 				debug_heat.pressed = false;
 			}
 
-			if (!(locomotionState & PlayerLocomotion::Grappling)) { // if grappling, don't cool down!
+			if (!(locomotionState & PlayerLocomotion::Grappling)) { // if grappling, don't cool down! (it's ok if I'm clinging, though)
 				melt_level += -0.1f * std::abs(melt_delta) * elapsed;
 				melt_level = std::clamp(melt_level, MELT_MIN, MELT_MAX);
 			}
@@ -304,6 +333,17 @@ void Player::set_heat_level(int level) {
 	melt_delta = base_melt_rate * rate_by_level[heat_level];
 }
 
+void Player::applyKnockbackSpeed(float elapsed) {
+	if (platform == nullptr)
+        speed.z -= CHOMP_GRAVITY * elapsed;
+
+    // y-axis is the forward/backward direction and the x-axis is the right/left direction
+    collision->position +=  glm::vec3(0.0f, speed.y * elapsed, speed.z * elapsed);
+}
+
+/********************
+ * Grapple Mechanics
+ ********************/
 // Based on try_toggle from Stove.cpp
 bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) {
     // if (!scene_) return false;
@@ -360,7 +400,6 @@ bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) 
     return true;
 }
 
-// // Give the player some speed
 void Player::release_grapple() {
 	float lin_speed = grapple_angular_velocity * grapple_length; // v = wr
 	speed.y = std::cos(grapple_angle) * lin_speed;
@@ -369,15 +408,48 @@ void Player::release_grapple() {
 	std::cout << "Release horizontal speed: " << speed.y << "/" << maxSpeed << "\n";
 
 	grapple_point = nullptr;
-	locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::Grappling);
+	locomotionState = (Player::PlayerLocomotion)((locomotionState & ~Player::PlayerLocomotion::Grappling) |
+												  Player::PlayerLocomotion::Jumping);
 
 	wasGrappling = true;
 }
 
-void Player::applyKnockbackSpeed(float elapsed) {
-	if (platform == nullptr)
-        speed.z -= CHOMP_GRAVITY * elapsed;
+/*************
+ * Wall Cling
+ *************/
+void Player::wall_cling(Scene::Transform *target) {
+	wall = target;
+	locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::WallClinging);
+	locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::WallJumping);
+
+	slideSpeed = 0.0f;
+	stickTimer = STICK_TIME;
+
+	assert(wall->position.y - collision->position.y != 0.0f);
+	wallDir = copysign(wallDir, wall->position.y - collision->position.y);
+}
+
+void Player::applySlideSpeed(float elapsed) {
+	if (stickTimer <= 0.0f) {
+		slideSpeed = std::clamp(slideSpeed + (SLIDE_ACCEL * elapsed), 0.0f, SLIDE_MAX_SPEED);
+		std::cout << "Slide speed: " << slideSpeed << "\n";
+    }
 
     // y-axis is the forward/backward direction and the x-axis is the right/left direction
-    collision->position +=  glm::vec3(0.0f, speed.y * elapsed, speed.z * elapsed);
+    collision->position -= glm::vec3(0.0f, 0.0f, slideSpeed * elapsed);
+}
+
+void Player::wall_jump() // "jump_time" is up and down
+{
+    // float jumpSpeed = (2 * jump_height) / (pow(jumpAirTime / 2.0f, 2.0f)) * (jumpAirTime / 2.0f);
+    float jumpSpeed = (jumpHeight + (0.5f * gravity * pow((jumpAirTime / 2.0f), 2.0f))) / (jumpAirTime / 2.0f); 
+
+    jumping = true;
+	speed.y = copysign(maxSpeed, -wallDir);
+    speed.z = jumpSpeed;
+	wall = nullptr;
+	wallJumpTimer = jumpAirTime * 0.6f;
+
+	locomotionState = (Player::PlayerLocomotion)((locomotionState & ~Player::PlayerLocomotion::WallClinging) |
+												  PlayerLocomotion::WallJumping);
 }

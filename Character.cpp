@@ -118,6 +118,11 @@ bool Character::collide(Scene::Transform *object, bool isTrigger)
             platform = nullptr;
         }
 
+        if (actualNormal.z == 0.0f) {
+            // cos(90°) = cos(270°) = 0
+            wall = object;
+        }
+
         return true;
     }
 

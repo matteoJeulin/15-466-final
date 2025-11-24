@@ -48,6 +48,9 @@ struct Character
     // Platform on which the player is
     Scene::Transform *platform = nullptr;
 
+    // Wall which the player has clung to
+    Scene::Transform *wall = nullptr;
+
     // Collision between a character and an object
     bool collide(Scene::Transform *object, bool isTrigger);
 

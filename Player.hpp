@@ -18,16 +18,29 @@ struct Player : public Character
 
 	Scene::Drawable *drawable = nullptr;
 
-    // Player physics
-    // Jumping
+    /****************
+     * Player physics
+     ****************/
+    enum PlayerLocomotion {
+        Rolling = 0b1,
+        Jumping = 0b10,
+        Grappling = 0b100,
+        WallClinging = 0b1000,
+        WallJumping = 0b10000
+    } locomotionState = (PlayerLocomotion)0;
+
+    /********************
+     * Vertical Movement
+     ********************/
     const float height = 6.24f;
     const float jumpHeight = height * 2.0f;
     const float jumpAirTime = 0.8f;
     const float gravity = (2 * jumpHeight) / (pow(jumpAirTime / 2.0f, 2.0f));
     // float jumpSpeed = (jumpHeight - (0.5f * (gravity) * pow(jumpAirTime / 2.0f, 2.0f)))/(jumpAirTime/2);
 
-    // Moving
-
+    /*******************
+     * Lateral Movement
+     *******************/
     // Player's maximum speed (want a nice arc, so should travel 2x jump height in horizontal direction in a single bound)
     // const float cheeseMaxSpeed = 10.0f * 2.0f;
     const float maxSpeed = (jumpHeight * 2) / jumpAirTime;
@@ -44,21 +57,30 @@ struct Player : public Character
     const float CHOMP_AIR_TIME = jumpAirTime * 1.5f;
     const float CHOMP_GRAVITY = (2 * CHOMP_VERT_KB) / (pow(CHOMP_AIR_TIME / 2.0f, 2.0f));
     const float CHOMP_VERT_KB_SPEED = CHOMP_GRAVITY * CHOMP_AIR_TIME * 0.5f;
-    // const float CHOMP_KB_SPEED = (CHOMP_KB - (0.5f * (-CHOMP_GRAVITY) * pow(CHOMP_AIR_TIME / 2.0f, 2.0f)))/(CHOMP_AIR_TIME/2);
-    
-    // const float CHOMP_HORI_KB = maxSpeed * CHOMP_AIR_TIME;
-    
     const float MERCY_INVINC = 1.0f;
     float mercyInvincTimer = 0.0f;
     void applyKnockbackSpeed(float elapsed);
 
-    enum PlayerLocomotion {
-        Rolling = 0b1,
-        Jumping = 0b10,
-        Grappling = 0b100
-    } locomotionState = (PlayerLocomotion)0;
+    /******************
+     * Melt Properties
+     ******************/
+    const float MELT_MIN = 0;
+    const float MELT_MAX = 5;
+    float melt_level = 0;
+    float melt_delta = MELT_MAX; // positive means melting, negative means cooling
 
-    // Grappling
+    const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to grapple
+    const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
+    const float MELT_FOR_CLING = 0.7f; // >=70% melt to cling
+
+    // Stove Heat
+    void set_heat_level(int level);
+    int heat_level = 0;
+    float base_melt_rate = 2.0f;
+
+    /************
+     * Grappling
+     ************/
     Scene::Transform *grapple_point = nullptr;
     float grapple_angle = 0.0f;
     float grapple_angular_velocity = 0.0f;
@@ -68,20 +90,21 @@ struct Player : public Character
     bool try_grapple(const Ray& ray, std::vector<Scene::Transform*> points);
     void release_grapple();
 
-    // Melt Properties
-    const float MELT_MIN = 0;
-    const float MELT_MAX = 5;
-    float melt_level = 0;
-    float melt_delta = MELT_MAX; // positive means melting, negative means cooling
-
-    const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to pass through
-    const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
-    const float MELT_FOR_CLING = 0.7f; // >=70% melt to pass through
-
-    // Stove Heat
-    void set_heat_level(int level);
-    int heat_level = 0;
-    float base_melt_rate = 2.0f;
+    /******************
+     * Wall Cling/Jump
+     ******************/
+    // Wall on which the player is clinging to
+    // See Character.cpp Scene::Transform *wall = nullptr;
+    const float STICK_TIME = 0.6f; // time until the player starts sliding
+    const float SLIDE_MAX_SPEED = maxSpeed / 2.0f;
+    const float SLIDE_ACCEL = SLIDE_MAX_SPEED * 4.0f;
+    float stickTimer = 0.0f;
+    float slideSpeed = 0.0f;
+    float wallDir = 0.0f; // -1 means wall is on the left, 1 means wall is on the right
+    float wallJumpTimer = 0.0f;
+    void wall_cling(Scene::Transform *target);
+    void applySlideSpeed(float elapsed);
+    void wall_jump();
 
     // Angle to rotate the player
 	glm::quat theta;
