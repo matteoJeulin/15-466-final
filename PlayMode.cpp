@@ -265,6 +265,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	}
 	else if (evt.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
 	{
+		// TODO: Refactor mouse code to be inside the Player class
 		// if (SDL_GetWindowRelativeMouseMode(Mode::window) == false)
 		// {
 		// 	SDL_SetWindowRelativeMouseMode(Mode::window, true);
@@ -302,16 +303,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 				return true;
 			}
 
-
-			if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
-				// for (auto cracker : grapple_crackers) {
-				// 	try_hit(cracker);
-
-				// 	if (hit) {
-				// 		player->grapple_point = cracker;
-				// 		player->locomotionState = (Player::PlayerLocomotion)(player->locomotionState | Player::PlayerLocomotion::Grappling);
-				// 	}
-				// }
+			// if (player->melt_level > (player->MELT_MIN + player->MELT_MAX) / 2) {
+			if (player->melt_level / player->MELT_MAX > player->MELT_FOR_GRAPPLE) {
 				player->try_grapple(r, grapple_crackers);
 			}
 		}
