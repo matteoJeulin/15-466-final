@@ -1,3 +1,6 @@
+
+#pragma once
+
 #include "GL.hpp"
 #include "Load.hpp"
 #include "Scene.hpp"
@@ -10,14 +13,21 @@ struct Framebuffers {
 	GLuint depth_rb = 0;
 	GLuint fb = 0;
 
-	//This framebuffer is used for shadow maps:
-	glm::uvec2 shadow_size = glm::uvec2(0,0);
-	GLuint shadow_color_tex = 0; //DEBUG
-	GLuint shadow_depth_tex = 0;
-	GLuint shadow_fb = 0;
+	// shadow atlas:
+    glm::uvec2 shadow_atlas_size = glm::uvec2(0,0);   // full atlas size (e.g. 2048x2048)
+    glm::uvec2 shadow_tiles = glm::uvec2(1,1);        // tile grid (e.g. 4x4)
+    GLuint shadow_color_tex = 0; // DEBUG
+    GLuint shadow_depth_tex = 0;
+    GLuint shadow_fb = 0;
 
-	void allocate(glm::uvec2 const &new_size, glm::uvec2 const &new_shadow_size);
-} fbs;
+	glm::uvec2 tile_size() const;
+
+	void allocate(glm::uvec2 const &new_size,
+                  glm::uvec2 const &new_shadow_atlas_size,
+                  glm::uvec2 const &new_shadow_tiles);
+};
+
+extern Framebuffers fbs;
 //ShadowedColorTextureProgram draws a surface lit by a distant directional light, a hemispherical light, and a spotlight.
 // The color is the vertex color multiplied by the color from texture unit 0.
 // Spotlight shadowing is computed with a shadow map bound to texture unit 1.
@@ -35,6 +45,7 @@ struct ShadowedColorTextureProgram {
 	GLuint sky_direction_vec3 = -1U; //direction *to* sky
 	GLuint sky_color_vec3 = -1U;
 
+	GLuint spot_count_int = -1U;
 	GLuint spot_position_vec3 = -1U;
 	GLuint spot_direction_vec3 = -1U; //direction *from* spotlight
 	GLuint spot_color_vec3 = -1U;

@@ -23,7 +23,8 @@
 #include <algorithm>
 
 GLuint level_meshes_for_lit_color_texture_program = 0;
-GLuint blob_shadows = 0;
+// define the global instance:
+Framebuffers fbs;
 
 
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
@@ -44,6 +45,20 @@ Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
+
+
+        // static Scene::Drawable::Pipeline texture_pipeline = [&]() {
+        //     Scene::Drawable::Pipeline p = shadowed_color_texture_program_pipeline;
+        //     p.vao = *meshes_for_shadowed_color_texture_program;
+        //     return p;
+        // }();
+
+        // static Scene::Drawable::Pipeline depth_pipeline = [&]() {
+        //     Scene::Drawable::Pipeline p = depth_only_program_pipeline;
+        //     p.vao = *meshes_for_depth_only_program;
+        //     return p;
+        // }();
+
 												if (( transform->name == "Cheese_Wheel")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
@@ -59,6 +74,20 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 drawable.pipeline[0].type = mesh.type;
 												 drawable.pipeline[0].start = mesh.start;
 												 drawable.pipeline[0].count = mesh.count; 
+
+												
+											// // COLOR (lit) pipeline:
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault] = texture_pipeline;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault].type  = mesh.type;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault].start = mesh.start;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault].count = mesh.count;
+
+											// // SHADOW (depth) pipeline:
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow] = depth_pipeline;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow].type  = mesh.type;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow].start = mesh.start;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow].count = mesh.count;
+
 
 												 float roughness = 1.0f; //where can we get roughness of the material 
 												 drawable.pipeline[0].set_uniforms = [roughness](){
@@ -192,6 +221,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	player->drawable->pipeline[0].type = player->mesh->type;
 	player->drawable->pipeline[0].start = 0; // Starts from 0 in the new buffer
 	player->drawable->pipeline[0].count = player->mesh->count;
+
 
 	//blob shadow mesh
 	 // Build a unit quad in the XY plane at z = 0, centered at origin.
@@ -532,7 +562,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 //     GL_ERRORS();
 
-// 	glBindFramebuffer(fbs.fb, 0); // (or fbs.fb if you want offscreen)
+// 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // (or fbs.fb if you want offscreen)
 //     glViewport(0, 0, drawable_size.x, drawable_size.y);
 	
 // 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -582,7 +612,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 // glm::mat4 bias(
 //     0.5f, 0.0f, 0.0f, 0.5f,
 //     0.0f, 0.5f, 0.0f, 0.5f,
-//     0.0f, 0.0f, 0.5f+0.00001f, 0.5f,
+//     0.0f, 0.0f, 0.5f, 0.5f,
 //     0.0f, 0.0f, 0.0f, 1.0f
 // );
 
@@ -658,7 +688,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 //     }
 
 //     // now draw the scene with shadowed_color_texture_program_pipeline:
-//     scene.draw(*camera,Scene::Drawable::PipelineTypeShadow); // make sure Scene uses shadowed_color_texture_program_pipeline for lit objects
+//     scene.draw(world_to_clip); // make sure Scene uses shadowed_color_texture_program_pipeline for lit objects
 
 //     glUseProgram(0);
 	/* Utilied boilerplate code for forwardlighting materials 
@@ -666,9 +696,9 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	https://github.com/15-466/15-466-lighting
 	*/
 	
-	// set light camera transform and aspect ratio
+	// // set light camera transform and aspect ratio
 	glm::vec3 eye = camera->transform->make_world_from_local()[3];
-	glm::mat4 world_to_clip = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
+	glm::mat4 light_to_clip_world = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
 
 	//compute light uniforms:
 	uint32_t lights = uint32_t(scene.lights.size());
@@ -732,7 +762,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 		glUniform1fv(lit_color_texture_program->LIGHT_CUTOFF_float_array, lights, light_cutoff.data());
 	}
 
-	scene.draw(world_to_clip);
+	// scene.draw(light_to_clip_world);
 //draw shadows blobs 
 if (player->shadow_valid && player->shadow_form) {
     glEnable(GL_BLEND);
@@ -743,7 +773,7 @@ if (player->shadow_valid && player->shadow_form) {
 
     // compute CLIP_FROM_OBJECT for the blob:
     glm::mat4 world_from_object = glm::mat4(player->shadow_form->make_world_from_local());
-    glm::mat4 clip_from_object  = world_to_clip * world_from_object;
+    glm::mat4 clip_from_object  = light_to_clip_world * world_from_object;
 
     glUniformMatrix4fv(blob_shadow_program->CLIP_FROM_OBJECT_mat4,
                        1, GL_FALSE, glm::value_ptr(clip_from_object));

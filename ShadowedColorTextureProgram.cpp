@@ -17,91 +17,94 @@
 #include <cstddef>
 #include <random>
 
-struct Framebuffers {
-	glm::uvec2 size = glm::uvec2(0,0); //remember the size of the framebuffer
 
-	//This framebuffer is used for fullscreen effects:
-	GLuint color_tex = 0;
-	GLuint depth_rb = 0;
-	GLuint fb = 0;
+glm::uvec2 Framebuffers::tile_size() const {
+    return glm::uvec2(
+        shadow_atlas_size.x / shadow_tiles.x,
+        shadow_atlas_size.y / shadow_tiles.y
+    );
+}
 
-	//This framebuffer is used for shadow maps:
-	glm::uvec2 shadow_size = glm::uvec2(0,0);
-	GLuint shadow_color_tex = 0; //DEBUG
-	GLuint shadow_depth_tex = 0;
-	GLuint shadow_fb = 0;
+void Framebuffers::allocate(glm::uvec2 const &new_size,
+                            glm::uvec2 const &new_shadow_atlas_size,
+                            glm::uvec2 const &new_shadow_tiles) {
+    // --- fullscreen fb (unchanged) ---
+    if (size != new_size) {
+        size = new_size;
 
-	void allocate(glm::uvec2 const &new_size, glm::uvec2 const &new_shadow_size) {
-		//allocate full-screen framebuffer:
-		if (size != new_size) {
-			size = new_size;
+        if (color_tex == 0) glGenTextures(1, &color_tex);
+        glBindTexture(GL_TEXTURE_2D, color_tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-			if (color_tex == 0) glGenTextures(1, &color_tex);
-			glBindTexture(GL_TEXTURE_2D, color_tex);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glBindTexture(GL_TEXTURE_2D, 0);
-	
-			if (depth_rb == 0) glGenRenderbuffers(1, &depth_rb);
-			glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size.x, size.y);
-			glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	
-			if (fb == 0) glGenFramebuffers(1, &fb);
-			glBindFramebuffer(GL_FRAMEBUFFER, fb);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
-			gl_check_fb();
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (depth_rb == 0) glGenRenderbuffers(1, &depth_rb);
+        glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size.x, size.y);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-			GL_ERRORS();
-		}
+        if (fb == 0) glGenFramebuffers(1, &fb);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
+        gl_check_fb();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		//allocate shadow map framebuffer:
-		if (shadow_size != new_shadow_size) {
-			shadow_size = new_shadow_size;
+        GL_ERRORS();
+    }
 
-			if (shadow_color_tex == 0) glGenTextures(1, &shadow_color_tex);
-			glBindTexture(GL_TEXTURE_2D, shadow_color_tex);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, shadow_size.x, shadow_size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glBindTexture(GL_TEXTURE_2D, 0);
+    // --- shadow atlas ---
+    if (shadow_atlas_size != new_shadow_atlas_size || shadow_tiles != new_shadow_tiles) {
+        shadow_atlas_size = new_shadow_atlas_size;
+        shadow_tiles      = new_shadow_tiles;
 
+        if (shadow_color_tex == 0) glGenTextures(1, &shadow_color_tex);
+        glBindTexture(GL_TEXTURE_2D, shadow_color_tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                     shadow_atlas_size.x, shadow_atlas_size.y,
+                     0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-			if (shadow_depth_tex == 0) glGenTextures(1, &shadow_depth_tex);
-			glBindTexture(GL_TEXTURE_2D, shadow_depth_tex);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, shadow_size.x, shadow_size.y, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glBindTexture(GL_TEXTURE_2D, 0);
-	
-			if (shadow_fb == 0) glGenFramebuffers(1, &shadow_fb);
-			glBindFramebuffer(GL_FRAMEBUFFER, shadow_fb);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, shadow_color_tex, 0);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_depth_tex, 0);
-			gl_check_fb();
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (shadow_depth_tex == 0) glGenTextures(1, &shadow_depth_tex);
+        glBindTexture(GL_TEXTURE_2D, shadow_depth_tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24,
+                     shadow_atlas_size.x, shadow_atlas_size.y,
+                     0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-			GL_ERRORS();
-		}
-	}
-};
+        if (shadow_fb == 0) glGenFramebuffers(1, &shadow_fb);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_fb);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, shadow_color_tex, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_depth_tex, 0);
+        gl_check_fb();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        GL_ERRORS();
+    }
+}
+
 
 ShadowedColorTextureProgram::ShadowedColorTextureProgram() {
 	program = gl_compile_program(
 		"#version 330\n"
+		"#define MAX_LIGHTS 8\n"
 		"uniform mat4 CLIP_FROM_OBJECT;\n"
 		"uniform mat4x3 LIGHT_FROM_OBJECT;\n"
 		"uniform mat3 LIGHT_FROM_NORMAL;\n"
-		"uniform mat4 SPOT_FROM_LIGHT;\n"
+		"uniform mat4 SPOT_FROM_LIGHT[MAX_LIGHTS];\n"
 		"layout(location=0) in vec4 Position;\n" //note: layout keyword used to make sure that the location-0 attribute is always bound to something
 		"in vec3 Normal;\n"
 		"in vec4 Color;\n"
@@ -110,32 +113,35 @@ ShadowedColorTextureProgram::ShadowedColorTextureProgram() {
 		"out vec3 normal;\n"
 		"out vec4 color;\n"
 		"out vec2 texCoord;\n"
-		"out vec4 spotPosition;\n"
+		"out vec4 spotPosition[MAX_LIGHTS];\n"
 		"void main() {\n"
 		"	gl_Position = CLIP_FROM_OBJECT * Position;\n"
 		"	position = LIGHT_FROM_OBJECT * Position;\n"
-		"	spotPosition = SPOT_FROM_LIGHT * vec4(position, 1.0);\n"
 		"	normal = LIGHT_FROM_NORMAL * Normal;\n"
 		"	color = Color;\n"
 		"	texCoord = TexCoord;\n"
+		"	for (int i = 0; i < MAX_LIGHTS; ++i) {\n"
+        "		spotPosition[i] = SPOT_FROM_LIGHT[i] * vec4(position, 1.0);}\n"
 		"}\n"
 		,
 		"#version 330\n"
+		"#define MAX_LIGHTS 8\n"
 		"uniform vec3 sun_direction;\n"
 		"uniform vec3 sun_color;\n"
 		"uniform vec3 sky_direction;\n"
 		"uniform vec3 sky_color;\n"
-		"uniform vec3 spot_position;\n"
-		"uniform vec3 spot_direction;\n"
-		"uniform vec3 spot_color;\n"
-		"uniform vec2 spot_outer_inner;\n"
+		"uniform int spot_count;\n"
+		"uniform vec3 spot_position[MAX_LIGHTS];\n"
+		"uniform vec3 spot_direction[MAX_LIGHTS];\n"
+		"uniform vec3 spot_color[MAX_LIGHTS];\n"
+		"uniform vec2 spot_outer_inner[MAX_LIGHTS];\n"
 		"uniform sampler2D tex;\n"
 		"uniform sampler2DShadow spot_depth_tex;\n"
 		"in vec3 position;\n"
 		"in vec3 normal;\n"
 		"in vec4 color;\n"
 		"in vec2 texCoord;\n"
-		"in vec4 spotPosition;\n"
+		"in vec4 spotPosition[MAX_LIGHTS];\n"
 		"out vec4 fragColor;\n"
 		"void main() {\n"
 		"	vec3 total_light = vec3(0.0, 0.0, 0.0);\n"
@@ -151,19 +157,22 @@ ShadowedColorTextureProgram::ShadowedColorTextureProgram() {
 		"		total_light += nl * sun_color;\n"
 		"	}\n"
 		"	{ //spot (point with fov + shadow map) light:\n"
-		"		vec3 l = normalize(spot_position - position);\n"
-		"		float nl = max(0.0, dot(n,l));\n"
-		"		//TODO: look up shadow map\n"
-		"		float d = dot(l,-spot_direction);\n"
-		"		float amt = smoothstep(spot_outer_inner.x, spot_outer_inner.y, d);\n"
-		"		float shadow = textureProj(spot_depth_tex, spotPosition);\n"
-		"		total_light += shadow * nl * amt * spot_color;\n"
+		"	    for (int i = 0; i < spot_count; ++i) {\n"
+		"			vec3 l = normalize(spot_position[i] - position);\n"
+		"			float nl = max(0.0, dot(n,l));\n"
+		"		//TODO: look up shadow atlas\n"
+		"		float d = dot(l,-spot_direction[i]);\n"
+		"		float amt = smoothstep(spot_outer_inner[i].x, spot_outer_inner[i].y, d);\n"
+		"		float shadow = textureProj(spot_depth_tex, spotPosition[i]);\n"
+		"		total_light += shadow * nl * amt * spot_color[i];\n"
+		"   	}\n"
 		//"		fragColor = vec4(s,s,s, 1.0);\n" //DEBUG: just show shadow
 		"	}\n"
 
 		"	fragColor = texture(tex, texCoord) * vec4(color.rgb * total_light, color.a);\n"
 		"}\n"
 	);
+
 
 	CLIP_FROM_OBJECT_mat4 = glGetUniformLocation(program, "CLIP_FROM_OBJECT");
 	LIGHT_FROM_OBJECT_mat4x3 = glGetUniformLocation(program, "LIGHT_FROM_OBJECT");
@@ -174,12 +183,13 @@ ShadowedColorTextureProgram::ShadowedColorTextureProgram() {
 	sky_direction_vec3 = glGetUniformLocation(program, "sky_direction");
 	sky_color_vec3 = glGetUniformLocation(program, "sky_color");
 
-	spot_position_vec3 = glGetUniformLocation(program, "spot_position");
-	spot_direction_vec3 = glGetUniformLocation(program, "spot_direction");
-	spot_color_vec3 = glGetUniformLocation(program, "spot_color");
-	spot_outer_inner_vec2 = glGetUniformLocation(program, "spot_outer_inner");
+	spot_count_int = glGetUniformLocation(program, "spot_count");
+	spot_position_vec3 = glGetUniformLocation(program, "spot_position[0]");
+	spot_direction_vec3 = glGetUniformLocation(program, "spot_direction[0]");
+	spot_color_vec3 = glGetUniformLocation(program, "spot_color[0]");
+	spot_outer_inner_vec2 = glGetUniformLocation(program, "spot_outer_inner[0]");
 
-	SPOT_FROM_LIGHT_mat4 = glGetUniformLocation(program, "SPOT_FROM_LIGHT");
+	SPOT_FROM_LIGHT_mat4 = glGetUniformLocation(program, "SPOT_FROM_LIGHT[0]");
 
 	glUseProgram(program);
 

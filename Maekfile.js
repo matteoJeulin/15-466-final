@@ -180,7 +180,9 @@ const common_names = [
 	maek.CPP('TextManager.cpp'),
 	maek.CPP('DynamicMeshBuffer.cpp'),
 	maek.CPP('RayCast.cpp'),
-	maek.CPP('BlobShadowPipeline.cpp')
+	maek.CPP('BlobShadowPipeline.cpp'),
+	maek.CPP('ShadowedColorTextureProgram.cpp'),
+	maek.CPP('DepthOnlyProgram.cpp')
 ];
 
 const show_meshes_names = [

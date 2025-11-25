@@ -2,6 +2,7 @@
 
 #include "gl_compile_program.hpp"
 
+
 DepthOnlyProgram::DepthOnlyProgram() {
 	program = gl_compile_program(
 		"#version 330\n"
@@ -24,6 +25,8 @@ DepthOnlyProgram::DepthOnlyProgram() {
 
 	CLIP_FROM_OBJECT_mat4 = glGetUniformLocation(program, "CLIP_FROM_OBJECT");
 }
+
+
 
 Load< DepthOnlyProgram > depth_only_program(LoadTagEarly, []() -> DepthOnlyProgram const * {
 	DepthOnlyProgram *ret = new DepthOnlyProgram();
