@@ -6,8 +6,15 @@
 namespace AudioManager {
 	void init();
 
-	void play_cheese_jump(
-		float volume = 1.0f,
-		float pan = 0.0f
-	);
+	enum class Event {
+		CheeseRegularJump,
+		CheeseWeakJump,
+		CheeseStrongJump,
+		CheeseMelt,
+		CheeseResolidify,
+		StoveClick,
+		MouseSqueak
+	};
+
+	void play_event(Event e, float volume = 1.0f, float pan = 0.0f);
 }

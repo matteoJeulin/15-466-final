@@ -352,6 +352,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			if (stove.try_toggle(r, nullptr))
 			{
 				// player->set_heat_level(new_level);
+				AudioManager::play_event(AudioManager::Event::StoveClick);
 				return true;
 			}
 
@@ -429,8 +430,9 @@ void PlayMode::update(float elapsed)
 	player->pause.downs = 0;
 
 	// music
+	float base_kitchen_vol = 0.5f;
 	pause_vol = std::clamp(pause_vol + (vol_fade_rate * elapsed), 0.0f, 1.0f);
-	kitchen_music.set_volume(1.0f - pause_vol, 1.f / 60.f);
+	kitchen_music.set_volume(base_kitchen_vol * (1.0f - pause_vol), 1.f / 60.f);
 	pause_music.set_volume(pause_vol * 2.0f, 1.f / 60.f);
 
 	kitchen_music.update();

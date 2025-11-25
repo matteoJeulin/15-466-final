@@ -1,7 +1,15 @@
 #include "Rat.hpp"
 #include "PlayMode.hpp"
 #include "Player.hpp"
+#include "AudioManager.hpp"
 #include <algorithm>
+#include <random>
+
+namespace {
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<float> squeak_chance(0.0f, 1.0f);
+    std::uniform_real_distribution<float> squeak_interval(0.4f, 5.0f);
+}
 
 Rat::Rat(PlayMode *_game) : Character(_game)
 {
@@ -45,6 +53,17 @@ void Rat::update(float elapsed)
         // // Jump if close to player
         // if (deltaPos < jumpRange && playerPos.z - ratPos.z > 2 * height) 
         //     charJump(jumpHeight);
+    }
+
+    squeak_timer -= elapsed;
+    float horizontal_speed = std::abs(speed.y);
+    bool is_moving = horizontal_speed > 0.1f;
+
+    if (is_moving && squeak_timer <= 0.0f) {
+        if (squeak_chance(rng) < 0.35f) {
+            AudioManager::play_event(AudioManager::Event::MouseSqueak);
+        }
+        squeak_timer = squeak_interval(rng);
     }
 
     applySpeed(elapsed);

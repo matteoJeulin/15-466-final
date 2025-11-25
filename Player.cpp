@@ -109,6 +109,7 @@ void Player::update(float elapsed)
 				jump.pressed = false;
 				charJump(jumpHeight, jumpAirTime, gravity);
 				locomotionState = (PlayerLocomotion)(locomotionState | PlayerLocomotion::Jumping);
+				AudioManager::play_event(AudioManager::Event::CheeseRegularJump);
 			}
 
 			// Apply inertia to get the player down to 0 speed.
@@ -191,8 +192,8 @@ void Player::update(float elapsed)
 				release_wall();
 				charJump(4.0f * height, jumpAirTime, gravity);
 				locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Jumping);
-				//AudioManager::play_cheese_jump_3D(collision->position, 2.0f, 3.0f);
-				AudioManager::play_cheese_jump(2.0f, 0.0f);
+				//AudioManager::play_cheese_jump(2.0f, 0.0f);
+				AudioManager::play_event(AudioManager::Event::CheeseWeakJump);
 				chomped = false;
 				mercyInvincTimer = 0.0f;
 			}
@@ -205,6 +206,7 @@ void Player::update(float elapsed)
 				release_wall();
 				charJump(8.0f * height, jumpAirTime, gravity);
 				locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Jumping);
+				AudioManager::play_event(AudioManager::Event::CheeseStrongJump);
 				chomped = false;
 				mercyInvincTimer = 0.0f;
 			}
