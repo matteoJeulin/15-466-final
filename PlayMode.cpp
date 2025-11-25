@@ -180,6 +180,8 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 			wine_bottles.emplace_back(&transform);
 		}
 	}
+	Scene::Transform *spawnTransform = spawn_positions[0];
+	spawnPos = glm::vec3(0.0f, spawnTransform[0].position.y, spawnTransform[0].position.z);
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
 	if (foundLevel) {

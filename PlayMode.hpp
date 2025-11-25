@@ -106,9 +106,8 @@ struct PlayMode : Mode
 	static inline int num_levels = 2;
 
 	// Should put the mode into play mode.
-	static void load_level(int lvl); // 0-indexed
-	static void load_next_level();
-
+	void load_level(int lvl); // 0-indexed
+	std::vector<Scene::Transform *> spawn_positions;
 	// Game Timer (+UI)
 	// To be set when the level is loaded
 	float S_RANK_TIME = 60.0f;
