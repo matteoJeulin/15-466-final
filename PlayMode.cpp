@@ -16,6 +16,9 @@
 
 #include <random>
 #include <fstream>
+#include <sstream>
+#include <iostream>
+
 #include <cmath>
 #include <string>
 #include <algorithm>
@@ -71,6 +74,30 @@ void resume(void)
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
 					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
+	// Import code based on Kenechukwu's Game 3 code
+	levels.clear();
+	std::ifstream levelFile;
+	levelFile.open(data_path("ranks_and_spawns.lvl"), std::ios::binary);
+
+	Level levelTemp;
+	while (levelFile.read(reinterpret_cast<char*>(&levelTemp), sizeof(Level))) {
+		levels.emplace_back(levelTemp);
+	}
+	levelFile.close();
+
+	foundLevel = false;
+	if (current_level >= 0 && current_level < levels.size()) {
+		S_RANK_TIME = levels[current_level].s_rank_time;
+		A_RANK_TIME = levels[current_level].a_rank_time;
+		B_RANK_TIME = levels[current_level].b_rank_time;
+		C_RANK_TIME = levels[current_level].c_rank_time;
+		D_RANK_TIME = levels[current_level].d_rank_time;
+
+		spawnLocName = std::string(levels[current_level].spawnLocation);
+
+		std::cout << "Loaded Level " << current_level + 1 << "\n";
+	}
+
 	std::cout << "=============================================================================================" << std::endl;
 	AudioManager::init();
 
@@ -141,9 +168,18 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 			wall->collision = &transform;
 			moving_walls.emplace_back(wall);
 		}
+		else if (transform.name.substr(0, 5) == "Spawn") {
+			foundLevel = true;
+			spawn_positions.emplace_back(&transform);
+			spawnPos = glm::vec3(0.0f, transform.position.y, transform.position.z);
+		}
+		else if (transform.name.substr(0, 4) == "Wine") {
+			wine_bottles.emplace_back(&transform);
+		}
 	}
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
+	if (foundLevel) player->collision->position = spawnPos;
 
 	// get pointer to camera for convenience:
 	if (scene.cameras.size() != 1)
@@ -405,12 +441,38 @@ void PlayMode::update(float elapsed)
 		camera->transform->position.y = player->collision->position.y; // need to change this
 		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
 		float last_wine = wine_remaining;
-		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, MAX_LEVEL_TIME);
+		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, D_RANK_TIME);
 
-		int last_rank = (int)(std::ceil(5 * ((last_wine / MAX_LEVEL_TIME))));
-		int wine_rank = (int)(std::ceil(5 * ((wine_remaining / MAX_LEVEL_TIME))));
+		int last_rank, wine_rank;
 
-		// std::cout << wine_rank << std::endl;
+		std::cout << "Elapsed: " << D_RANK_TIME - wine_remaining << "\n";
+
+		if (D_RANK_TIME - wine_remaining < S_RANK_TIME) {
+			wine_rank = 5;
+			last_rank = 5;
+		}
+		else if (D_RANK_TIME - wine_remaining < A_RANK_TIME) {
+			wine_rank = 4;
+			last_rank = D_RANK_TIME - last_wine < S_RANK_TIME ? 5 : 4;
+		}
+		else if (D_RANK_TIME - wine_remaining < B_RANK_TIME) {
+			wine_rank = 3;
+			last_rank = D_RANK_TIME - last_wine < A_RANK_TIME ? 4 : 3;
+		}
+		else if (D_RANK_TIME - wine_remaining < C_RANK_TIME) {
+			wine_rank = 2;
+			last_rank = D_RANK_TIME - last_wine < B_RANK_TIME ? 3 : 2;
+		}
+		else if (D_RANK_TIME - wine_remaining < D_RANK_TIME) {
+			wine_rank = 1;
+			last_rank = D_RANK_TIME - last_wine < C_RANK_TIME ? 2 : 1;
+		}
+		else {
+			wine_rank = 0;
+			last_rank = D_RANK_TIME - last_wine < D_RANK_TIME ? 1 : 0;
+		}
+
+		std::cout << wine_rank << std::endl;
 
 		if (wine_rank != last_rank)
 		{
@@ -429,8 +491,8 @@ void PlayMode::update(float elapsed)
 	player->pause.downs = 0;
 
 	// music
-	pause_vol = std::clamp(pause_vol + (vol_fade_rate * elapsed), 0.0f, 1.0f);
-	kitchen_music.set_volume(1.0f - pause_vol, 1.f / 60.f);
+	pause_vol = std::clamp(pause_vol + (vol_fade_rate * elapsed), 0.0f, 0.7f);
+	kitchen_music.set_volume(0.7f - pause_vol, 1.f / 60.f);
 	pause_music.set_volume(pause_vol * 2.0f, 1.f / 60.f);
 
 	kitchen_music.update();
@@ -560,5 +622,10 @@ void PlayMode::reset()
 	// player->collision->position = glm::vec3(0.0f, 77.41f, 30.301f);
 	// player->locomotionState = (Player::PlayerLocomotion)0;
 	// player->dead = false;
+	Mode::set_current(std::make_shared<PlayMode>());
+}
+
+bool PlayMode::load_level(int lvl) {
+	current_level = lvl;
 	Mode::set_current(std::make_shared<PlayMode>());
 }

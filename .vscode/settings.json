@@ -79,6 +79,7 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "forward_list": "cpp",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "ranges": "cpp"
     }
 }
