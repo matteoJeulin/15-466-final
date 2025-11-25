@@ -169,9 +169,12 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 			moving_walls.emplace_back(wall);
 		}
 		else if (transform.name.substr(0, 5) == "Spawn") {
-			foundLevel = true;
-			spawn_positions.emplace_back(&transform);
-			spawnPos = glm::vec3(0.0f, transform.position.y, transform.position.z);
+			spawn_locations.emplace_back(&transform);
+
+			if (transform.name.substr(6, 1)[0] == std::to_string(current_level + 1)[0]) {
+				foundLevel = true;
+				spawnPos = glm::vec3(0.0f, transform.position.y, transform.position.z);
+			}
 		}
 		else if (transform.name.substr(0, 4) == "Wine") {
 			wine_bottles.emplace_back(&transform);
@@ -179,7 +182,10 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	}
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
-	if (foundLevel) player->collision->position = spawnPos;
+	if (foundLevel) {
+		player->collision->position = spawnPos;
+		std::cout << "Level found!\n";
+	}
 
 	// get pointer to camera for convenience:
 	if (scene.cameras.size() != 1)
@@ -445,8 +451,6 @@ void PlayMode::update(float elapsed)
 
 		int last_rank, wine_rank;
 
-		std::cout << "Elapsed: " << D_RANK_TIME - wine_remaining << "\n";
-
 		if (D_RANK_TIME - wine_remaining < S_RANK_TIME) {
 			wine_rank = 5;
 			last_rank = 5;
@@ -472,15 +476,13 @@ void PlayMode::update(float elapsed)
 			last_rank = D_RANK_TIME - last_wine < D_RANK_TIME ? 1 : 0;
 		}
 
-		std::cout << wine_rank << std::endl;
-
 		if (wine_rank != last_rank)
 		{
 			wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
 			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 		}
 
-		if (wine_remaining <= 0.0f) 
+		if (wine_remaining <= 0.0f)
 		{
 			Mode::set_current(std::make_shared<MenuMode>(MenuMode::LoseMenu));
 			return;
@@ -625,7 +627,11 @@ void PlayMode::reset()
 	Mode::set_current(std::make_shared<PlayMode>());
 }
 
-bool PlayMode::load_level(int lvl) {
+void PlayMode::load_level(int lvl) {
 	current_level = lvl;
 	Mode::set_current(std::make_shared<PlayMode>());
+}
+
+void PlayMode::load_next_level() {
+	PlayMode::load_level(current_level + 1);
 }
