@@ -98,10 +98,16 @@ struct Player : public Character
     const float STICK_TIME = 0.6f; // time until the player starts sliding
     const float SLIDE_MAX_SPEED = maxSpeed / 2.0f;
     const float SLIDE_ACCEL = SLIDE_MAX_SPEED * 4.0f;
+
+    float wallDir = 0.0f; // -1 means wall is on the left, 1 means wall is on the right
+    float stickHeight = 0.0f; // the height along the wall where I started sticking
+
     float stickTimer = 0.0f;
     float slideSpeed = 0.0f;
-    float wallDir = 0.0f; // -1 means wall is on the left, 1 means wall is on the right
+    float slideDistance = 0.0f; // how much the cheese has slid down the wall (if > stickHeight, release)
+    
     float wallJumpTimer = 0.0f;
+    
     void wall_cling(Scene::Transform *target);
     void applySlideSpeed(float elapsed);
     void wall_jump();
