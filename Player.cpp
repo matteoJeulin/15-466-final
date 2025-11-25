@@ -79,6 +79,7 @@ void Player::update(float elapsed)
 			}
 			else if ((wallDir < 0 && !left.pressed) ||
 					 (wallDir > 0 && !right.pressed) ||
+					 slideDistance > stickHeight ||
 					 melt_level / MELT_MAX < MELT_FOR_CLING) { // let go
 				release_wall();
 				applySpeed(elapsed);
@@ -430,6 +431,13 @@ void Player::wall_cling(Scene::Transform *target) {
 	slideSpeed = 0.0f;
 	stickTimer = STICK_TIME;
 
+	// Get the top of the wall: (height/2) + wall->position.z
+	float wall_top = (wall->scale.z / 2.0f) + wall->position.z;
+
+	// Get stick height along wall: wall->scale->z - (top of wall - collision->position.z)
+	stickHeight = wall->scale.z - (wall_top - collision->position.z);
+	slideDistance = 0.0f;
+
 	assert(wall->position.y - collision->position.y != 0.0f);
 	wallDir = copysign(1.0f, wall->position.y - collision->position.y);
 }
@@ -441,7 +449,11 @@ void Player::applySlideSpeed(float elapsed) {
     }
 
     // y-axis is the forward/backward direction and the x-axis is the right/left direction
-    collision->position -= glm::vec3(0.0f, 0.0f, slideSpeed * elapsed);
+	slideDistance += slideSpeed * elapsed;
+
+	float wall_bottom = wall->position.z - (wall->scale.z / 2.0f);
+	float offset_z = wall_bottom + stickHeight - slideDistance;
+    collision->position = glm::vec3(collision->position.x, collision->position.y, offset_z);
 }
 
 void Player::wall_jump() // "jump_time" is up and down
