@@ -114,6 +114,8 @@ void resume(void)
 	((PlayMode *)Mode::current.get())->vol_fade_rate = -2.0f;
 }
 
+
+
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
 					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
@@ -223,8 +225,6 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 			wine_bottles.emplace_back(&transform);
 		}
 	}
-	Scene::Transform *spawnTransform = spawn_positions[0];
-	spawnPos = glm::vec3(0.0f, spawnTransform[current_level].position.y, spawnTransform[current_level].position.z);
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
 	if (foundLevel) {
@@ -853,7 +853,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 		glUniform1fv(lit_color_texture_program->LIGHT_CUTOFF_float_array, lights, light_cutoff.data());
 	}
 
-	// scene.draw(light_to_clip_world);
+	scene.draw(light_camera_view);
 //draw shadows blobs 
 if (player->shadow_valid && player->shadow_form) {
     glEnable(GL_BLEND);
