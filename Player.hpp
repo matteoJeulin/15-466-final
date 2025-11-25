@@ -68,6 +68,8 @@ struct Player : public Character
     const float MELT_MAX = 5;
     float melt_level = 0;
     float melt_delta = MELT_MAX; // positive means melting, negative means cooling
+    float prev_melt_level = 0.0f;
+    bool had_full_melt = false;
 
     const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to grapple
     const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through

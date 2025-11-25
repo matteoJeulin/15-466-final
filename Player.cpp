@@ -15,6 +15,8 @@ Player::Player(PlayMode *_game) : Character(_game)
 
 void Player::update(float elapsed)
 {
+	float last_melet = melt_level;
+	prev_melt_level = last_melet;
 	// combine inputs into a move:
 	// std::cout << chomped << std::endl;
 	if (chomped) {
@@ -110,6 +112,7 @@ void Player::update(float elapsed)
 				jump.pressed = false;
 				charJump(jumpHeight, jumpAirTime, gravity);
 				locomotionState = (PlayerLocomotion)(locomotionState | PlayerLocomotion::Jumping);
+				AudioManager::play_event(AudioManager::Event::CheeseRegularJump);
 			}
 
 			// Apply inertia to get the player down to 0 speed.
@@ -202,8 +205,8 @@ void Player::update(float elapsed)
 				release_wall();
 				charJump(4.0f * height, jumpAirTime, gravity);
 				locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Jumping);
-				//AudioManager::play_cheese_jump_3D(collision->position, 2.0f, 3.0f);
-				AudioManager::play_cheese_jump(2.0f, 0.0f);
+				//AudioManager::play_cheese_jump(2.0f, 0.0f);
+				AudioManager::play_event(AudioManager::Event::CheeseWeakJump);
 				chomped = false;
 				mercyInvincTimer = 0.0f;
 			}
@@ -216,6 +219,7 @@ void Player::update(float elapsed)
 				release_wall();
 				charJump(8.0f * height, jumpAirTime, gravity);
 				locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Jumping);
+				AudioManager::play_event(AudioManager::Event::CheeseStrongJump);
 				chomped = false;
 				mercyInvincTimer = 0.0f;
 			}
@@ -272,6 +276,29 @@ void Player::update(float elapsed)
 			}
 		}
 	}
+
+	const float MELT_START = 2.0f;
+	const float FULL_MELT = 3.0f; 
+	const float RESOLIDIFY_THRESHOLD = 4.5f;
+
+	float current = melt_level;
+
+	// track if reached the melt range this cycle
+	if ((prev_melt_level < FULL_MELT) && (current >= FULL_MELT)) {
+		had_full_melt = true;
+	}
+
+	// melt sound when melt level from 2->3:
+	if ((prev_melt_level < MELT_START) && (current >= MELT_START)) {
+		AudioManager::play_event(AudioManager::Event::CheeseMelt, 1.0f, 0.0f);
+	}
+
+	// resolidify:
+	if (had_full_melt && (prev_melt_level >= RESOLIDIFY_THRESHOLD) && (current < RESOLIDIFY_THRESHOLD)) {
+		AudioManager::play_event(AudioManager::Event::CheeseResolidify, 1.0f, 0.0f);
+		had_full_melt = false; // reset for next melt cycle
+	}
+
 
 	//----------------------------------------
 	{ //
