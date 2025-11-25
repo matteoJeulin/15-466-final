@@ -17,7 +17,7 @@ void Player::update(float elapsed)
 	float last_melet = melt_level;
 	prev_melt_level = last_melet;
 	// combine inputs into a move:
-	std::cout << chomped << std::endl;
+	// std::cout << chomped << std::endl;
 	if (chomped) {
 		if (platform == nullptr || chompedTimer >= 0) {
 			applyKnockbackSpeed(elapsed);
@@ -70,6 +70,7 @@ void Player::update(float elapsed)
 			}
 			else {
 				// TODO: change angle as I fall
+				attach_grapple(grapple_point);
 				applySpeed(elapsed);
 			}
 		}
@@ -144,6 +145,16 @@ void Player::update(float elapsed)
 					std::cout << rat->collision->name << std::endl;
 					std::cout << "CHOMPED" << std::endl;
 					chomped = true;
+
+					if (locomotionState & Player::PlayerLocomotion::Grappling) {
+						assert(grapple_point != nullptr);
+						release_grapple();
+					}
+					if (locomotionState & Player::PlayerLocomotion::WallClinging) {
+						assert(wall != nullptr);
+						release_wall();
+					}
+
 					speed.y = copysign(maxSpeed / 2.0f, collision->position.y - rat->collision->position.y);
 					speed.z = CHOMP_VERT_KB_SPEED;
 					chompedTimer = CHOMP_AIR_TIME;
@@ -231,6 +242,14 @@ void Player::update(float elapsed)
 				else if (wall && (melt_level / MELT_MAX > MELT_FOR_CLING)) {
 					wall_cling(wall);
 				}
+			}
+		}
+
+		for (Scene::Transform *plat : game->wine_bottles)
+		{
+			if (collide(plat, true))
+			{
+				// TODO: Go to clear screen
 			}
 		}
 	}
@@ -402,8 +421,40 @@ bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) 
 	}
 
 	std::cout << "Found grapple_point " << best_point->name << "!\n";
+	attach_grapple(best_point);
 
-    // Set grapple_point
+    // // Set grapple_point
+	// grapple_point = best_point;
+	// locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Grappling);
+
+	// glm::vec2 rope_vector = glm::vec2(grapple_point->position.y - collision->position.y,
+	// 								  grapple_point->position.z - collision->position.z);
+	// grapple_length = std::max(glm::length(rope_vector), MIN_ROPE_LENGTH);
+	// glm::vec2 rope_dir = grapple_length > 0 ? glm::normalize(rope_vector) : glm::vec2(0.0f, 1.0f);
+	// grapple_angle = glm::angle(glm::vec2(0.0f, -1.0f), -rope_dir);
+	// grapple_angular_velocity = glm::length(speed) / grapple_length;
+
+	// assert(grapple_angle >= 0.0f && grapple_angle <= std::numbers::pi);
+	// assert(grapple_angular_velocity >= 0.0f);
+
+	// // determine which side I'm on so I know if my angle is positive or negative
+	// if (rope_dir[0] > 0) grapple_angle *= -1;
+
+	// // likewise, is my speed giving me positive or negative torque
+	// if ((speed.y * rope_vector[1]) - (speed.z * rope_vector[0]) < 0) grapple_angular_velocity *= -1;
+
+	// std::cout << "Attach angle = " << grapple_angle * 180.0f / std::numbers::pi << "\n";
+	// std::cout << "Attach ang. vel = " << grapple_angular_velocity << "\n";
+
+
+	// // speed.y = 0.0f;
+
+    // std::cout << "[Grappling] Attached to Grapple " << best_point->name << " (updated best point)\n";
+    return true;
+}
+
+void Player::attach_grapple(Scene::Transform *best_point) {
+	// Set grapple_point
 	grapple_point = best_point;
 	locomotionState = (Player::PlayerLocomotion)(locomotionState | Player::PlayerLocomotion::Grappling);
 
@@ -426,11 +477,9 @@ bool Player::try_grapple(const Ray& ray, std::vector<Scene::Transform*> points) 
 	std::cout << "Attach angle = " << grapple_angle * 180.0f / std::numbers::pi << "\n";
 	std::cout << "Attach ang. vel = " << grapple_angular_velocity << "\n";
 
-
 	// speed.y = 0.0f;
 
     std::cout << "[Grappling] Attached to Grapple " << best_point->name << " (updated best point)\n";
-    return true;
 }
 
 void Player::release_grapple() {

@@ -90,6 +90,7 @@ struct Player : public Character
     const float MIN_ROPE_LENGTH = height * 2;
     bool wasGrappling = false; // allows me to maintain momentum while preventing weird things when bonking on a corner
     bool try_grapple(const Ray& ray, std::vector<Scene::Transform*> points);
+    void attach_grapple(Scene::Transform *best_point);
     void release_grapple();
 
     /******************

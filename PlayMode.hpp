@@ -7,6 +7,9 @@
 #include <vector>
 #include <deque>
 #include <cmath>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <unordered_map>
 
 #include "Scene.hpp"
@@ -22,13 +25,14 @@
 #include "Stove.hpp"
 #include "MovingWall.hpp"
 #include "Button.hpp"
+#include "Level.hpp"
 
 
 struct PlayMode : Mode
 {
 	PlayMode();
 	virtual ~PlayMode();
-
+	
 	// functions called by main loop:
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
 	virtual void update(float elapsed) override;
@@ -65,7 +69,9 @@ struct PlayMode : Mode
 	std::vector<Scene::Transform *> bouncy_weak_platforms;
 	std::vector<Scene::Transform *> bouncy_strong_platforms;
 	std::vector<Scene::Transform *> grapple_crackers;
+	std::vector<Scene::Transform *> spawn_locations;
 	std::vector<MovingWall *> moving_walls;
+	std::vector<Scene::Transform *> wine_bottles;
 	std::vector<Rat *> rats;
 	std::unordered_map<Scene::Transform*, Rat*> rat_map;
 	StoveSystem stove;
@@ -88,14 +94,31 @@ struct PlayMode : Mode
 	std::string screen_text = "";
 
 	// stove:
-	int knob_state_1 = 0;
-	int knob_state_2 = 0;
+	// int knob_state_1 = 0;
+	// int knob_state_2 = 0;
 	GLuint stove_tint_lvl0 = 0, stove_tint_lvl1 = 0, stove_tint_lvl2 = 0, stove_tint_lvl3 = 0;
 	Scene::Drawable* stove_drawable = nullptr; 
 
+	// Level Information:
+	// Level contains rank information and spawn location
+	std::vector<Level> levels = {};
+	int current_level = 0;
+
+	// Should put the mode into play mode.
+	bool load_level(int lvl); // 0-indexed
+
 	// Game Timer (+UI)
-	float MAX_LEVEL_TIME = 120.0f; // TODO: A struct of some level class
-	float wine_remaining = MAX_LEVEL_TIME;
+	// To be set when the level is loaded
+	float S_RANK_TIME = 60.0f;
+	float A_RANK_TIME = 80.0f;
+	float B_RANK_TIME = 100.0f;
+	float C_RANK_TIME = 120.0f;
+	float D_RANK_TIME = 140.0f;
+	bool foundLevel = false;
+	std::string spawnLocName;
+	glm::vec3 spawnPos = glm::vec3();
+
+	float wine_remaining = D_RANK_TIME;
 	UIElement wine_bottle_ui;
 	float bottle_ui_pos_x = 0.9f;
 	float bottle_ui_pos_y = 0.6f;
