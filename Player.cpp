@@ -1,5 +1,6 @@
 #include "Player.hpp"
 #include "PlayMode.hpp"
+#include "MenuMode.hpp"
 
 #include "Mode.hpp"
 #include "iostream"
@@ -75,7 +76,6 @@ void Player::update(float elapsed)
 			}
 		}
 		else if (locomotionState & PlayerLocomotion::WallClinging) {
-			std::cout << "Direction = " << wallDir << "\n";
 			if (jump.pressed) { // wall jump
 				wall_jump();
 				applySpeed(elapsed);
@@ -239,7 +239,7 @@ void Player::update(float elapsed)
 						chomped = false;
 					}
 				}
-				else if (wall && (melt_level / MELT_MAX > MELT_FOR_CLING)) {
+				else if (wall && (melt_level / MELT_MAX > MELT_FOR_CLING) && game->current_level >= 1) {
 					wall_cling(wall);
 				}
 			}
@@ -249,7 +249,8 @@ void Player::update(float elapsed)
 		{
 			if (collide(plat, true))
 			{
-				// TODO: Go to clear screen
+				if (game->current_level < game->num_levels - 1) Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu));
+				else Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu));
 			}
 		}
 	}

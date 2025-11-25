@@ -102,10 +102,12 @@ struct PlayMode : Mode
 	// Level Information:
 	// Level contains rank information and spawn location
 	std::vector<Level> levels = {};
-	int current_level = 0;
+	static inline int current_level = 0;
+	static inline int num_levels = 2;
 
 	// Should put the mode into play mode.
-	bool load_level(int lvl); // 0-indexed
+	static void load_level(int lvl); // 0-indexed
+	static void load_next_level();
 
 	// Game Timer (+UI)
 	// To be set when the level is loaded

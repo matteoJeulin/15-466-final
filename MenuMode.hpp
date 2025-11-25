@@ -17,7 +17,8 @@ struct MenuMode : Mode
     {
         StartMenu,
         WinMenu,
-        LoseMenu
+        LoseMenu,
+        LevelClearMenu
     };
 
     MenuMode(MenuType menu);
