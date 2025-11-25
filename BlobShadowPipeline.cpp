@@ -13,8 +13,8 @@ Load< BlobShadowProgram > blob_shadow_program(LoadTagEarly, []() -> BlobShadowPr
     // build pipeline template:
     blob_shadow_pipeline.program = ret->program;
     blob_shadow_pipeline.CLIP_FROM_OBJECT_mat4 = ret->CLIP_FROM_OBJECT_mat4;
-    blob_shadow_pipeline.LIGHT_FROM_OBJECT_mat4x3 = -1;
-    blob_shadow_pipeline.LIGHT_FROM_NORMAL_mat3 = -1;
+    blob_shadow_pipeline.LIGHT_FROM_OBJECT_mat4x3 = 0;
+    blob_shadow_pipeline.LIGHT_FROM_NORMAL_mat3 = 0;
 
     // no textures needed, but pipeline.textures[0] can stay default
 

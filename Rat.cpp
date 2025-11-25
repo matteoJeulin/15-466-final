@@ -5,7 +5,7 @@
 
 Rat::Rat(PlayMode *_game) : Character(_game)
 {
-    createBlobShadow(_game);
+    // createBlobShadow();
 }
 
 void Rat::update(float elapsed)
@@ -72,5 +72,5 @@ void Rat::update(float elapsed)
     }
 
     //apply shadow 
-    applyBlobShadow(game);
+    // applyBlobShadow();
 }

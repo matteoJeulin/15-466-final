@@ -21,13 +21,13 @@ ShowMeshesMode::ShowMeshesMode(MeshBuffer const &buffer_) : buffer(buffer_) {
 		scene.transforms.emplace_back();
 		scene.drawables.emplace_back(&scene.transforms.back());
 		scene_drawable = &scene.drawables.back();
-
-		scene_drawable->pipeline = show_meshes_program_pipeline;
-		scene_drawable->pipeline.vao = vao;
+		Scene::Drawable::Pipeline pipe = scene_drawable->pipeline[Scene::Drawable::PipelineTypeDefault];
+		pipe = show_meshes_program_pipeline;
+		pipe.vao = vao;
 		//these will be updated by the mesh selection code:
-		scene_drawable->pipeline.type = GL_TRIANGLES;
-		scene_drawable->pipeline.start = 0;
-		scene_drawable->pipeline.count = 0;
+		pipe.type = GL_TRIANGLES;
+		pipe.start = 0;
+		pipe.count = 0;
 	}
 
 	//select first mesh in buffer:
@@ -162,16 +162,18 @@ void ShowMeshesMode::select_prev_mesh() {
 
 	if (f != buffer.meshes.end()) {
 		current_mesh_name = f->first;
-		scene_drawable->pipeline.type = f->second.type;
-		scene_drawable->pipeline.start = f->second.start;
-		scene_drawable->pipeline.count = f->second.count;
+		Scene::Drawable::Pipeline pipe = scene_drawable->pipeline[Scene::Drawable::PipelineTypeDefault];
+		pipe.type = f->second.type;
+		pipe.start = f->second.start;
+		pipe.count = f->second.count;
 		current_mesh_min = f->second.min;
 		current_mesh_max = f->second.max;
 	} else {
 		current_mesh_name = "";
-		scene_drawable->pipeline.type = GL_TRIANGLES;
-		scene_drawable->pipeline.start = 0;
-		scene_drawable->pipeline.count = 0;
+		Scene::Drawable::Pipeline pipe = scene_drawable->pipeline[Scene::Drawable::PipelineTypeDefault]; 
+		pipe.type = GL_TRIANGLES;
+		pipe.start = 0;
+		pipe.count = 0;
 		current_mesh_min = glm::vec3(0.0f);
 		current_mesh_max = glm::vec3(0.0f);
 	}
@@ -194,16 +196,18 @@ void ShowMeshesMode::select_next_mesh() {
 
 	if (f != buffer.meshes.end()) {
 		current_mesh_name = f->first;
-		scene_drawable->pipeline.type = f->second.type;
-		scene_drawable->pipeline.start = f->second.start;
-		scene_drawable->pipeline.count = f->second.count;
+		Scene::Drawable::Pipeline pipe = scene_drawable->pipeline[Scene::Drawable::PipelineTypeDefault];
+		pipe.type = f->second.type;
+		pipe.start = f->second.start;
+		pipe.count = f->second.count;
 		current_mesh_min = f->second.min;
 		current_mesh_max = f->second.max;
 	} else {
 		current_mesh_name = "";
-		scene_drawable->pipeline.type = GL_TRIANGLES;
-		scene_drawable->pipeline.start = 0;
-		scene_drawable->pipeline.count = 0;
+		Scene::Drawable::Pipeline pipe = scene_drawable->pipeline[Scene::Drawable::PipelineTypeDefault]; 
+		pipe.type = GL_TRIANGLES;
+		pipe.start = 0;
+		pipe.count = 0;
 		current_mesh_min = glm::vec3(0.0f);
 		current_mesh_max = glm::vec3(0.0f);
 	}

@@ -58,6 +58,7 @@ struct Scene {
 		enum PipelineType : uint32_t {
 			PipelineTypeDefault = 0, //...default drawing
 			PipelineTypeShadow = 1, //...drawing into a shadow map
+			PipelineTypeBlobShadow = 2 , //...drawing into a blob shadow
 			PipelineTypes //count of pipeline types
 		};
 
