@@ -11,6 +11,7 @@ Player::Player(PlayMode *_game) : Character(_game)
 {
 	drawable = nullptr;
 	set_heat_level(0);
+
 }
 
 void Player::update(float elapsed)
@@ -377,6 +378,8 @@ void Player::update(float elapsed)
 	}
 
 	// pause.pressed = false;
+	//updating shadow 
+	applyBlobShadow();
 }
 
 void Player::set_heat_level(int level) {

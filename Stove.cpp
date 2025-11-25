@@ -110,8 +110,8 @@ void StoveSystem::apply_plate_tint_for_level(int plate_index, int level) {
     if (!p.d) return; // non-rendered plate
 
     int L = std::clamp(level, 0, 3);
-    p.d->pipeline.textures[0].texture = tint_lvl_[L];
-    p.d->pipeline.textures[0].target = GL_TEXTURE_2D;
+    p.d->pipeline[0].textures[0].texture = tint_lvl_[L];
+    p.d->pipeline[0].textures[0].target = GL_TEXTURE_2D;
     p.level = L;
 }
 

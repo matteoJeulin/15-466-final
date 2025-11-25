@@ -7,10 +7,13 @@
 #include "Scene.hpp"
 #include "DynamicMeshBuffer.hpp"
 #include "Mesh.hpp"
+#include "GL.hpp"
+
 
 #include <vector>
 #include <deque>
 #include <cmath>
+
 
 // Forward declaration to break circular dependency
 struct PlayMode;
@@ -58,4 +61,12 @@ struct Character
     void charJump(float char_jump_height, float jump_time, float jump_grav);
 
     void applySpeed(float elapsed);
+
+    //blob shadow
+    Scene::Transform *shadow_form = nullptr;
+    bool shadow_valid = false;
+    GLuint shadow_vao = 0;
+
+    GLuint createBlobShadow();
+    void applyBlobShadow();
 };

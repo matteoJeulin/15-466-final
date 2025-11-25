@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 			std::cerr << "ERROR loading mesh buffer '" << meshes_file << "': " << e.what() << std::endl;
 			usage = true;
 			buffer = nullptr;
-		}
+		} 
 	}
 	Scene *scene = nullptr;
 	if (scene_file != "") {
@@ -116,13 +116,13 @@ int main(int argc, char **argv) {
 
 				scene.drawables.emplace_back(transform);
 				Scene::Drawable &drawable = scene.drawables.back();
+				Scene::Drawable::Pipeline &pipe = drawable.pipeline[Scene::Drawable::PipelineTypeDefault];
+				pipe  = show_scene_program_pipeline;
 
-				drawable.pipeline = show_scene_program_pipeline;
-
-				drawable.pipeline.vao = buffer_vao;
-				drawable.pipeline.type = mesh.type;
-				drawable.pipeline.start = mesh.start;
-				drawable.pipeline.count = mesh.count;
+				pipe.vao = buffer_vao;
+				pipe.type = mesh.type;
+				pipe.start = mesh.start;
+				pipe.count = mesh.count;
 
 			});
 		} catch (std::exception &e) {

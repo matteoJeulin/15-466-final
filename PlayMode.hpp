@@ -132,4 +132,8 @@ struct PlayMode : Mode
 	DynamicSoundLoop pause_music;
 	float pause_vol = 0.0f;
 	float vol_fade_rate = -2.0f; // per second
+
+
+	//shadow
+	DynamicMeshBuffer blob_mesh;
 };

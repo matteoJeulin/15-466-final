@@ -1,5 +1,10 @@
 #include "Character.hpp"
 #include "PlayMode.hpp"
+#include "RayCast.hpp"
+#include "BlobShadowPipeline.hpp"
+#include "DynamicMeshBuffer.hpp"
+#include "LitColorTextureProgram.hpp"
+
 
 Character::Character(PlayMode *_game) : game(_game)
 {
@@ -147,3 +152,110 @@ void Character::applySpeed(float elapsed)
     // y-axis is the forward/backward direction and the x-axis is the right/left direction
     collision->position += speed.y * glm::vec3(0.0f, 1.0f, 0.0f) * elapsed + speed.z * glm::vec3(0.0f, 0.0f, 1.0f) * elapsed;
 }
+
+
+GLuint Character::createBlobShadow(){
+
+    // Static storage for blob mesh:
+    DynamicMeshBuffer &blob_mesh = this->game->blob_mesh;
+    GLuint blob_vao = 0;
+
+    // Make VAO for the *lit_color_texture_program* 
+    blob_vao = blob_mesh.make_vao_for_program(blob_shadow_program->program);
+    std::cout << "Created blob shadow VAO: " << blob_vao << std::endl;
+    //2. Create a transform for the shadow:
+    this->game->scene.transforms.emplace_back();
+    shadow_form = &this->game->scene.transforms.back();
+    shadow_form->name = "BlobShadow_" + collision->name;
+    std::cout << "shadow name" << shadow_form << std::endl;
+
+    // initial placement; will be overwritten each frame by applyBlobShadow:
+    shadow_form->position = collision->position;
+    shadow_form->rotation = glm::quat();
+    shadow_form->scale    = glm::vec3(2.0f, 2.0f, 1.0f); // blob radius in world units
+    std::cout << "start drawable" << std::endl;
+    // 3. Create a drawable attached to that transform:
+    this->game->scene.drawables.emplace_back(shadow_form);
+    Scene::Drawable &drawable = this->game->scene.drawables.back();
+    drawable.pipeline[2] = blob_shadow_pipeline;
+    drawable.pipeline[2].vao   = blob_vao;
+    drawable.pipeline[2].type  = GL_TRIANGLES;
+    drawable.pipeline[2].start = 0;
+    drawable.pipeline[2].count = 6;
+
+    // set blob color to a dark translucent “shadow”:
+    drawable.pipeline[2].set_uniforms = []() {
+        glUniform4f(blob_shadow_program->BLOB_COLOR_vec4,
+                    1.0f, 1.0f, 1.0f, 0.5f); // black, 50% alpha
+    };
+    shadow_valid = false;
+    return blob_vao;
+}
+void Character::applyBlobShadow()
+{
+    if (!shadow_form) {
+        shadow_vao = createBlobShadow();
+    }
+
+    glm::vec3 origin = collision->position+glm::vec3(0.0f, 0.0f, 1.0f);
+    
+    glm::vec3 dir = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    Ray r;
+    r.origin = origin;
+    r.dir = dir;
+
+    float best_t = std::numeric_limits<float>::max();
+    bool found = false;
+    Scene::Transform *hit_transform = nullptr;
+    glm::vec3 hit_pos;
+
+    //loop through all collison objects and check what objects we are hitting: 
+    auto test_transform = [&](Scene::Transform *t) {
+            if (!t) return;
+            float tval;
+            glm::vec3 hit;
+            if (ray_vs_rotated_platform_box(r, t, &tval, &hit) && tval < best_t) {
+                best_t = tval;
+                found = true;
+                hit_transform = t;
+            }
+        };
+
+    // test against collision platforms + grates + plates etc:
+    for (auto *t : this->game->collision_platforms) test_transform(t);
+    for (auto *t : this->game->bouncy_weak_platforms) test_transform(t);
+    for (auto *t : this->game->bouncy_strong_platforms) test_transform(t);
+    for (auto *t : this->game->collision_plates) test_transform(t);
+    for (auto *t : this->game->grates) test_transform(t);
+
+    if (found && shadow_form) {
+
+        // local normal on the mesh:
+        glm::vec3 local_normal(0.0f, 0.0f, 1.0f);
+        glm::mat4x3 world_from_local = hit_transform->make_world_from_local();
+        glm::mat3 M = glm::mat3(world_from_local);
+        glm::mat3 normal_matrix = glm::transpose(glm::inverse(M));
+        glm::vec3 world_normal = glm::normalize(normal_matrix * local_normal);
+
+        hit_pos = origin + best_t * dir;
+
+        // assume ground normal is roughly +Z (0,0,1) for now
+        glm::vec3 normal = world_normal;
+
+        // place the shadow just above the ground:
+        shadow_form->position = hit_pos + normal * 0.01f;
+        // orient so its local +Z points along the normal:
+        shadow_form->rotation = -glm::rotation(glm::vec3(0,0,1), world_normal);
+        // scale blob size:
+        shadow_form->scale = glm::vec3(5.0f * (2.2/std::sqrt(best_t)), 5.0f *(2.2/std::sqrt(best_t)), 5.0f);
+
+        shadow_valid = true;
+        // std::cout << hit_transform->name <<" position:" << hit_pos.x <<","<< hit_pos.y <<","<< hit_pos.z <<" with normals "<< shadow_form->position.x <<","<< shadow_form->position.y <<","<< shadow_form->position.z << std::endl;
+        std::cout << "distance:" << best_t << std::endl;
+    } else if (shadow_form) {
+        shadow_valid = false;
+    }
+}
+
+

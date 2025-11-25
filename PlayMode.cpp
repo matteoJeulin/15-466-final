@@ -3,6 +3,9 @@
 #include "Mode.hpp"
 #include "RayCast.hpp"
 #include "LitColorTextureProgram.hpp"
+#include "ShadowedColorTextureProgram.hpp"
+#include "DepthOnlyProgram.hpp"
+#include "BlobShadowPipeline.hpp"
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -24,15 +27,42 @@
 #include <algorithm>
 
 GLuint level_meshes_for_lit_color_texture_program = 0;
+// define the global instance:
+Framebuffers fbs;
+
+
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 							  {
 	MeshBuffer const *ret = new MeshBuffer(data_path("Cheese.pnct"));
 	level_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret; });
 
+// Load< GLuint > meshes_for_shadowed_color_texture_program(LoadTagDefault, [](){
+// 	return new GLuint(level_meshes->make_vao_for_program(shadowed_color_texture_program->program));
+// });
+
+// Load< GLuint > meshes_for_depth_only_program(LoadTagDefault, [](){
+// 	return new GLuint(level_meshes->make_vao_for_program(depth_only_program->program));
+// });
+
+
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
+
+
+        // static Scene::Drawable::Pipeline texture_pipeline = [&]() {
+        //     Scene::Drawable::Pipeline p = shadowed_color_texture_program_pipeline;
+        //     p.vao = *meshes_for_shadowed_color_texture_program;
+        //     return p;
+        // }();
+
+        // static Scene::Drawable::Pipeline depth_pipeline = [&]() {
+        //     Scene::Drawable::Pipeline p = depth_only_program_pipeline;
+        //     p.vao = *meshes_for_depth_only_program;
+        //     return p;
+        // }();
+
 												if (( transform->name == "Cheese_Wheel")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
@@ -43,15 +73,28 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												 scene.drawables.emplace_back(transform);
 												 Scene::Drawable &drawable = scene.drawables.back();
 
-												 drawable.pipeline = lit_color_texture_program_pipeline;
+												 drawable.pipeline[0] = lit_color_texture_program_pipeline;
+												 drawable.pipeline[0].vao = level_meshes_for_lit_color_texture_program;
+												 drawable.pipeline[0].type = mesh.type;
+												 drawable.pipeline[0].start = mesh.start;
+												 drawable.pipeline[0].count = mesh.count; 
 
-												 drawable.pipeline.vao = level_meshes_for_lit_color_texture_program;
-												 drawable.pipeline.type = mesh.type;
-												 drawable.pipeline.start = mesh.start;
-												 drawable.pipeline.count = mesh.count; 
+												
+											// // COLOR (lit) pipeline:
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault] = texture_pipeline;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault].type  = mesh.type;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault].start = mesh.start;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeDefault].count = mesh.count;
+
+											// // SHADOW (depth) pipeline:
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow] = depth_pipeline;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow].type  = mesh.type;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow].start = mesh.start;
+											// drawable.pipeline[Scene::Drawable::PipelineTypeShadow].count = mesh.count;
+
 
 												 float roughness = 1.0f; //where can we get roughness of the material 
-												 drawable.pipeline.set_uniforms = [roughness](){
+												 drawable.pipeline[0].set_uniforms = [roughness](){
 													glUniform1f(lit_color_texture_program->ROUGHNESS_float, roughness);
 		};
 												
@@ -181,7 +224,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		}
 	}
 	Scene::Transform *spawnTransform = spawn_positions[0];
-	spawnPos = glm::vec3(0.0f, spawnTransform[0].position.y, spawnTransform[0].position.z);
+	spawnPos = glm::vec3(0.0f, spawnTransform[current_level].position.y, spawnTransform[current_level].position.z);
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
 	if (foundLevel) {
@@ -244,11 +287,46 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	// change static to dynamic mesh
 	player->cheese_lit_color_texture_program = player->initialMeshBuffer.make_vao_for_program(lit_color_texture_program->program);
 	player->melted_cheese_lit_color_texture_program = player->initialMeshBuffer.make_vao_for_program(lit_color_texture_program->program);
-	player->drawable->pipeline.vao = player->cheese_lit_color_texture_program;
-	player->drawable->pipeline.type = player->mesh->type;
-	player->drawable->pipeline.start = 0; // Starts from 0 in the new buffer
-	player->drawable->pipeline.count = player->mesh->count;
+	player->drawable->pipeline[0].vao = player->cheese_lit_color_texture_program;
+	player->drawable->pipeline[0].type = player->mesh->type;
+	player->drawable->pipeline[0].start = 0; // Starts from 0 in the new buffer
+	player->drawable->pipeline[0].count = player->mesh->count;
 
+
+	//blob shadow mesh
+	 // Build a unit quad in the XY plane at z = 0, centered at origin.
+    // Local +Z is up (0,0,1) so your rotation-from-normal logic works.
+    std::vector<DynamicMeshBuffer::Vertex> verts;
+    verts.reserve(6);
+
+    auto make_vertex = [](float x, float y, float u, float v) -> DynamicMeshBuffer::Vertex {
+        DynamicMeshBuffer::Vertex vert;
+        vert.Position = glm::vec3(x, y, 0.0f);          // in X-Y plane
+        vert.Normal   = glm::vec3(0.0f, 0.0f, 1.0f);    // up
+        vert.Color    = glm::u8vec4(0xff, 0xff, 0xff, 0xff); // white (ignored by blob branch if you want)
+        vert.TexCoord = glm::vec2(u, v);                // [0,1] range
+        return vert;
+    };
+
+    // Quad corners: (-1,-1), (1,-1), (1,1), (-1,1)
+    DynamicMeshBuffer::Vertex v0 = make_vertex(-1.0f, -1.0f, 0.0f, 0.0f);
+    DynamicMeshBuffer::Vertex v1 = make_vertex( 1.0f, -1.0f, 1.0f, 0.0f);
+    DynamicMeshBuffer::Vertex v2 = make_vertex( 1.0f,  1.0f, 1.0f, 1.0f);
+    DynamicMeshBuffer::Vertex v3 = make_vertex(-1.0f,  1.0f, 0.0f, 1.0f);
+
+    // Two triangles: (0,1,2) and (0,2,3)
+    verts.push_back(v0);
+    verts.push_back(v1);
+    verts.push_back(v2);
+
+    verts.push_back(v0);
+    verts.push_back(v2);
+    verts.push_back(v3);
+
+    // Upload once:
+    blob_mesh.set(verts.data(), verts.size(), GL_STATIC_DRAW);
+
+	//UI seteup 
 	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
 	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 
@@ -264,14 +342,14 @@ PlayMode::~PlayMode()
 	glDeleteVertexArrays(1, &player->cheese_lit_color_texture_program);
 	player->cheese_lit_color_texture_program = 0;
 
-	if (stove_tint_lvl0)
-		glDeleteTextures(1, &stove_tint_lvl0);
-	if (stove_tint_lvl1)
-		glDeleteTextures(1, &stove_tint_lvl1);
-	if (stove_tint_lvl2)
-		glDeleteTextures(1, &stove_tint_lvl2);
-	if (stove_tint_lvl3)
-		glDeleteTextures(1, &stove_tint_lvl3);
+	glDeleteVertexArrays(1, &player->shadow_vao);
+	player->shadow_vao = 0;
+	player->shadow_form = nullptr;
+
+	if (stove_tint_lvl0) glDeleteTextures(1, &stove_tint_lvl0);
+	if (stove_tint_lvl1) glDeleteTextures(1, &stove_tint_lvl1);
+	if (stove_tint_lvl2) glDeleteTextures(1, &stove_tint_lvl2);
+	if (stove_tint_lvl3) glDeleteTextures(1, &stove_tint_lvl3);
 
 	Sound::stop_all_samples();
 }
@@ -514,7 +592,202 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	// for mouse
 	last_drawable_px = drawable_size;
 
-	// set light camera transform and aspect ratio
+
+// 	glm::uvec2 shadow_atlas_size = glm::uvec2(2048, 2048);
+//     glm::uvec2 shadow_tiles = glm::uvec2(4, 4); // must be >= MAX_LIGHTS tiles total
+
+// 	fbs.allocate(drawable_size, shadow_atlas_size, shadow_tiles);
+
+//     auto tileSize = fbs.tile_size();
+//     glm::uvec2 tiles = fbs.shadow_tiles;
+
+//     // glUseProgram(depth_only_program->program);
+
+//     // --- build list of shadow-casting lights from scene.lights ---
+//     static constexpr uint32_t MAX_SHADOW_LIGHTS = 8;
+
+//     std::vector<Scene::Light const*> shadow_lights;
+// 	shadow_lights.reserve(MAX_SHADOW_LIGHTS);
+
+
+//    for (auto const &L : scene.lights) {
+//         if (L.type != Scene::Light::Spot) continue;       // only spots get shadows (you can relax this)
+//         // if you have a "casts_shadows" flag, check it here too.
+//         shadow_lights.push_back(&L);
+//         if (shadow_lights.size() >= MAX_SHADOW_LIGHTS) break;
+//     }
+
+//     uint32_t shadow_light_count = uint32_t(shadow_lights.size());
+
+//     // --- SHADOW PASS: render all these lights into atlas ---
+//     glBindFramebuffer(GL_FRAMEBUFFER, fbs.shadow_fb);
+//     glViewport(0, 0, fbs.shadow_atlas_size.x, fbs.shadow_atlas_size.y);
+
+//     glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+//     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+//     glEnable(GL_DEPTH_TEST);
+//     glDisable(GL_BLEND);
+
+//     glCullFace(GL_FRONT);
+//     glEnable(GL_CULL_FACE);
+
+//     for (uint32_t idx = 0; idx < shadow_light_count; ++idx) {
+
+//         if (idx >= tiles.x * tiles.y) break; // safety: ran out of tiles
+// 		Scene::Light const *light = shadow_lights[idx];
+
+//         uint32_t tile_x = idx % tiles.x;
+//         uint32_t tile_y = idx / tiles.x;
+
+//         GLint x = tile_x * tileSize.x;
+//         GLint y = tile_y * tileSize.y;
+
+//         glViewport(x, y, tileSize.x, tileSize.y);
+
+//         scene.draw(*light, Scene::Drawable::PipelineTypeShadow);
+//     }
+
+//     glDisable(GL_CULL_FACE);
+//     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+//     GL_ERRORS();
+
+// 	glBindFramebuffer(GL_FRAMEBUFFER, 0); // (or fbs.fb if you want offscreen)
+//     glViewport(0, 0, drawable_size.x, drawable_size.y);
+	
+// 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+// 	//set up basic OpenGL state:
+// 	glEnable(GL_DEPTH_TEST);
+// 	glEnable(GL_BLEND);
+// 	glBlendEquation(GL_FUNC_ADD);
+// 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+// 	//set up light positions:
+// 	glUseProgram(shadowed_color_texture_program->program);
+
+// 	glm::mat4 world_to_clip =
+//         camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
+
+//     // --- use shadowed lighting shader ---
+//     glUseProgram(shadowed_color_texture_program->program);
+
+//     // sun/sky (you can tweak these)
+//     glUniform3fv(shadowed_color_texture_program->sun_color_vec3, 1,
+//                  glm::value_ptr(glm::vec3(0.0f, 0.0f, 0.0f)));
+//     glUniform3fv(shadowed_color_texture_program->sun_direction_vec3, 1,
+//                  glm::value_ptr(glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f))));
+//     glUniform3fv(shadowed_color_texture_program->sky_color_vec3, 1,
+//                  glm::value_ptr(glm::vec3(0.2f, 0.2f, 0.3f)));
+//     glUniform3fv(shadowed_color_texture_program->sky_direction_vec3, 1,
+//                  glm::value_ptr(glm::vec3(0.0f, 0.0f, 1.0f)));
+
+//     // bind shadow atlas depth texture to unit 1 for sampler2DShadow
+//     glActiveTexture(GL_TEXTURE1);
+//     glBindTexture(GL_TEXTURE_2D, fbs.shadow_depth_tex);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+//     glActiveTexture(GL_TEXTURE0);
+
+// 	glm::mat4 spot_from_light[MAX_SHADOW_LIGHTS];
+// glm::vec3 spot_position[MAX_SHADOW_LIGHTS];
+// glm::vec3 spot_direction[MAX_SHADOW_LIGHTS];
+// glm::vec3 spot_color[MAX_SHADOW_LIGHTS];
+// glm::vec2 spot_outer_inner[MAX_SHADOW_LIGHTS];
+
+
+// glm::vec2 atlas_scale(1.0f / float(tiles.x), 1.0f / float(tiles.y));
+
+// glm::mat4 bias(
+//     0.5f, 0.0f, 0.0f, 0.5f,
+//     0.0f, 0.5f, 0.0f, 0.5f,
+//     0.0f, 0.0f, 0.5f, 0.5f,
+//     0.0f, 0.0f, 0.0f, 1.0f
+// );
+
+// int spot_count = static_cast<int>(shadow_light_count);
+
+// for (int i = 0; i < spot_count; ++i) {
+//     Scene::Light const *light = shadow_lights[i];
+
+//     glm::mat4 light_clip_from_world =
+//         light->make_projection() *
+//         glm::mat4(light->transform->make_local_from_world());
+
+//     uint32_t tile_x = uint32_t(i) % tiles.x;
+//     uint32_t tile_y = uint32_t(i) / tiles.x;
+
+//     glm::vec2 atlas_offset(
+//         tile_x * atlas_scale.x,
+//         tile_y * atlas_scale.y
+//     );
+
+//     glm::mat4 atlas(
+//         atlas_scale.x, 0.0f,         0.0f, atlas_offset.x,
+//         0.0f,         atlas_scale.y, 0.0f, atlas_offset.y,
+//         0.0f,         0.0f,          1.0f, 0.0f,
+//         0.0f,         0.0f,          0.0f, 1.0f
+//     );
+
+//     spot_from_light[i] = atlas * bias * light_clip_from_world;
+
+//     glm::mat4 world_from_light = light->transform->make_world_from_local();
+//     spot_position[i] = glm::vec3(world_from_light[3]);
+//     spot_direction[i] = glm::vec3(-world_from_light[2]);
+//     spot_color[i] = light->energy;
+//     spot_outer_inner[i] = glm::vec2(
+//         std::cos(0.5f * light->spot_fov),
+//         std::cos(0.85f * 0.5f * light->spot_fov)
+//     );
+// }
+
+// glUniform1i(shadowed_color_texture_program->spot_count_int, spot_count);
+
+//  if (spot_count > 0) {
+//         glUniformMatrix4fv(
+//             shadowed_color_texture_program->SPOT_FROM_LIGHT_mat4,
+//             spot_count,
+//             GL_FALSE,
+//             glm::value_ptr(spot_from_light[0])
+//         );
+
+//         glUniform3fv(
+//             shadowed_color_texture_program->spot_position_vec3,
+//             spot_count,
+//             glm::value_ptr(spot_position[0])
+//         );
+
+//         glUniform3fv(
+//             shadowed_color_texture_program->spot_direction_vec3,
+//             spot_count,
+//             glm::value_ptr(spot_direction[0])
+//         );
+
+//         glUniform3fv(
+//             shadowed_color_texture_program->spot_color_vec3,
+//             spot_count,
+//             glm::value_ptr(spot_color[0])
+//         );
+
+//         glUniform2fv(
+//             shadowed_color_texture_program->spot_outer_inner_vec2,
+//             spot_count,
+//             glm::value_ptr(spot_outer_inner[0])
+//         );
+//     }
+
+//     // now draw the scene with shadowed_color_texture_program_pipeline:
+//     scene.draw(world_to_clip); // make sure Scene uses shadowed_color_texture_program_pipeline for lit objects
+
+//     glUseProgram(0);
+	/* Utilied boilerplate code for forwardlighting materials 
+	FowardDrawMode
+	https://github.com/15-466/15-466-lighting
+	*/
+	
+	// // set light camera transform and aspect ratio
 	glm::vec3 eye = camera->transform->make_world_from_local()[3];
 	glm::mat4 light_camera_view = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
 
@@ -524,8 +797,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	//clamp lights to maximum lights allowed by shader:
 	lights = std::min< uint32_t >(lights, LitColorTextureProgram::MaxLights);
 
-	// std::cout << "Number of lights: " << lights << std::endl;
-
 	std::vector< int32_t > light_type; light_type.reserve(lights);
 	std::vector< glm::vec3 > light_location; light_location.reserve(lights);
 	std::vector< glm::vec3 > light_direction; light_direction.reserve(lights);
@@ -534,6 +805,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	for (auto const &light : scene.lights) {
 		glm::mat4 light_to_world = light.transform->make_world_from_local();
+
+		
 		//set up lighting information for this light:
 		light_location.emplace_back(glm::vec3(light_to_world[3]));
 		light_direction.emplace_back(glm::vec3(-light_to_world[2]));
@@ -557,14 +830,13 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 		if (light_type.size() == lights) break;
 	}
 
-	GL_ERRORS();
-	
 	//--- actual drawing ---
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//upload light uniforms:
 	glUseProgram(lit_color_texture_program->program);
@@ -581,9 +853,33 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 		glUniform1fv(lit_color_texture_program->LIGHT_CUTOFF_float_array, lights, light_cutoff.data());
 	}
 
+	// scene.draw(light_to_clip_world);
+//draw shadows blobs 
+if (player->shadow_valid && player->shadow_form) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE); // don't overwrite depth buffer
 
+    glUseProgram(blob_shadow_program->program);
 
-	scene.draw(light_camera_view);
+    // compute CLIP_FROM_OBJECT for the blob:
+    glm::mat4 world_from_object = glm::mat4(player->shadow_form->make_world_from_local());
+    glm::mat4 clip_from_object  = light_camera_view * world_from_object;
+
+    glUniformMatrix4fv(blob_shadow_program->CLIP_FROM_OBJECT_mat4,
+                       1, GL_FALSE, glm::value_ptr(clip_from_object));
+
+    // simple dark color:
+    glUniform4f(blob_shadow_program->BLOB_COLOR_vec4,
+                0.0f, 0.0f, 0.0f, 1.0f); // black, 50% alpha
+
+    glBindVertexArray(player->shadow_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6); // our quad
+
+    glBindVertexArray(0);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
+}
 
 	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)

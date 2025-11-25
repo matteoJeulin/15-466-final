@@ -3,6 +3,10 @@
 #include "gl_compile_program.hpp"
 #include "gl_errors.hpp"
 
+/* Utilied boilerplate code for forwardlighting materials 
+https://github.com/15-466/15-466-lighting
+*/
+
 Scene::Drawable::Pipeline lit_color_texture_program_pipeline;
 
 Load< LitColorTextureProgram > lit_color_texture_program(LoadTagEarly, []() -> LitColorTextureProgram const * {
