@@ -7,6 +7,9 @@
 // The 'MenuMode' mode shows menus:
 #include "MenuMode.hpp"
 
+// The intro 'GP25' show intro scnee
+#include "GP25IntroMode.hpp"
+
 // For asset loading:
 #include "Load.hpp"
 
@@ -130,8 +133,8 @@ int main(int argc, char **argv)
 
 		//------------ create game mode + make current --------------
 		// Mode::set_current(std::make_shared<PlayMode>());
-		Mode::set_current(std::make_shared<MenuMode>(MenuMode::MenuType::StartMenu));
-
+		Mode::set_current(std::make_shared< GP25IntroMode >( [](){Mode::set_current(std::make_shared<MenuMode>(MenuMode::MenuType::StartMenu));}));
+		
 		//------------ main loop ------------
 
 		// this inline function will be called whenever the window is resized,
