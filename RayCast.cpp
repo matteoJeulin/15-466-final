@@ -2,6 +2,7 @@
 
 #include <string>
 #include <algorithm>
+#include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
 // code adapted from https://medium.com/@logandvllrd/how-to-pick-a-3d-object-using-raycasting-in-c-39112aed1987
@@ -60,7 +61,7 @@ void world_box(Scene::Transform* t, glm::vec3& center, glm::vec3& half)
 	glm::vec3 ay = glm::abs(Y);
 	glm::vec3 az = glm::abs(Z);
 
-	half = (ax + ay + az) * 0.5f;
+	half = (ax + ay + az) * 0.95f;
 }
 
 bool ray_vs_rotated_platform_box(
