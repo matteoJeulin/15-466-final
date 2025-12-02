@@ -164,7 +164,8 @@ const game_names = [
 	maek.CPP('MovingWall.cpp'),
 	maek.CPP('MenuMode.cpp'),
 	maek.CPP('Button.cpp'),
-	maek.CPP('AudioManager.cpp')
+	maek.CPP('AudioManager.cpp'),
+	maek.CPP('GP25IntroMode.cpp')
 ];
 
 const common_names = [

@@ -933,5 +933,6 @@ void PlayMode::load_level(int lvl) {
 }
 
 void PlayMode::load_next_level() {
-	PlayMode::load_level(current_level + 1);
+
+	PlayMode::load_level((int)current_level + 1);
 }
