@@ -6,6 +6,8 @@
 #include "ShadowedColorTextureProgram.hpp"
 #include "DepthOnlyProgram.hpp"
 #include "BlobShadowPipeline.hpp"
+#include "SoftBody.hpp"
+#include "Framebuffers.hpp"
 
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
@@ -28,7 +30,7 @@
 
 GLuint level_meshes_for_lit_color_texture_program = 0;
 // define the global instance:
-Framebuffers fbs;
+Framebuffers_shadows fbs;
 
 
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
@@ -63,7 +65,7 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
         //     return p;
         // }();
 
-												if (( transform->name == "Cheese_Wheel") || (transform->name.substr(0, 5) == "Grate")) {
+												if (( transform->name == "Cheese_Wheel") ||(transform->name.substr(0, 5) == "Grate")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
@@ -291,6 +293,8 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	player->drawable->pipeline[0].type = player->mesh->type;
 	player->drawable->pipeline[0].start = 0; // Starts from 0 in the new buffer
 	player->drawable->pipeline[0].count = player->mesh->count;
+
+	player->cheese_body.init(initial_vertices);
 
 
 	//blob shadow mesh
@@ -586,6 +590,8 @@ void PlayMode::update(float elapsed)
 void PlayMode::draw(glm::uvec2 const &drawable_size)
 {
 
+	//make sure framebuffers are the same size as the window:
+	framebuffers.realloc(drawable_size);
 	// update camera aspect ratio for drawable:
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 
@@ -853,8 +859,18 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 		glUniform1fv(lit_color_texture_program->LIGHT_CUTOFF_float_array, lights, light_cutoff.data());
 	}
 
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffers.hdr_fb);
+
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
+
 	scene.draw(light_camera_view);
-//draw shadows blobs 
+
+	//draw shadows blobs 
 if (player->shadow_valid && player->shadow_form) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -880,6 +896,16 @@ if (player->shadow_valid && player->shadow_form) {
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 }
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//apply a bloom effect:
+	framebuffers.add_bloom();
+
+	//copy scene to main window framebuffer:
+	framebuffers.tone_map();
+
+
 
 	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)

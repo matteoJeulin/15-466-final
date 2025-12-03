@@ -256,10 +256,7 @@ void Player::update(float elapsed)
 		}
 	}
 
-	float rotation_angle = speed.y * elapsed;
 
-	glm::quat rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
-	theta = theta * rotation;
 
 	// Melt Logic
 	{
@@ -300,6 +297,15 @@ void Player::update(float elapsed)
 		had_full_melt = false; // reset for next melt cycle
 	}
 
+	float rotation_angle = speed.y * elapsed;
+
+	glm::quat rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
+
+	if (melt_level <= FULL_MELT){
+		theta = theta * rotation;
+	}
+	
+
 
 	//----------------------------------------
 	{ //
@@ -322,7 +328,89 @@ void Player::update(float elapsed)
 		float melt_factor = (1.0f - melt_percentage_level);
 		float flow = (1.0f + melt_factor * cheese_spread);
 
-		// Gemnin chat
+		verticesCpu = initialVerticesCpu;
+    
+    {
+    // // Call soft body update
+    // cheese_body.update(elapsed, 
+    //                    collision->position, 
+    //                    melt_factor, // Using the computed melt factor
+    //                    gravity, 
+    //                    platform != nullptr, 
+    //                    game->collision_platforms, 
+    //                    game->grates);
+                       
+    // // Retrieve the new positions from the soft body (assuming a new getter exists)
+    // const auto& new_softbody_positions = cheese_body.get_mass_point_positions();
+
+    
+    // // 3. APPLY ROTATION, MELT, AND SOFTBODY DEFORMATION
+    
+    // // Ensure the size matches before iterating
+    // if (new_softbody_positions.size() == verticesCpu.size()) {
+    //     for (size_t i = 0; i < verticesCpu.size(); ++i)
+    //     {
+    //         auto &vertex = verticesCpu[i];
+            
+    //         // A. Apply Character Rotation (theta) to the initial position (or softbody position)
+    //         // It's cleaner to have the softbody work in the local frame and then apply rotation here.
+            
+    //         // B. Apply Melt-Based Color/Radial Expansion (still needed for melt effect)
+            
+    //         // --- Melt and Color Logic (Copied from your existing code) ---
+    //         glm::vec3 pos = new_softbody_positions[i]; // Use softbody position for melt logic below
+    //         glm::vec4 original_color_f = glm::vec4(vertex.Color);
+
+    //         // Re-calculate melt parameters based on the new, deformed position (pos)
+    //         float melt_z_percent = ((pos.z - cheese_base) / (height_range));
+
+    //         // Radial wave/flow logic (This should ideally be handled by the SoftBody spring physics)
+    //         // Since SoftBody is handling deformation, we only keep the color and rotation here.
+            
+
+    //         if (melt_z_percent < melt_factor)
+    //         {
+    //             // This radial expansion is now redundant/conflicting with the SoftBody physics
+    //             // Instead, we only handle the coloring and use the SoftBody position.
+    //             glm::vec4 final_color_f = glm::mix(original_color_f, TARGET_BROWN, (1.0f - (melt_factor * melt_factor)));
+    //             vertex.Color = glm::u8vec4(final_color_f);
+    //         }
+    //         // --- End Melt and Color Logic ---
+            
+            
+    //         // C. Final Position Assignment (Integration)
+    //         // Apply the softbody position and character rotation (theta)
+    //         // The softbody position is relative to the character center (0,0,0)
+            
+    //         // Apply SoftBody Position (which is relative to the character's local origin)
+    //         glm::vec3 softbody_local_pos = new_softbody_positions[i];
+            
+    //         // The final vertex position in the mesh buffer:
+    //         // 1. Take the SoftBody position (local deformation).
+    //         // 2. Apply the character's rotational quaternion (theta).
+    //         vertex.Position = softbody_local_pos * theta; 
+            
+            
+    //         // D. Normal Recalculation (Requires using the new deformed position)
+    //         // Since the vertex position is now determined by the soft body, the normal should be too.
+    //         // For a soft body mesh, normals are usually recalculated by averaging the face normals
+    //         // of the adjacent faces *after* all vertex positions are set, but for this code's wave logic:
+            
+    //         // If the SoftBody handles all position changes, you need a proper mesh normal recalculation algorithm.
+    //         // Since the code seems to have abandoned the wave amplitude (0.0f), we'll skip the derivative-based normal.
+    //         // Instead, the SoftBody needs to update the Normals as well, or you need to recalculate them from the mesh.
+            
+    //         // For now, let's simplify and rely on the SoftBody to provide a position.
+    //         // If the mesh is dynamic, a dedicated normal calculation pass is needed after the loop.
+
+    //     }
+    // } else {
+    //     // Handle error: mismatch between mass points and vertices
+    //     std::cerr << "Warning: SoftBody mass point count does not match mesh vertex count.\n";
+    // }
+	}
+
+		// // Gemnin chat
 		for (auto &vertex : verticesCpu)
 		{
 			vertex.Position = vertex.Position * theta;
@@ -374,8 +462,11 @@ void Player::update(float elapsed)
 			// New normal is the cross product of the tangent vectors:
 			vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
 		}
+		// cheese_body.update(elapsed, collision->position, melt_factor, gravity, platform != nullptr,  game->collision_platforms, game->grates);
 		initialMeshBuffer.set(verticesCpu.data(), verticesCpu.size(), GL_DYNAMIC_DRAW);
 	}
+
+	
 
 	// pause.pressed = false;
 	//updating shadow 

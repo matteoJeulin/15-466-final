@@ -251,8 +251,6 @@ void Character::applyBlobShadow()
         shadow_form->scale = glm::vec3(5.0f * (2.2/std::sqrt(best_t)), 5.0f *(2.2/std::sqrt(best_t)), 5.0f);
 
         shadow_valid = true;
-        // std::cout << hit_transform->name <<" position:" << hit_pos.x <<","<< hit_pos.y <<","<< hit_pos.z <<" with normals "<< shadow_form->position.x <<","<< shadow_form->position.y <<","<< shadow_form->position.z << std::endl;
-        std::cout << "distance:" << best_t << std::endl;
     } else if (shadow_form) {
         shadow_valid = false;
     }
