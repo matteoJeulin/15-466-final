@@ -120,6 +120,8 @@ struct PlayMode : Mode
 	std::string spawnLocName;
 	glm::vec3 spawnPos = glm::vec3();
 
+	// TODO: level blocks
+
 	float wine_remaining = D_RANK_TIME;
 	UIElement wine_bottle_ui;
 	float bottle_ui_pos_x = 0.9f;

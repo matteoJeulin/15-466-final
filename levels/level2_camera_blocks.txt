@@ -1,0 +1,39 @@
+% player left, right, bottom, top trigger zone...
+% camera left, right, bottom, top bounds...
+
+% crevice in section 1
+1282.24, 1313.4, 0.0, 34.032
+1282.24, 1313.4, 0.0, 64.032 
+
+% wall jump tutorial in section 1
+1309.3, 1328.3, 0.0, 73.536
+1309.3, 1309.3, 0.0, 103.536 
+
+% section 1
+1309.3, 1392.2, 76.737, 125.078  
+1309.3, 1309.3, 106.737, 155.078
+
+% section 2 crevice
+1373.09, 1440.21, 125.078, 153.613 
+1373.09, 1437.07, 155.078, 183.613
+
+% section 2 middle
+1373.09, 1440.21, 153.613, 224.016
+1373.09, 1437.07, 155.078, 254.016
+
+% section 2 top
+1373.09, 1462.82, 224.016, 255.457 
+1373.09, 1422.46, 224.016, 280.457
+
+% section 3 bottom (TODO)
+% section 3 tunnel (TODO)
+% section 3 part 2 (TODO)
+% section 3 fall (TODO)
+
+% section 4 stairs (TODO)
+% section 4 corner (TODO)
+% section 4 sliding walls (TODO)
+% section 4 part 2 (TODO)
+% section 4 final grapples (TODO)
+% section 4 ultra fall (TODO)
+% section 4 near wine (TODO)
