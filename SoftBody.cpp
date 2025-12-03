@@ -18,55 +18,13 @@ void SoftBody::init(std::vector<DynamicMeshBuffer::Vertex> & initial_vertices) {
 
 void SoftBody::update(float elapsed, const glm::vec3& center_pos, float melt_factor, float gravity, bool on_platform,std::vector<Scene::Transform*>& collision_platforms,
                       std::vector<Scene::Transform*>& grates) {
-    apply_physics(elapsed, center_pos, melt_factor, gravity);
+    apply_physics(elapsed, melt_factor, gravity);
     update_metaballs(elapsed, center_pos, gravity,melt_factor, on_platform, collision_platforms, grates);
 }
 
-void SoftBody::apply_physics(float elapsed, const glm::vec3& center_pos, float melt_factor, float gravity) {
-    // melt_factor ranges from 0.0 (not melted) to 1.0 (fully melted)
-    // The cheese_spread value from the original code (used for radial expansion)
-    constexpr float CHEESE_SPREAD = 1.0f; 
+void SoftBody::apply_physics(float elapsed,
+    float melt_factor,  float gravity) {
 
-    for (auto &mp : mass_points) {
-        mp.acceleration = glm::vec3(0.0f); // Reset acceleration
-
-        // 1. Force from Gravity (Applied only along the Z-axis)
-        // Note: Gravity here is for the internal deforma tion, not for the Character's movement.
-        // It helps the cheese droop internally.
-        mp.acceleration.z -= (gravity / MASS) * 0.0f; // Apply reduced gravity force
-
-        // 2. Force from Center Spring (Radial Spring Simulation)
-        
-        // mp.position is relative to the character center. center_pos is the world center.
-        // The spring calculation is done in the character's local/rotated frame (relative to center_pos).
-        
-        glm::vec3 to_center_dir = -mp.position; // Vector from mass point *to* the center (0,0,0)
-        float current_dist = glm::length(to_center_dir);
-        
-        // Calculate the target resting distance for the spring.
-        // As melt_factor increases, the target distance increases, causing the spring to push outwards.
-        // (1.0 + melt_factor * CHEESE_SPREAD) expands the cheese radius.
-        float target_dist = glm::length(mp.initial_position) * (1.0f + (melt_factor) * CHEESE_SPREAD);
-
-        // Hooke's Law: F_spring = -k * (x - L) * direction
-        float displacement = current_dist - target_dist;
-        
-        // Normalize only if current_dist is non-zero
-        glm::vec3 direction = current_dist > 0.001f ? glm::normalize(to_center_dir) : glm::vec3(0.0f);
-        
-        // The force should push *out* if the current distance is *less* than the target (displacement < 0).
-        // The force should pull *in* if the current distance is *greater* than the target (displacement > 0).
-        glm::vec3 spring_force = SPRING_K * displacement * direction;
-        mp.acceleration += spring_force / MASS;
-
-        // 3. Force from Damping (to stabilize the system)
-        glm::vec3 damping_force = -DAMPING * mp.velocity;
-        mp.acceleration += damping_force / MASS;
-
-        // 4. Integration (Euler or Verlet for stability, here using simple Euler)
-        mp.velocity += mp.acceleration * elapsed;
-        mp.position += mp.velocity * elapsed;
-    }
 }
 
 void SoftBody::update_metaballs(float elapsed, const glm::vec3& center_pos, float melt_factor, float gravity, bool on_platform, 

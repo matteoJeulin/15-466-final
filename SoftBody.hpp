@@ -77,7 +77,7 @@ public:
     /**
      * @brief Applies physics forces and updates mass point positions.
      */
-    void apply_physics(float elapsed, const glm::vec3& center_pos, float melt_factor, float gravity);
+    void apply_physics(float elapsed, float melt_factor, float gravity);
 
     /**
      * @brief Spawns, updates, and culls metaballs.

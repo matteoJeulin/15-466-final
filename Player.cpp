@@ -297,24 +297,32 @@ void Player::update(float elapsed)
 		had_full_melt = false; // reset for next melt cycle
 	}
 
-	float rotation_angle = speed.y * elapsed;
-
+	float rotation_angle = 0.0f;
 	glm::quat rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
 
-	if (melt_level <= FULL_MELT){
-		theta = theta * rotation;
+	if (locomotionState & PlayerLocomotion::Grappling) {
+		rotation_angle = -grapple_angular_velocity * elapsed;
+		rotation = glm::angleAxis(rotation_angle , glm::vec3(1, 0.0f, 0.0f));
+	} else {
+		// Fallback: rolling from ground speed
+		rotation_angle = speed.y * elapsed;
+		rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
 	}
+
+	// if (melt_level <= FULL_MELT || (locomotionState & PlayerLocomotion::Grappling)){
+		theta = theta * rotation;
+	// }
 	
 
 
 	//----------------------------------------
 	{ //
-		float cheese_base = mesh->min.z;
-		float cheese_top = mesh->max.z;
-		float height_range = cheese_top - cheese_base;
+		// float cheese_base = mesh->min.z;
+		// float cheese_top = mesh->max.z;
+		// float height_range = cheese_top - cheese_base;
 		wave_acc += elapsed / 5.0f; // 5 second wave animation cycle
 		wave_acc -= std::floor(wave_acc);
-		float cheese_spread = 1.0f;
+		// float cheese_spread = 1.0f;
 
 		// Target Brown (e.g., RGB: 139, 69, 19)
 		constexpr glm::vec4 TARGET_BROWN = glm::vec4(60.0f, 10.0f, 2.0f, 255.0f);
@@ -326,143 +334,227 @@ void Player::update(float elapsed)
 		melt_percentage_level = std::clamp(melt_percentage_level, 0.0f, 1.0f);
 
 		float melt_factor = (1.0f - melt_percentage_level);
-		float flow = (1.0f + melt_factor * cheese_spread);
+		// // float flow = (1.0f + melt_factor * cheese_spread);
 
 		verticesCpu = initialVerticesCpu;
     
-    {
-    // // Call soft body update
-    // cheese_body.update(elapsed, 
-    //                    collision->position, 
-    //                    melt_factor, // Using the computed melt factor
-    //                    gravity, 
-    //                    platform != nullptr, 
-    //                    game->collision_platforms, 
-    //                    game->grates);
+
                        
     // // Retrieve the new positions from the soft body (assuming a new getter exists)
     // const auto& new_softbody_positions = cheese_body.get_mass_point_positions();
 
     
-    // // 3. APPLY ROTATION, MELT, AND SOFTBODY DEFORMATION
-    
-    // // Ensure the size matches before iterating
-    // if (new_softbody_positions.size() == verticesCpu.size()) {
-    //     for (size_t i = 0; i < verticesCpu.size(); ++i)
-    //     {
-    //         auto &vertex = verticesCpu[i];
-            
-    //         // A. Apply Character Rotation (theta) to the initial position (or softbody position)
-    //         // It's cleaner to have the softbody work in the local frame and then apply rotation here.
-            
-    //         // B. Apply Melt-Based Color/Radial Expansion (still needed for melt effect)
-            
-    //         // --- Melt and Color Logic (Copied from your existing code) ---
-    //         glm::vec3 pos = new_softbody_positions[i]; // Use softbody position for melt logic below
-    //         glm::vec4 original_color_f = glm::vec4(vertex.Color);
+	// grapple deform
+	std::vector<float> grapple_influence(verticesCpu.size(), 0.0f);
+    glm::vec3 grapple_target_local(0.0f); // cheese-local position of the hook
+	std::vector<glm::vec3> world_rest(verticesCpu.size());
 
-    //         // Re-calculate melt parameters based on the new, deformed position (pos)
-    //         float melt_z_percent = ((pos.z - cheese_base) / (height_range));
+	glm::vec3 hook_world(0.0f);
+	glm::vec3 ray_dir_world(0.0f);
+	float ray_len_world = 0.0f;
 
-    //         // Radial wave/flow logic (This should ideally be handled by the SoftBody spring physics)
-    //         // Since SoftBody is handling deformation, we only keep the color and rotation here.
-            
+	bool do_grapple_deform =
+		(locomotionState & PlayerLocomotion::Grappling) &&
+		(grapple_point != nullptr);
 
-    //         if (melt_z_percent < melt_factor)
-    //         {
-    //             // This radial expansion is now redundant/conflicting with the SoftBody physics
-    //             // Instead, we only handle the coloring and use the SoftBody position.
-    //             glm::vec4 final_color_f = glm::mix(original_color_f, TARGET_BROWN, (1.0f - (melt_factor * melt_factor)));
-    //             vertex.Color = glm::u8vec4(final_color_f);
-    //         }
-    //         // --- End Melt and Color Logic ---
-            
-            
-    //         // C. Final Position Assignment (Integration)
-    //         // Apply the softbody position and character rotation (theta)
-    //         // The softbody position is relative to the character center (0,0,0)
-            
-    //         // Apply SoftBody Position (which is relative to the character's local origin)
-    //         glm::vec3 softbody_local_pos = new_softbody_positions[i];
-            
-    //         // The final vertex position in the mesh buffer:
-    //         // 1. Take the SoftBody position (local deformation).
-    //         // 2. Apply the character's rotational quaternion (theta).
-    //         vertex.Position = softbody_local_pos * theta; 
-            
-            
-    //         // D. Normal Recalculation (Requires using the new deformed position)
-    //         // Since the vertex position is now determined by the soft body, the normal should be too.
-    //         // For a soft body mesh, normals are usually recalculated by averaging the face normals
-    //         // of the adjacent faces *after* all vertex positions are set, but for this code's wave logic:
-            
-    //         // If the SoftBody handles all position changes, you need a proper mesh normal recalculation algorithm.
-    //         // Since the code seems to have abandoned the wave amplitude (0.0f), we'll skip the derivative-based normal.
-    //         // Instead, the SoftBody needs to update the Normals as well, or you need to recalculate them from the mesh.
-            
-    //         // For now, let's simplify and rely on the SoftBody to provide a position.
-    //         // If the mesh is dynamic, a dedicated normal calculation pass is needed after the loop.
+	if (do_grapple_deform && !verticesCpu.empty()) {
+		// 1) define the ray in WORLD space: from cheese center to hook
+		glm::vec3 origin_world = collision->position;
+		glm::vec3 to_hook_world = grapple_point->position - origin_world;
+		ray_len_world = glm::length(to_hook_world);
 
-    //     }
-    // } else {
-    //     // Handle error: mismatch between mass points and vertices
-    //     std::cerr << "Warning: SoftBody mass point count does not match mesh vertex count.\n";
-    // }
+		if (ray_len_world > 1e-4f) {
+			ray_dir_world = to_hook_world / ray_len_world;
+			hook_world = grapple_point->position;
+
+			// 2) precompute each vertex's WORLD rest position:
+			//    world_rest = origin_world + (local * theta)
+			for (std::size_t i = 0; i < verticesCpu.size(); ++i) {
+				glm::vec3 local_rest = initialVerticesCpu[i].Position; // cheese-local
+				glm::vec3 rotated    = local_rest * theta;             // same way you rotate elsewhere
+				world_rest[i]        = origin_world + rotated;
+			}
+
+			// 3) Find 100 vertices closest to the ray near the HOOK end
+			struct Candidate { std::size_t idx; float dist; };
+			std::vector<Candidate> candidates;
+			candidates.reserve(verticesCpu.size());
+
+			// ---- parameters controlling how "gooey" it is ----
+			float rope_radius = ray_len_world ;   // thickness of influence tube
+			rope_radius = std::max(rope_radius, 0.1f);
+
+
+			float hook_region_start = 0.0f;
+			float hook_region_end   = ray_len_world*0.7f;
+
+			for (std::size_t i = 0; i < verticesCpu.size(); ++i) {
+				glm::vec3 p = world_rest[i];
+				glm::vec3 rel = p - origin_world;
+
+				// position along the rope in world:
+				float t = glm::dot(rel, ray_dir_world);
+				float t_clamped = std::clamp(t, hook_region_start, hook_region_end);
+
+				glm::vec3 closest = origin_world + t_clamped * ray_dir_world;
+				float dist = glm::length(p - closest);
+
+				if (dist > rope_radius) continue; // too far from rope cylinder
+				candidates.push_back({i, dist});
+			}
+
+			const std::size_t MAX_COUNT = 300;
+			std::size_t keep = std::min<std::size_t>(MAX_COUNT, candidates.size());
+			if (keep > 0) {
+				std::nth_element(
+					candidates.begin(),
+					candidates.begin() + keep,
+					candidates.end(),
+					[](const Candidate &a, const Candidate &b) {
+						return a.dist < b.dist;
+					}
+				);
+				candidates.resize(keep);
+
+				float maxDist = 0.0f;
+				for (auto &c : candidates) maxDist = std::max(maxDist, c.dist);
+				if (maxDist < 1e-4f) maxDist = 1e-4f;
+
+				float sigma = maxDist * 0.5f;
+				float twoSigma2 = 2.0f * sigma * sigma;
+				const float MAX_PULL_STRENGTH = 0.35f; // <=1; how far toward hook we pull
+
+				for (auto &c : candidates) {
+					float d = c.dist;
+					float w = std::exp(-(d * d) / twoSigma2); // Gaussian radial falloff
+					w *= MAX_PULL_STRENGTH;
+					grapple_influence[c.idx] = w;
+				}
+			}
+		}
 	}
 
-		// // Gemnin chat
-		for (auto &vertex : verticesCpu)
-		{
-			vertex.Position = vertex.Position * theta;
-			glm::vec3 pos = vertex.Position;
-			glm::vec4 original_color_f = glm::vec4(vertex.Color); // Already 0-255 range
+	cheese_body.update(elapsed, collision->position, melt_factor, gravity, platform != nullptr,  game->collision_platforms, game->grates);
 
-			float melt_level_z = ((pos.z - cheese_base) * melt_percentage_level) + cheese_base;
+	// // World gravity direction (e.g., -Z):
+	// glm::vec3 world_gravity_dir = glm::vec3(0.0f, 0.0f, -1.0f);
 
-			float melt_z_percent = ((pos.z - cheese_base) / (height_range));
+	// // Convert to cheese-local space using theta:
+	// glm::quat inv_T = glm::inverse(theta);
+	// glm::vec3 gravity_dir_local = inv_T * world_gravity_dir;
+
+	// // Run soft body:
+	// cheese_body.apply_physics(
+	// 	elapsed,
+	// 	melt_percentage_level,
+	// 	gravity,           // same scalar you use in character motion
+	// 	gravity_dir_local
+	// );
+
+	
+				// // Gemnin chat
+	for (std::size_t i = 0; i < verticesCpu.size(); ++i)
+    {
+        auto &vertex = verticesCpu[i];
+
+
+
+			// If we're grappling, pull some vertices toward the hook along a Gaussian falloff.
+			// local rest:
+		glm::vec3 local_rest = initialVerticesCpu[i].Position;
+
+		// base rotated local position (no goo):
+		glm::vec3 rotated = local_rest * theta;
+		glm::vec3 world_pos = collision->position + rotated;
+
+		// If grappling, pull some vertices toward the hook in WORLD space:
+		if (do_grapple_deform && grapple_influence[i] > 0.0f && ray_len_world > 1e-4f) {
+			float w = grapple_influence[i]; // 0..MAX_PULL_STRENGTH
+			glm::vec3 pulled_world = glm::mix(world_pos, hook_world, w);
+
+			// Convert back to local so the GPU transform still works:
+			glm::vec3 rel = pulled_world - collision->position;
+			glm::quat inv_theta = glm::inverse(theta);
+			glm::vec3 new_local = rel * inv_theta;   // inverse of (local * theta)
+
+			// overwrite rotated/pos based on this new local:
+			rotated   = new_local * theta;
+			world_pos = collision->position + rotated;
+		}
+
+		// At this point, 'rotated' is your deformed local position
+		glm::vec3 pos = rotated;    // object-space (no translation)
+		vertex.Position = pos;
+		glm::vec4 original_color_f = glm::vec4(vertex.Color); // Already 0-255 range
+
+		// 	float melt_level_z = ((pos.z - cheese_base) * melt_percentage_level) + cheese_base;
+
+		// 	float melt_z_percent = ((pos.z - cheese_base) / (height_range));
 
 			float r = std::hypot(pos.x, pos.y) + 0.01f;
 			float sin_arg = float((r * 0.25f + wave_acc) * (2.0f * M_PI));
-			float h = std::sin(sin_arg);
-			float wave_amplitude = 0.00f; // Adjust this value to change the wave height
+		// 	float h = std::sin(sin_arg);
+			// float wave_amplitude = 0.00f; // Adjust this value to change the wave height
 
 			float dh_dr = float(0.25f * 2.0f * M_PI * std::cos(sin_arg));
-			if (melt_z_percent < melt_factor)
-			{
-				vertex.Position.x = (1.0f + flow) * vertex.Position.x;
-				vertex.Position.y = (1.0f + flow) * vertex.Position.y;
-				// Lerp (Interpolate): new_color = (1.0 - factor) * start_color + factor * end_color
-				glm::vec4 final_color_f = glm::mix(original_color_f, TARGET_BROWN, (1.0f - (melt_factor * melt_factor)));
+		// 	if (melt_z_percent < melt_factor)
+		// 	{
+		// 		vertex.Position.x = (1.0f + flow) * vertex.Position.x;
+		// 		vertex.Position.y = (1.0f + flow) * vertex.Position.y;
+		// 		// Lerp (Interpolate): new_color = (1.0 - factor) * start_color + factor * end_color
+		// 		glm::vec4 final_color_f = glm::mix(original_color_f, TARGET_BROWN, (1.0f - (melt_factor * melt_factor)));
 
-				// Assign the result back to the vertex (rounding the floats to integers)
-				vertex.Color = glm::u8vec4(final_color_f);
-				vertex.Position.z = cheese_base + 0.1f + (melt_percentage_level)*std::abs(0 * h * wave_amplitude);
+		// 		// Assign the result back to the vertex (rounding the floats to integers)
+		// 		vertex.Color = glm::u8vec4(final_color_f);
+		// 		vertex.Position.z = cheese_base + 0.1f + (melt_percentage_level)*std::abs(0 * h * wave_amplitude);
 
-				// Apply deformation to the Z component (vertical axis for the cheese wheel)
-				// Adjust the multiplier for the desired wave intensity0
-			}
-			else
-			{
+		// 		// Apply deformation to the Z component (vertical axis for the cheese wheel)
+		// 		// Adjust the multiplier for the desired wave intensity0
+		// 	}
+		// 	else
+		// 	{
 
-				// Deform the position:
-				vertex.Position.z = melt_level_z + 0.1f + (melt_percentage_level)*std::abs(0 * h * wave_amplitude);
-			}
+		// 		// Deform the position:
+		// 		vertex.Position.z = melt_level_z + 0.1f + (melt_percentage_level)*std::abs(0 * h * wave_amplitude);
+		// 	}
 
-			// Deform the normal (assuming the wave is propagating in the XY plane):
+		// 	// Deform the normal (assuming the wave is propagating in the XY plane):
 
-			// Recalculate derivative parts for the new normal vector:
-			// dr/dx = x / r; dr/dy = y / r (from r = sqrt(x^2 + y^2))
-			float dr_dx = pos.x / r;
-			float dr_dy = pos.y / r;
+		// 	// Recalculate derivative parts for the new normal vector:
+		// 	// dr/dx = x / r; dr/dy = y / r (from r = sqrt(x^2 + y^2))
+		// 	float dr_dx = pos.x / r;
+		// 	float dr_dy = pos.y / r;
 
-			// Tangent vectors (dp_dx, dp_dy) for the surface:
-			glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx * wave_amplitude);
-			glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy * wave_amplitude);
+		// 	// Tangent vectors (dp_dx, dp_dy) for the surface:
+		// 	glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx * wave_amplitude);
+		// 	glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy * wave_amplitude);
 
-			// New normal is the cross product of the tangent vectors:
-			vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
+		// 	// New normal is the cross product of the tangent vectors:
+		// 	vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
+
+		float dr_dx = pos.x / r;
+		float dr_dy = pos.y / r;
+
+		glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx );
+		glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy );
+
+		glm::vec3 wave_normal = glm::normalize(glm::cross(dp_dx, dp_dy));
+
+		// --- Grapple-adjusted normal ---
+		glm::vec3 final_normal = wave_normal;
+
+		// If this vertex is being pulled by the grapple, tilt its normal:
+		if (do_grapple_deform && grapple_influence[i] > 0.0f) {
+			// "Stretch direction" – roughly outward from center of cheese
+			glm::vec3 radial_local = glm::normalize(pos); // from (0,0,0) to vertex
+
+			// Blend wave normal and radial normal, using influence as weight (clamped)
+			float n_w = std::clamp(grapple_influence[i], 0.0f, 1.0f); // 0..1
+			final_normal = glm::normalize(glm::mix(wave_normal, radial_local, n_w));
 		}
-		// cheese_body.update(elapsed, collision->position, melt_factor, gravity, platform != nullptr,  game->collision_platforms, game->grates);
+
+		vertex.Normal = final_normal;
+		}
 		initialMeshBuffer.set(verticesCpu.data(), verticesCpu.size(), GL_DYNAMIC_DRAW);
 	}
 
@@ -559,6 +651,18 @@ void Player::attach_grapple(Scene::Transform *best_point) {
 	glm::vec2 rope_dir = grapple_length > 0 ? glm::normalize(rope_vector) : glm::vec2(0.0f, 1.0f);
 	grapple_angle = glm::angle(glm::vec2(0.0f, -1.0f), -rope_dir);
 	grapple_angular_velocity = glm::length(speed) / grapple_length;
+
+	glm::vec3 to_hook_ws = grapple_point->position - collision->position; 
+	glm::quat inv_theta   = glm::inverse(theta);                          // cheese rotation inverse
+	grapple_attach_local  = inv_theta * to_hook_ws;                      
+	grapple_attach_length = glm::length(grapple_attach_local);            //
+	if (grapple_attach_length > 1e-4f) {
+		grapple_attach_local /= grapple_attach_length; 
+	} else {
+		grapple_attach_local = glm::vec3(0, 0, 1); 
+		grapple_attach_length = 1.0f;
+	}
+
 
 	assert(grapple_angle >= 0.0f && grapple_angle <= std::numbers::pi);
 	assert(grapple_angular_velocity >= 0.0f);
