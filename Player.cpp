@@ -250,8 +250,17 @@ void Player::update(float elapsed)
 		{
 			if (collide(plat, true))
 			{
-				if (game->current_level < game->num_levels - 1) Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu));
-				else Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu));
+				MenuMode::Rank rank;
+				if (game->wine_remaining > game->S_RANK_TIME) rank = MenuMode::S;
+				else if (game->wine_remaining > game->A_RANK_TIME) rank = MenuMode::A;
+				else if (game->wine_remaining > game->B_RANK_TIME) rank = MenuMode::B;
+				else if (game->wine_remaining > game->C_RANK_TIME) rank = MenuMode::C;
+				else if (game->wine_remaining > game->D_RANK_TIME) rank = MenuMode::D;
+				else rank = MenuMode::F; // Should be impossible
+
+				game->totalScore += game->wine_remaining;
+
+				Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu, rank, game->wine_remaining));
 			}
 		}
 	}
@@ -469,7 +478,7 @@ void Player::attach_grapple(Scene::Transform *best_point) {
 	grapple_angle = glm::angle(glm::vec2(0.0f, -1.0f), -rope_dir);
 	grapple_angular_velocity = glm::length(speed) / grapple_length;
 
-	assert(grapple_angle >= 0.0f && grapple_angle <= std::numbers::pi);
+	assert(grapple_angle >= 0.0f && grapple_angle <= M_PI);
 	assert(grapple_angular_velocity >= 0.0f);
 
 	// determine which side I'm on so I know if my angle is positive or negative
@@ -478,7 +487,7 @@ void Player::attach_grapple(Scene::Transform *best_point) {
 	// likewise, is my speed giving me positive or negative torque
 	if ((speed.y * rope_vector[1]) - (speed.z * rope_vector[0]) < 0) grapple_angular_velocity *= -1;
 
-	std::cout << "Attach angle = " << grapple_angle * 180.0f / std::numbers::pi << "\n";
+	std::cout << "Attach angle = " << grapple_angle * 180.0f / M_PI << "\n";
 	std::cout << "Attach ang. vel = " << grapple_angular_velocity << "\n";
 
 	// speed.y = 0.0f;

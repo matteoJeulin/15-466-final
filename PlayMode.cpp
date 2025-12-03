@@ -30,6 +30,8 @@ GLuint level_meshes_for_lit_color_texture_program = 0;
 // define the global instance:
 Framebuffers fbs;
 
+// Set the score to 0
+float PlayMode::totalScore = 0.0f;
 
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 							  {
@@ -565,7 +567,7 @@ void PlayMode::update(float elapsed)
 
 		if (wine_remaining <= 0.0f)
 		{
-			Mode::set_current(std::make_shared<MenuMode>(MenuMode::LoseMenu));
+			Mode::set_current(std::make_shared<MenuMode>(MenuMode::LoseMenu, MenuMode::F, 0));
 			return;
 		}
 
@@ -933,6 +935,9 @@ void PlayMode::load_level(int lvl) {
 }
 
 void PlayMode::load_next_level() {
-
-	PlayMode::load_level((int)current_level + 1);
+	if (current_level + 1 < num_levels) {
+		PlayMode::load_level((int)current_level + 1);
+	} else {
+		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, totalScore));
+	}
 }
