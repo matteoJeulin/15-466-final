@@ -252,6 +252,7 @@ void Player::update(float elapsed)
 			{
 				if (game->current_level < game->num_levels - 1) Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu));
 				else Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu));
+				return;
 			}
 		}
 	}
@@ -403,7 +404,7 @@ void Player::update(float elapsed)
 				candidates.push_back({i, dist});
 			}
 
-			const std::size_t MAX_COUNT = 300;
+			const std::size_t MAX_COUNT = 500;
 			std::size_t keep = std::min<std::size_t>(MAX_COUNT, candidates.size());
 			if (keep > 0) {
 				std::nth_element(
@@ -450,7 +451,10 @@ void Player::update(float elapsed)
 	// 	gravity,           // same scalar you use in character motion
 	// 	gravity_dir_local
 	// );
-
+	float cheese_base = mesh->min.z;
+	float cheese_top = mesh->max.z;
+	float height_range = cheese_top - cheese_base;
+	
 	
 				// // Gemnin chat
 	for (std::size_t i = 0; i < verticesCpu.size(); ++i)
@@ -465,7 +469,83 @@ void Player::update(float elapsed)
 
 		// base rotated local position (no goo):
 		glm::vec3 rotated = local_rest * theta;
+
+
+			float melt_level_z = ((rotated.z - cheese_base) * melt_percentage_level) + cheese_base;
+
+			float melt_z_percent = ((rotated.z - cheese_base) / (height_range));
+
+				if (melt_z_percent < melt_factor)
+			{
+				rotated.z = cheese_base;
+			}
+			else
+			{
+				// Deform the position:
+				rotated.z = melt_level_z;
+			}
+
 		glm::vec3 world_pos = collision->position + rotated;
+
+				// start from local rest pose:
+    // glm::vec3 local = initialVerticesCpu[i].Position;
+
+    // glm::vec3 rotated;
+    // glm::vec3 world_pos;
+
+    // if (!do_grapple_deform) {
+    //     // --------------------------------------
+    //     // CASE 1: MELT IN WORLD VERTICAL (GROUND)
+    //     // --------------------------------------
+    //     // First rotate the cheese so it's in its current orientation:
+    //     rotated   = local * theta;
+    //     world_pos = collision->position + rotated;
+
+    //     // Use world Z to decide how much to squash:
+    //     float world_bottom = collision->position.z + cheese_base;
+    //     float world_top    = collision->position.z + cheese_top;
+    //     float world_height = std::max(0.01f, world_top - world_bottom);
+
+    //     float melt_z_percent = (world_pos.z - world_bottom) / world_height;
+    //     melt_z_percent = std::clamp(melt_z_percent, 0.0f, 1.0f);
+
+    //     // Example: lower part stays at bottom, upper part moves downward
+    //     float t = melt_factor; // how melted we are
+    //     if (melt_z_percent < t) {
+    //         world_pos.z = world_bottom; // stuck to the bottom
+    //     } else {
+    //         // compress toward the bottom as we melt:
+    //         float local_h = (world_pos.z - world_bottom) / world_height;
+    //         float squashed_h = glm::mix(local_h, 0.5f, t); // tweak 0.5f for how tall the blob stays
+    //         world_pos.z = world_bottom + squashed_h * world_height;
+    //     }
+
+    //     // Now convert the *melted* world position back into object/local:
+    //     glm::vec3 rel = world_pos - collision->position;
+    //     glm::quat inv_theta = glm::inverse(theta);
+    //     glm::vec3 new_local = inv_theta * rel;
+    //     rotated = new_local * theta; // rotated local again for consistency
+
+    // } else {
+    //     // --------------------------------------
+    //     // CASE 2: MELT IN LOCAL CHEESE-Z (GRAPPLING)
+    //     // --------------------------------------
+    //     float melt_z_percent = (local.z - cheese_base) / height_range;
+    //     melt_z_percent = std::clamp(melt_z_percent, 0.0f, 1.0f);
+
+    //     if (melt_z_percent < melt_factor) {
+    //         local.z = cheese_base;
+    //     } else {
+    //         // Simple compression along local z:
+    //         float local_h = (local.z - cheese_base) / height_range;
+    //         float squashed_h = glm::mix(local_h, 0.5f, melt_factor);
+    //         local.z = cheese_base + squashed_h * height_range;
+    //     }
+
+    //     // THEN rotate the locally-melted shape:
+    //     rotated   = local * theta;
+    //     world_pos = collision->position + rotated;
+    // }
 
 		// If grappling, pull some vertices toward the hook in WORLD space:
 		if (do_grapple_deform && grapple_influence[i] > 0.0f && ray_len_world > 1e-4f) {
@@ -487,9 +567,7 @@ void Player::update(float elapsed)
 		vertex.Position = pos;
 		glm::vec4 original_color_f = glm::vec4(vertex.Color); // Already 0-255 range
 
-		// 	float melt_level_z = ((pos.z - cheese_base) * melt_percentage_level) + cheese_base;
-
-		// 	float melt_z_percent = ((pos.z - cheese_base) / (height_range));
+		
 
 			float r = std::hypot(pos.x, pos.y) + 0.01f;
 			float sin_arg = float((r * 0.25f + wave_acc) * (2.0f * M_PI));
@@ -497,40 +575,9 @@ void Player::update(float elapsed)
 			// float wave_amplitude = 0.00f; // Adjust this value to change the wave height
 
 			float dh_dr = float(0.25f * 2.0f * M_PI * std::cos(sin_arg));
-		// 	if (melt_z_percent < melt_factor)
-		// 	{
-		// 		vertex.Position.x = (1.0f + flow) * vertex.Position.x;
-		// 		vertex.Position.y = (1.0f + flow) * vertex.Position.y;
-		// 		// Lerp (Interpolate): new_color = (1.0 - factor) * start_color + factor * end_color
-		// 		glm::vec4 final_color_f = glm::mix(original_color_f, TARGET_BROWN, (1.0f - (melt_factor * melt_factor)));
+	
+	
 
-		// 		// Assign the result back to the vertex (rounding the floats to integers)
-		// 		vertex.Color = glm::u8vec4(final_color_f);
-		// 		vertex.Position.z = cheese_base + 0.1f + (melt_percentage_level)*std::abs(0 * h * wave_amplitude);
-
-		// 		// Apply deformation to the Z component (vertical axis for the cheese wheel)
-		// 		// Adjust the multiplier for the desired wave intensity0
-		// 	}
-		// 	else
-		// 	{
-
-		// 		// Deform the position:
-		// 		vertex.Position.z = melt_level_z + 0.1f + (melt_percentage_level)*std::abs(0 * h * wave_amplitude);
-		// 	}
-
-		// 	// Deform the normal (assuming the wave is propagating in the XY plane):
-
-		// 	// Recalculate derivative parts for the new normal vector:
-		// 	// dr/dx = x / r; dr/dy = y / r (from r = sqrt(x^2 + y^2))
-		// 	float dr_dx = pos.x / r;
-		// 	float dr_dy = pos.y / r;
-
-		// 	// Tangent vectors (dp_dx, dp_dy) for the surface:
-		// 	glm::vec3 dp_dx = glm::vec3(1.0f, 0.0f, dh_dr * dr_dx * wave_amplitude);
-		// 	glm::vec3 dp_dy = glm::vec3(0.0f, 1.0f, dh_dr * dr_dy * wave_amplitude);
-
-		// 	// New normal is the cross product of the tangent vectors:
-		// 	vertex.Normal = glm::normalize(glm::cross(dp_dx, dp_dy));
 
 		float dr_dx = pos.x / r;
 		float dr_dy = pos.y / r;
