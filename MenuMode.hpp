@@ -2,6 +2,7 @@
 
 #include "Mode.hpp"
 #include "UIElement.hpp"
+#include "TextManager.hpp"
 
 #include <glm/glm.hpp>
 
@@ -21,7 +22,20 @@ struct MenuMode : Mode
         LevelClearMenu
     };
 
-    MenuMode(MenuType menu);
+    enum Rank
+    {
+        S,
+        A,
+        B,
+        C,
+        D,
+        F,
+        NO_RANK
+    };
+
+    static std::unordered_map<Rank, UIElement> rankSprites;
+
+    MenuMode(MenuType menu, Rank _rank = NO_RANK, int _score = -1);
     virtual ~MenuMode();
 
     // functions called by main loop:
@@ -29,9 +43,19 @@ struct MenuMode : Mode
     virtual void update(float elapsed) override;
     virtual void draw(glm::uvec2 const &drawable_size) override;
 
-    std::shared_ptr< Mode > lastMode;
-
     std::vector<Button> buttons;
     UIElement background;
     glm::uvec2 last_drawable_size = glm::uvec2(0, 0);
+
+    TextManager text = TextManager("Monteilga.otf", 54);
+    TextManager numbers = TextManager("Royal_Cocktail.ttf", 60);
+
+    std::string title;
+    float title_x_pos;
+
+    // Score keeping
+    int score = -1;
+    Rank rank = NO_RANK;
+
+    int displayed = 0;
 };

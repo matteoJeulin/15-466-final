@@ -56,13 +56,12 @@ Load<void> createButtons(LoadTagDefault, []() -> void
     mainMenuButton.load_image_data(data_path("back_to_menu_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement nextLevelButton;
-    // TODO: change to actual continue button
     nextLevelButton.load_image_data(data_path("continue_button.png"), OriginLocation::UpperLeftOrigin);
 
-    Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.5f), 0.4f);
-    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, 0.0f), 0.2f);
-    Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(0.0f, 0.4f), 0.2f);
-    Button::NextLevel = Button(&nextLevel, nextLevelButton, glm::vec2(0.0f, -0.4f), 0.3f);
+    Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.0f), 0.4f);
+    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, -0.8f), 0.2f);
+    Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(0.3f, -0.5f), 0.2f);
+    Button::NextLevel = Button(&nextLevel, nextLevelButton, glm::vec2(-0.3f, -0.5f), 0.2f);
 });
 
 Button::Button(void (*_callback)(void), UIElement _button, glm::vec2 _position, float _height)

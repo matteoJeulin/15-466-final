@@ -37,8 +37,10 @@ const GLchar *fragmentSrc =
         }
     )GLSL";
 
-TextManager::TextManager()
+TextManager::TextManager(const char *font_file, int _font_size)
 {
+    font_size = _font_size;
+    
     FT_Error ft_error;
 
     ft_error = FT_Init_FreeType(&ft_library);

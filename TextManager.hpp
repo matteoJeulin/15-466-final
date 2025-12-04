@@ -35,7 +35,7 @@ struct TextManager
 
     void draw_text(std::string str, glm::vec2 window_dimensions, glm::vec2 anchor, glm::vec3 colour);
 
-    TextManager();
+    TextManager(const char *font_file, int font_size);
     ~TextManager();
 
     TextManager operator=(const TextManager other)
@@ -63,9 +63,8 @@ private:
     FT_Face ft_face;
     hb_font_t *hb_font;
 
-    // Font file and size
-    const char *font_file = "FreeSans.otf";
-    const int font_size = 36;
+    // Font size
+    int font_size = 36;
     const int margin = font_size / 2;
 
     // Map of all previously seen characters and their corresponding texture

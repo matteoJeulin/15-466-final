@@ -119,6 +119,7 @@ struct PlayMode : Mode
 	bool foundLevel = false;
 	std::string spawnLocName;
 	glm::vec3 spawnPos = glm::vec3();
+	static float totalScore;
 
 	float wine_remaining = D_RANK_TIME;
 	UIElement wine_bottle_ui;
