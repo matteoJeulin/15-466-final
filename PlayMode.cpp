@@ -392,7 +392,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		}
 		else if (evt.key.key == SDLK_TAB)
 		{
-			player->pause.downs += 1;
+			if (!player->pause.pressed) {
+				player->pause.downs += 1;
+			}
 			player->pause.pressed = true;
 			return true;
 		}
