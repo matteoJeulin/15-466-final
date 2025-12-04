@@ -139,7 +139,6 @@ struct PlayMode : Mode
 
 	// Pause menu displayables
 	std::vector<Button> buttons;
-	UIElement controls;
 
 	// Music
 	DynamicSoundLoop kitchen_music;
