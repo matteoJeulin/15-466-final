@@ -8,7 +8,8 @@
 #include "BlobShadowPipeline.hpp"
 #include "SoftBody.hpp"
 #include "Framebuffers.hpp"
-
+#include "MetaballProgram.hpp"
+#include "Metaball.hpp"
 #include "DrawLines.hpp"
 #include "Mesh.hpp"
 #include "Load.hpp"
@@ -67,12 +68,17 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
         //     return p;
         // }();
 
-												if (( transform->name == "Cheese_Wheel") ||(transform->name.substr(0, 5) == "Grate")) {
+												if (( transform->name == "metaBallCube")||( transform->name == "Cheese_Wheel") ||(transform->name.substr(0, 5) == "Grate")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
 												}
 												 Mesh const &mesh = level_meshes->lookup(mesh_name);
+
+												 
+												if (( transform->name == "metaBallCube")) {
+													std::cout<<"found the cube" <<std::endl;
+												}
 
 												 scene.drawables.emplace_back(transform);
 												 Scene::Drawable &drawable = scene.drawables.back();
@@ -177,17 +183,17 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 	buttons.push_back(Button::MainMenu);
 	buttons.push_back(Button::QuitGame);
 
-
-std::cout << "Lit program id: " << lit_color_texture_program->program << "\n";
-std::cout << "Is program? " << int(glIsProgram(lit_color_texture_program->program)) << "\n";
-
 	for (auto &transform : scene.transforms)
 	{
-		// std::cout << transform.name << std::endl;
+		std::cout << transform.name << std::endl;
 		if (transform.name == "Wheel_Prototype")
 			player->model = &transform;
 		else if (transform.name == "Cheese_Wheel")
 			player->collision = &transform;
+		else if(transform.name == "metaBallCube"){
+			player->metaBallCube= &transform ;
+			std::cout<<"MetaballCube found" << std::endl;
+		}
 		else if (transform.name.substr(0, 5) == "Grate")
 		{
 			grates.emplace_back(&transform);
@@ -557,28 +563,6 @@ void PlayMode::update(float elapsed)
 		camera->transform->position.y = player->collision->position.y; // need to change this
 		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
 
-// 		{
-//     glm::mat4 cam_world = camera->transform->make_world_from_local();
-//     glm::vec3 cam_world_pos = glm::vec3(cam_world[3]);
-
-//     std::cout << "[Update] L" << current_level + 1
-//               << " player local = ("
-//               << player->collision->position.x << ", "
-//               << player->collision->position.y << ", "
-//               << player->collision->position.z << ")\n";
-
-//     std::cout << "[Update] L" << current_level + 1
-//               << " camera local = ("
-//               << camera->transform->position.x << ", "
-//               << camera->transform->position.y << ", "
-//               << camera->transform->position.z << ")\n";
-
-//     std::cout << "[Update] L" << current_level + 1
-//               << " camera WORLD = ("
-//               << cam_world_pos.x << ", "
-//               << cam_world_pos.y << ", "
-//               << cam_world_pos.z << ")\n";
-// }
 		float last_wine = wine_remaining;
 		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, D_RANK_TIME);
 
@@ -638,7 +622,7 @@ void PlayMode::update(float elapsed)
 void PlayMode::draw(glm::uvec2 const &drawable_size)
 {
 
-	//make sure framebuffers are the same size as the window:
+	// //make sure framebuffers are the same size as the window:
 	framebuffers.realloc(drawable_size);
 	// update camera aspect ratio for drawable:
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
@@ -652,7 +636,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	https://github.com/15-466/15-466-lighting
 	*/
 	
-	// // set light camera transform and aspect ratio
+	// // // set light camera transform and aspect ratio
 	glm::vec3 eye = camera->transform->make_world_from_local()[3];
 	glm::mat4 light_camera_view = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
 
@@ -695,7 +679,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 		if (light_type.size() == lights) break;
 	}
 
-	//--- actual drawing ---
+	// --- actual drawing ---
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_BLEND);
@@ -703,49 +687,14 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glDepthFunc(GL_LEQUAL);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+
+
 	//upload light uniforms:
 	glUseProgram(lit_color_texture_program->program);
 
 	glUniform3fv(lit_color_texture_program->EYE_vec3, 1, glm::value_ptr(eye));
 
 	glUniform1ui(lit_color_texture_program->LIGHTS_uint, lights);
-
-	// Make sure we're looking at the right program:
-    GLint current_program = 0;
-    glGetIntegerv(GL_CURRENT_PROGRAM, &current_program);
-
-    // ----- EYE (vec3) -----
-    GLfloat eye_val[3] = {0,0,0};
-    glGetUniformfv(
-        lit_color_texture_program->program,
-        lit_color_texture_program->EYE_vec3,
-        eye_val
-    );
-    std::cerr << "  EYE = (" 
-              << eye_val[0] << ", " 
-              << eye_val[1] << ", " 
-              << eye_val[2] << ")\n";
-
-    // ----- LIGHTS (uint) -----
-    GLuint lights_uniform = 0;
-    glGetUniformuiv(
-        lit_color_texture_program->program,
-        lit_color_texture_program->LIGHTS_uint,
-        &lights_uniform
-    );
-    std::cerr << "  LIGHTS uniform = " << lights_uniform
-              << " (scene.lights.size() = " << scene.lights.size() << ")\n";
-
-    // ----- ROUGHNESS (float) -----
-    if (lit_color_texture_program->ROUGHNESS_float != -1) {
-        GLfloat rough_val = -1.0f;
-        glGetUniformfv(
-            lit_color_texture_program->program,
-            lit_color_texture_program->ROUGHNESS_float,
-            &rough_val
-        );
-        std::cerr << "  ROUGHNESS = " << rough_val << "\n";
-    }
 
 	if (lights > 0) {
 		glUniform1iv(lit_color_texture_program->LIGHT_TYPE_int_array, lights, light_type.data());
@@ -766,32 +715,71 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	scene.draw(*camera, Scene::Drawable::PipelineTypeDefault);
 
+	if (player->metaBallCube!= nullptr) {
+		std::cout << "metaballcube running"  <<std::endl;
+      draw_cheese_metaballs(player->cheese_body, *camera, *player->metaBallCube, player->cheese_body.metaball_timer);
+
+    }
+
+// 	 glUseProgram(metaball_program->program);
+
+// 	glm::mat4 world_from_object = player->metaBallCube->make_world_from_local();
+
+//     glm::mat4 clip_from_world = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
+//     glm::mat4 clip_from_object = clip_from_world * world_from_object;
+
+// 	glm::vec3 cube_pos = glm::vec3(world_from_object[3]);
+// glm::vec3 cam_pos  = camera->transform->position;
+// std::cout << "cube world pos: " << cube_pos.x << ", " << cube_pos.y << ", " << cube_pos.z << "\n";
+// std::cout << "cam  world pos: " << cam_pos.x  << ", " << cam_pos.y  << ", " << cam_pos.z  << "\n";
+
+	// glUniformMatrix4fv(
+    //     metaball_program->CLIP_FROM_OBJECT_mat4,
+    //     1, GL_FALSE,
+    //     glm::value_ptr(clip_from_object)
+    // );
+
+
+    // glUniformMatrix4fv(metaball_program->CLIP_FROM_OBJECT_mat4, 1, GL_FALSE, glm::value_ptr(clip_from_object));
+
+    // // TIME and EYE can be garbage here; shader doesn't use them in the red-version
+    // glUniform1f(metaball_program->TIME_float, 0.0f);
+    // glm::vec3 dummyEye(0.0f);
+    // glUniform3fv(metaball_program->EYE_vec3, 1, glm::value_ptr(dummyEye));
+
+    // glBindVertexArray(cheese_cube_vao);
+    // glDrawElements(GL_TRIANGLES, cheese_cube_index_count, GL_UNSIGNED_SHORT, (void*)0);
+    // glBindVertexArray(0);
+
+    // glUseProgram(0);
+	//
+
 	//draw shadows blobs 
-if (player->shadow_valid && player->shadow_form) {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(GL_FALSE); // don't overwrite depth buffer
+	if (player->shadow_valid && player->shadow_form) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDepthMask(GL_FALSE); // don't overwrite depth buffer
 
-    glUseProgram(blob_shadow_program->program);
+		glUseProgram(blob_shadow_program->program);
 
-    // compute CLIP_FROM_OBJECT for the blob:
-    glm::mat4 world_from_object = glm::mat4(player->shadow_form->make_world_from_local());
-    glm::mat4 clip_from_object  = light_camera_view * world_from_object;
+		// compute CLIP_FROM_OBJECT for the blob:
+		glm::mat4 world_from_object = glm::mat4(player->shadow_form->make_world_from_local());
+		glm::mat4 clip_from_object  = light_camera_view * world_from_object;
 
-    glUniformMatrix4fv(blob_shadow_program->CLIP_FROM_OBJECT_mat4,
-                       1, GL_FALSE, glm::value_ptr(clip_from_object));
+		glUniformMatrix4fv(blob_shadow_program->CLIP_FROM_OBJECT_mat4,
+						1, GL_FALSE, glm::value_ptr(clip_from_object));
 
-    // simple dark color:
-    glUniform4f(blob_shadow_program->BLOB_COLOR_vec4,
-                0.0f, 0.0f, 0.0f, 1.0f); // black, 50% alpha
+		// simple dark color:
+		glUniform4f(blob_shadow_program->BLOB_COLOR_vec4,
+					0.0f, 0.0f, 0.0f, 1.0f); // black, 50% alpha
 
-    glBindVertexArray(player->shadow_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6); // our quad
+		glBindVertexArray(player->shadow_vao);
+		glDrawArrays(GL_TRIANGLES, 0, 6); // our quad
 
-    glBindVertexArray(0);
-    glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
-}
+		glBindVertexArray(0);
+		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -800,8 +788,6 @@ if (player->shadow_valid && player->shadow_form) {
 
 	//copy scene to main window framebuffer:
 	framebuffers.tone_map();
-
-
 
 	assert(wine_bottle_ui.data_created);
 	if (wine_bottle_ui.data_created)

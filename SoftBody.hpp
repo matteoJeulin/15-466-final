@@ -15,7 +15,7 @@ constexpr float SPRING_K = 100.0f; // Spring constant (stiffness)
 constexpr float DAMPING = 5.0f;    // Damping factor (slows oscillation)
 constexpr float MASS = 1.0f;       // Mass of a single vertex/mass point
 constexpr float METABALL_SPAWN_INTERVAL = 0.1f;
-constexpr float METABALL_MAX_DISTANCE = 5.0f;
+constexpr float METABALL_MAX_DISTANCE = 6.0f;
 constexpr float INTERNAL_GRAVITY_MULTIPLIER = 0.5f; 
 constexpr float RADIAL_MELT_REDUCTION = 0.2f;
 // --- Soft Body Data Structures ---
@@ -38,6 +38,8 @@ struct SoftBodyMassPoint {
  */
 struct Metaball {
     glm::vec3 position; // World position of the metaball center.
+    glm::vec3 render_position; // smoothed position used for drawing
+    glm::vec3 velocity = glm::vec3(0.0f); // optional, if you want
     float radius;
 };
 
@@ -84,7 +86,27 @@ public:
      */
     void update_metaballs(float elapsed, const glm::vec3& center_pos, float melt_factor, float gravity, bool on_platform, 
                                std::vector<Scene::Transform*>& collision_platforms,
-                               std::vector<Scene::Transform*>& grates);
+                               std::vector<Scene::Transform*>& grates,  float collision_min,  float collision_max );
 
     const std::vector<glm::vec3> get_mass_point_positions() const;
+
+     // wall-cling state:
+    bool wallClingActive = false;
+    float wallClingDir = 0.0f; // +1 toward +y wall, -1 toward -y wall
+
+    float cheese_base = 0.0f;   // min z
+    float cheese_top  = 1.0f;   // max z
+    float height_range = 1.0f;  // cheese_top - cheese_base
+
+    void setWallCling(float dir) {
+        wallClingActive = true;
+        wallClingDir = (dir >= 0.0f) ? 1.0f : -1.0f;
+    }
+
+    void clearWallCling() {
+        wallClingActive = false;
+    }
+
+    // helper used inside your vertex update:
+    void applyWallClingDeform(glm::vec3 &p) const;
 };

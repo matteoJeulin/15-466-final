@@ -310,16 +310,14 @@ void Player::update(float elapsed)
 		rotation = glm::angleAxis(rotation_angle * 0.5f, glm::vec3(1, 0.0f, 0.0f));
 	}
 
-	// if (melt_level <= FULL_MELT || (locomotionState & PlayerLocomotion::Grappling)){
+	if (melt_level <= FULL_MELT || (locomotionState & PlayerLocomotion::Grappling)){
 		theta = theta * rotation;
-	// }
+	}
 	
 
 
 	//----------------------------------------
 	{ //
-		// float cheese_base = mesh->min.z;
-		// float cheese_top = mesh->max.z;
 		// float height_range = cheese_top - cheese_base;
 		wave_acc += elapsed / 5.0f; // 5 second wave animation cycle
 		wave_acc -= std::floor(wave_acc);
@@ -434,9 +432,15 @@ void Player::update(float elapsed)
 			}
 		}
 	}
-
-	cheese_body.update(elapsed, collision->position, melt_factor, gravity, platform != nullptr,  game->collision_platforms, game->grates);
-
+	glm::vec3 world_gravity_dir = glm::vec3(0.0f, 0.0f, -1.0f);
+	float cheese_base = mesh->min.z;
+	float cheese_top = mesh->max.z;
+	// cheese_body.update(elapsed, collision->position, melt_factor, gravity, platform != nullptr,  game->collision_platforms, game->grates);
+	if (melt_level >= 1 ){
+		cheese_body.update_metaballs(elapsed, collision->position, -1.0f,melt_factor,platform != nullptr, game->collision_platforms, game->grates, cheese_base, cheese_top);
+		cheese_body.metaball_timer += elapsed;
+	}
+	
 	// // World gravity direction (e.g., -Z):
 	// glm::vec3 world_gravity_dir = glm::vec3(0.0f, 0.0f, -1.0f);
 
@@ -451,8 +455,6 @@ void Player::update(float elapsed)
 	// 	gravity,           // same scalar you use in character motion
 	// 	gravity_dir_local
 	// );
-	float cheese_base = mesh->min.z;
-	float cheese_top = mesh->max.z;
 	float height_range = cheese_top - cheese_base;
 	
 	
@@ -484,7 +486,7 @@ void Player::update(float elapsed)
 				// Deform the position:
 				rotated.z = melt_level_z;
 			}
-
+		if (locomotionState & PlayerLocomotion::WallClinging) cheese_body.applyWallClingDeform(rotated);
 		glm::vec3 world_pos = collision->position + rotated;
 
 				// start from local rest pose:
@@ -604,9 +606,11 @@ void Player::update(float elapsed)
 		}
 		initialMeshBuffer.set(verticesCpu.data(), verticesCpu.size(), GL_DYNAMIC_DRAW);
 	}
-
+	if(metaBallCube){
+		// metaBallCube->position = collision->position + glm::vec3(0.0f, 0.0f, -1.0f);
+		std::cout<< metaBallCube->position.x << ", " << metaBallCube->position.y << ", " << metaBallCube->position.z << "\n"<<std::endl;
+	}
 	
-
 	// pause.pressed = false;
 	//updating shadow 
 	applyBlobShadow();
@@ -762,6 +766,7 @@ void Player::wall_cling(Scene::Transform *target) {
 
 	assert(wall->position.y - collision->position.y != 0.0f);
 	wallDir = copysign(1.0f, wall->position.y - collision->position.y);
+	cheese_body.setWallCling(wallDir);
 }
 
 void Player::applySlideSpeed(float elapsed) {
@@ -788,9 +793,10 @@ void Player::wall_jump() // "jump_time" is up and down
     speed.z = jumpSpeed;
 	wall = nullptr;
 	wallJumpTimer = jumpAirTime * 0.6f;
-
+	cheese_body.clearWallCling();
 	locomotionState = (Player::PlayerLocomotion)((locomotionState & ~Player::PlayerLocomotion::WallClinging) |
 												  PlayerLocomotion::WallJumping);
+					
 }
 
 void Player::release_wall()
@@ -798,4 +804,5 @@ void Player::release_wall()
 	locomotionState = (Player::PlayerLocomotion)(locomotionState & ~Player::PlayerLocomotion::WallClinging);
 	// collision->position.y += copysign(RELEASE_DIST, -wallDir); // nope lol
 	speed.z = -slideSpeed;
+	cheese_body.clearWallCling();
 }

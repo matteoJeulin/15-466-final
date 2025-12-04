@@ -131,6 +131,7 @@ struct Player : public Character
 	std::vector<DynamicMeshBuffer::Vertex> verticesCpu;
     std::vector<SoftBodyMassPoint> massPoints;
     SoftBody cheese_body;
+    Scene::Transform *metaBallCube = nullptr;
 
 
 
