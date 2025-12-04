@@ -938,6 +938,6 @@ void PlayMode::load_next_level() {
 	if (current_level + 1 < num_levels) {
 		PlayMode::load_level((int)current_level + 1);
 	} else {
-		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, totalScore));
+		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore)));
 	}
 }

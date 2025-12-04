@@ -260,7 +260,7 @@ void Player::update(float elapsed)
 
 				game->totalScore += game->wine_remaining;
 
-				Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu, rank, game->wine_remaining));
+				Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu, rank, static_cast<int>(game->wine_remaining)));
 			}
 		}
 	}
