@@ -70,7 +70,7 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
 												}
-												 Mesh const &mesh = level_meshes->lookup(mesh_name);
+												std::cout<<transform->name<<std::endl;	 Mesh const &mesh = level_meshes->lookup(mesh_name);
 
 												 scene.drawables.emplace_back(transform);
 												 Scene::Drawable &drawable = scene.drawables.back();
@@ -100,7 +100,7 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 													glUniform1f(lit_color_texture_program->ROUGHNESS_float, roughness);
 		};
 												
-												}); });
+												}); }	);
 
 Sound::Sample kitchen_first = Sound::Sample(data_path("kitchen_music_first.wav"));
 Sound::Sample kitchen_loop = Sound::Sample(data_path("kitchen_music_loop.wav"));
@@ -122,16 +122,17 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
 	// Import code based on Kenechukwu's Game 3 code
+	std::cout << ">>> ENTERED PlayMode constructor body <<<" << std::endl;
 	levels.clear();
 	std::ifstream levelFile;
 	// levelFile.open(data_path("ranks_and_spawns.lvl"), std::ios::binary);
 	levelFile.open(data_path("levels.lvl"), std::ios::binary);
-	printf("Opened level data\n");
+	std::cout << ">>>opened path <<<" << std::endl;
 
 	Level levelTemp;
 	while (levelFile.read(reinterpret_cast<char*>(&levelTemp), sizeof(Level))) {
 		levels.emplace_back(levelTemp);
-		printf("Added a level\n");
+		std::cout << ">>> added level<<<" << std::endl;
 	}
 	levelFile.close();
 
@@ -157,6 +158,8 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	AudioManager::init();
 
 	player = new Player(this);
+
+	CAMERA_CORRECTION_SPEED = player->maxSpeed;
 
 	UIElement resumeButton;
 	resumeButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
@@ -991,12 +994,15 @@ void PlayMode::reset()
 
 void PlayMode::load_level(int lvl) {
 	current_level = lvl;
+	std::cout<< "going to another " <<current_level <<std::endl;
 	Mode::set_current(std::make_shared<PlayMode>());
+	std::cout<< "loading level" <<current_level <<std::endl;
 }
 
 void PlayMode::load_next_level() {
 	if (current_level + 1 < num_levels) {
 		PlayMode::load_level((int)current_level + 1);
+		std::cout<< "loading level" <<std::endl;
 	} else {
 		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore)));
 	}
