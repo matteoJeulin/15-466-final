@@ -99,8 +99,10 @@ struct PlayMode : Mode
 	GLuint stove_tint_lvl0 = 0, stove_tint_lvl1 = 0, stove_tint_lvl2 = 0, stove_tint_lvl3 = 0;
 	Scene::Drawable* stove_drawable = nullptr; 
 
-	// Level Information:
-	// Level contains rank information and spawn location
+	/*********************
+	 * Level Information:
+	 *********************/
+	// Level contains rank information, spawn location, and camera blocks
 	std::vector<Level> levels = {};
 	static inline size_t current_level = 0;
 	static inline size_t num_levels = 2;
@@ -116,10 +118,18 @@ struct PlayMode : Mode
 	float B_RANK_TIME = 100.0f;
 	float C_RANK_TIME = 120.0f;
 	float D_RANK_TIME = 140.0f;
+
 	bool foundLevel = false;
 	std::string spawnLocName;
 	glm::vec3 spawnPos = glm::vec3();
 	static float totalScore;
+
+	// TODO: level camera blocks blocks
+	int numberOfCameraBlocks = 0;
+	CameraBlock cameraBlocks[64];
+	const float CAMERA_CORRECTION_SPEED = player->maxSpeed; // per second
+
+	void camera_update(float elapsed);
 
 	float wine_remaining = D_RANK_TIME;
 	UIElement wine_bottle_ui;

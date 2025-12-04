@@ -1,0 +1,22 @@
+% Ranks and Spawn: S-A-B-C-D Spawn Name
+60.0, 80.0, 100.0, 120.0, 140.0, Spawn_1
+
+% Camera Blocks
+% player left, right, bottom, top trigger zone...
+% camera left, right, bottom, top bounds...
+% standard vertical offset of the camera
+
+% sections 1 and 2
+50.0, 336.78, 0.0, 135.37
+76.0603, 336.78, 0.0, 135.37
+30.0
+
+% section 3
+333.93, 462.95, 0.0, 109.892
+333.93, 462.95, 0.0, 127.280
+30.0
+
+% section 4
+462.95, 970.00, 0.0, 164.92
+462.95, 970.00, 0.0, 194.92
+30.0
