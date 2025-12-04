@@ -164,6 +164,10 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	UIElement resumeButton;
 	resumeButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
 
+	// TODO: Change the image path to the actual controls image
+	controls.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+	controls.create_mesh(Mode::window, 0.0f, 0.2f, 0.6f);
+
 	buttons.push_back(Button(&resume, resumeButton, glm::vec2(0.0f, 0.7f), 0.2f));
 	buttons.push_back(Button::MainMenu);
 	buttons.push_back(Button::QuitGame);
@@ -957,6 +961,8 @@ if (player->shadow_valid && player->shadow_form) {
 		{
 			button.draw(drawable_size);
 		}
+
+		controls.draw_mesh();
 	}
 	{
 		if (player->grapple_point)

@@ -137,7 +137,9 @@ struct PlayMode : Mode
 	float bottle_ui_pos_y = 0.6f;
 	float bottle_ui_height = 0.8f;
 
+	// Pause menu displayables
 	std::vector<Button> buttons;
+	UIElement controls;
 
 	// Music
 	DynamicSoundLoop kitchen_music;
