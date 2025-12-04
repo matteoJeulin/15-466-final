@@ -122,11 +122,14 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 	// Import code based on Kenechukwu's Game 3 code
 	levels.clear();
 	std::ifstream levelFile;
-	levelFile.open(data_path("ranks_and_spawns.lvl"), std::ios::binary);
+	// levelFile.open(data_path("ranks_and_spawns.lvl"), std::ios::binary);
+	levelFile.open(data_path("levels.lvl"), std::ios::binary);
+	printf("Opened level data\n");
 
 	Level levelTemp;
 	while (levelFile.read(reinterpret_cast<char*>(&levelTemp), sizeof(Level))) {
 		levels.emplace_back(levelTemp);
+		printf("Added a level\n");
 	}
 	levelFile.close();
 
@@ -137,6 +140,11 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		B_RANK_TIME = levels[current_level].b_rank_time;
 		C_RANK_TIME = levels[current_level].c_rank_time;
 		D_RANK_TIME = levels[current_level].d_rank_time;
+
+		numberOfCameraBlocks = levels[current_level].numberOfCameraBlocks;
+		for (int block = 0; block < numberOfCameraBlocks; block++) {
+			cameraBlocks[block] = levels[current_level].cameraBlocks[block];
+		}
 
 		spawnLocName = std::string(levels[current_level].spawnLocation);
 
@@ -497,6 +505,55 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
+void PlayMode::camera_update(float elapsed) {
+	// 0) Determine which player block the player is in
+	for (int i = 0; i < numberOfCameraBlocks; i++) {
+		if (player->collision->position.y >= cameraBlocks[i].playerLeft &&
+			player->collision->position.y <= cameraBlocks[i].playerRight &&
+			player->collision->position.z >= cameraBlocks[i].playerBottom &&
+			player->collision->position.z <= cameraBlocks[i].playerTop) {
+
+				// 1) Determine if camera is in the camera block with the correct offset
+				//    if wrong, correct using CAMERA_CORRECTION_SPEED
+
+				// Horizontal Correction
+				if (camera->transform->position.y < cameraBlocks[i].cameraLeft) {
+					camera->transform->position.y =
+						std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed),
+								 cameraBlocks[i].cameraLeft);
+				}
+				else if (camera->transform->position.y > cameraBlocks[i].cameraRight) {
+					camera->transform->position.y =
+						std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed),
+								 cameraBlocks[i].cameraRight);
+				}
+				else {
+					camera->transform->position.y = player->collision->position.y;
+				}
+
+				// Vertical Correction
+				if (camera->transform->position.z < cameraBlocks[i].cameraBottom) {
+					camera->transform->position.z =
+						std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed),
+								 cameraBlocks[i].cameraBottom);
+				}
+				else if (camera->transform->position.z > cameraBlocks[i].cameraTop) {
+					camera->transform->position.z =
+						std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed),
+								 cameraBlocks[i].cameraTop);
+				}
+				else {
+					camera->transform->position.z =
+						player->collision->position.z + cameraBlocks[i].cameraVerticalOffset;
+				}
+				return;
+		}
+	}
+
+	camera->transform->position.y = player->collision->position.y;
+	camera->transform->position.z = player->collision->position.z + 30.0f;
+}
+
 void PlayMode::update(float elapsed)
 {
 	if (player->pause.downs > 0)
@@ -525,8 +582,9 @@ void PlayMode::update(float elapsed)
 		for (Rat *rat : rats)
 			rat->update(elapsed);
 
-		camera->transform->position.y = player->collision->position.y; // need to change this
-		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
+		// camera->transform->position.y = player->collision->position.y; // need to change this
+		// camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
+		camera_update(elapsed);
 		float last_wine = wine_remaining;
 		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, D_RANK_TIME);
 
