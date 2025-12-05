@@ -618,7 +618,7 @@ void Player::update(float elapsed)
 	}
 	if(metaBallCube){
 		// metaBallCube->position = collision->position + glm::vec3(0.0f, 0.0f, -1.0f);
-		std::cout<< metaBallCube->position.x << ", " << metaBallCube->position.y << ", " << metaBallCube->position.z << "\n"<<std::endl;
+		// std::cout<< metaBallCube->position.x << ", " << metaBallCube->position.y << ", " << metaBallCube->position.z << "\n"<<std::endl;
 	}
 	
 	// pause.pressed = false;

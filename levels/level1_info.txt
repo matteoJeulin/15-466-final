@@ -1,5 +1,5 @@
 % Ranks and Spawn: S-A-B-C-D Spawn Name
-60.0, 80.0, 100.0, 120.0, 140.0, Spawn_1
+180.0, 240.0, 300.0, 360.0, 420.0, Spawn_1
 
 % Camera Blocks
 % player left, right, bottom, top trigger zone...

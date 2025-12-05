@@ -107,6 +107,8 @@ bool Character::collide(Scene::Transform *object, bool isTrigger)
 
         if (velocityAlongNormal < 0.0f)
         { // Only if moving into the surface
+            if (collision->name.compare("Player") == 0)
+                std::cout << collision->name <<  " moving into surface " << object->name << "... actual normal = (" << actualNormal.x << ", " << actualNormal.y << ", " << actualNormal.z << ")\n";
             speed -= velocityAlongNormal * actualNormal;
             speed.x = 0.0f;
         }
@@ -123,9 +125,13 @@ bool Character::collide(Scene::Transform *object, bool isTrigger)
             platform = nullptr;
         }
 
-        if (actualNormal.z == 0.0f) {
+        if (game->current_level > 0 && actualNormal.z == 0.0f) {
             // cos(90°) = cos(270°) = 0
             wall = object;
+        }
+
+        if (collision == game->player->collision) {
+            std::cout << "Player is touching " << object->name << "\n";
         }
 
         return true;

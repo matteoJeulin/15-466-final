@@ -26,7 +26,7 @@ DynamicMeshBuffer::~DynamicMeshBuffer() {
 	buffer = 0;
 	count = 0;
 
-	GL_ERRORS();
+	// GL_ERRORS();
 }
 
 void DynamicMeshBuffer::set(DynamicMeshBuffer::Vertex const *data, size_t count_, GLenum usage) {
