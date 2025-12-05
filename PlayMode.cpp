@@ -624,9 +624,9 @@ void PlayMode::update(float elapsed)
 		for (Rat *rat : rats)
 			rat->update(elapsed);
 
-		// camera->transform->position.y = player->collision->position.y; // need to change this
-		// camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
-		camera_update(elapsed);
+		camera->transform->position.y = player->collision->position.y; // need to change this
+		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
+		// camera_update(elapsed);
 		float last_wine = wine_remaining;
 		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, D_RANK_TIME);
 
@@ -780,7 +780,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	scene.draw(*camera, Scene::Drawable::PipelineTypeDefault);
 
 	if (player->metaBallCube!= nullptr) {
-		std::cout << "metaballcube running"  <<std::endl;
+		// std::cout << "metaballcube running"  <<std::endl;
       draw_cheese_metaballs(player->cheese_body, *camera, *player->metaBallCube, player->cheese_body.metaball_timer);
 
     }

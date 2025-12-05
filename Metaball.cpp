@@ -11,7 +11,7 @@ void draw_cheese_metaballs(
     Scene::Transform const &cheese_xform,
     float metaball_time
 ) {
-       std::cout << "[metaball] draw, count = " << soft.metaballs.size() << "\n";
+    //    std::cout << "[metaball] draw, count = " << soft.metaballs.size() << "\n";
     if (soft.metaballs.empty()) return;
 
     // 1. Compute matrices:
@@ -37,15 +37,15 @@ void draw_cheese_metaballs(
     int count = std::min<int>(int(soft.metaballs.size()), MetaballProgram::MaxMetaballs);
 
     
-    std::cout<< "cube"<< " pistiony" << cheese_xform.make_world_from_local()[3].y<< std::endl;
-    std::cout<< "cube"<< " pistionz" << cheese_xform.make_world_from_local()[3].z<< std::endl;
+    // std::cout<< "cube"<< " pistiony" << cheese_xform.make_world_from_local()[3].y<< std::endl;
+    // std::cout<< "cube"<< " pistionz" << cheese_xform.make_world_from_local()[3].z<< std::endl;
 
     for (int i = 0; i < count; ++i) {
         const auto &mb = soft.metaballs[i];
 
-        std::cout<< "metaball"<<i<< " pistion" << mb.position.y<< std::endl;
-        std::cout<< "metaball"<<i<< " pistion" << mb.position.z<< std::endl;
-        
+        // std::cout<< "metaball"<<i<< " pistion" << mb.position.y<< std::endl;
+        // std::cout<< "metaball"<<i<< " pistion" << mb.position.z<< std::endl;
+        txt
 
         // If mb.position is WORLD space:
         glm::vec3 posOS = glm::vec3(object_from_world * glm::vec4(mb.render_position, 1.0f));
