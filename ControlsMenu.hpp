@@ -31,6 +31,7 @@ struct ControlsMenu : Mode
     std::vector<Button> buttons;
     static std::vector<UIElement> controls;
     static size_t currentIndex;
+    static std::vector<bool> controls_mesh_created;
 
     // Mode to go to after cycling through the instructions
     static std::shared_ptr<Mode> nextMode;

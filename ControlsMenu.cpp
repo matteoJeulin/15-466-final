@@ -5,6 +5,7 @@
 
 size_t ControlsMenu::currentIndex = 0;
 std::vector<UIElement> ControlsMenu::controls = std::vector<UIElement>();
+std::vector<bool> ControlsMenu::controls_mesh_created = std::vector<bool>();
 std::shared_ptr<Mode> ControlsMenu::nextMode = nullptr;
 
 void nextPage()
@@ -43,6 +44,8 @@ ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode, Type type)
         controls.emplace_back(lvl2cutscene);
     }
 
+    // initialize mesh-created flags to "false" for each page
+    controls_mesh_created.assign(controls.size(), false);
 
     UIElement continueButton;
     continueButton.load_image_data(data_path("Buttons/continue_button.png"), OriginLocation::UpperLeftOrigin);
@@ -52,7 +55,7 @@ ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode, Type type)
 
 bool ControlsMenu::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
-    for (Button b : buttons)
+    for (Button &b : buttons)
     {
         if (b.handle_click(evt, window_size, last_drawable_size))
             return true;
@@ -101,11 +104,15 @@ void ControlsMenu::draw(glm::uvec2 const &drawable_size)
 
     if (controls[currentIndex].data_created)
     {
-        controls[currentIndex].create_mesh(Mode::window, 0.0f, 0.0f, 2.0f);
+        if (!controls_mesh_created[currentIndex]) {
+            controls[currentIndex].create_mesh(Mode::window, 0.0f, 0.0f, 2.0f);
+            controls_mesh_created[currentIndex] = true;
+        }
+        //controls[currentIndex].create_mesh(Mode::window, 0.0f, 0.0f, 2.0f);
         controls[currentIndex].draw_mesh();
     }
 
-    for (Button b : buttons)
+    for (Button &b : buttons)
     {
         b.draw(drawable_size);
     }

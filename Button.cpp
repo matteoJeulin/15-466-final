@@ -131,7 +131,11 @@ void Button::draw(glm::uvec2 const &drawable_size)
 {
     if (button.data_created)
     {
-        button.create_mesh(Mode::window, position.x, position.y, height);
+        if (!mesh_created) {
+            button.create_mesh(Mode::window, position.x, position.y, height);
+            mesh_created = true;
+        }
+        //button.create_mesh(Mode::window, position.x, position.y, height);
         button.draw_mesh();
     }
 }
