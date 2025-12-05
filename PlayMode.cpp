@@ -184,6 +184,7 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 
 		std::cout << "Loaded Level " << current_level + 1 << "\n";
 	}
+	wine_remaining = D_RANK_TIME;
 
 	std::cout << "=============================================================================================" << std::endl;
 	AudioManager::init();
