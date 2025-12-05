@@ -25,6 +25,9 @@ struct Rat : public Character
     // const float cheeseMaxSpeed = 10.0f * 2.0f;
     const float maxSpeed = ((jumpHeight * 2) / (jumpAirTime)) / 2.5f ;
 
+    // Rollback to prevent falling off cliffs
+    float lastPosY = 0.0f;
+
     // Squeaking
     float squeak_timer = 0.0f;
 };

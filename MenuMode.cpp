@@ -90,7 +90,7 @@ MenuMode::~MenuMode()
 
 bool MenuMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
-    for (Button b : buttons)
+    for (auto &b : buttons)
     {
         if (b.handle_click(evt, window_size, last_drawable_size))
             return true;
@@ -148,7 +148,7 @@ void MenuMode::draw(glm::uvec2 const &drawable_size)
             background.draw_mesh();
         }
 
-        for (Button b : buttons)
+        for (auto &b : buttons)
         {
             b.draw(drawable_size);
         }

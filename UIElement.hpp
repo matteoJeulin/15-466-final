@@ -259,7 +259,6 @@ struct UIElement {
 		glUseProgram(0);
 
         GL_ERRORS();
-
     }
 
     ~UIElement() {

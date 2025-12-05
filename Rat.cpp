@@ -74,35 +74,43 @@ void Rat::update(float elapsed)
     {
         platform = nullptr;
 
-        for (Scene::Transform *plate : game->collision_plates)
-		{
-			collide(plate, false);
-		}
-
-        for (Scene::Transform *grate : game->grates)
-		{
-			// Go throught the grate if melted enough
-			collide(grate, false);
-		}
-
-        for (Scene::Transform *bouncy : game->bouncy_weak_platforms)
-		{
-			collide(bouncy, false);
-		}
-
-		for (Scene::Transform *bouncy : game->bouncy_strong_platforms)
-		{
-			collide(bouncy, false);
-		}
-
-        for (Scene::Transform *plat : game->collision_platforms)
-        {
-            if (collide(plat, false))
+        for (int i = 0; platform == nullptr && i < 2; i++) {
+            for (Scene::Transform *plate : game->collision_plates)
             {
-                jumping = false;
+                collide(plate, false);
             }
+
+            for (Scene::Transform *grate : game->grates)
+            {
+                // Go throught the grate if melted enough
+                collide(grate, false);
+            }
+
+            for (Scene::Transform *bouncy : game->bouncy_weak_platforms)
+            {
+                collide(bouncy, false);
+            }
+
+            for (Scene::Transform *bouncy : game->bouncy_strong_platforms)
+            {
+                collide(bouncy, false);
+            }
+
+            for (Scene::Transform *plat : game->collision_platforms)
+            {
+                if (collide(plat, false))
+                {
+                    jumping = false;
+                }
+            }
+
+            // TODO: Platform is null even when I don't think it should be
+            if (platform == nullptr)
+                collision->position.y = lastPosY;
         }
     }
+
+    lastPosY = collision->position.y;
 
     //apply shadow 
     // applyBlobShadow();

@@ -226,6 +226,7 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 			rat_map[&transform] = rat;
 			rat->model = &transform;
 			rat->collision = &transform;
+			rat->lastPosY = rat->collision->position.y;
 			rats.emplace_back(rat);
 		}
 		else if (transform.name.substr(0, 9) == "Model_Rat")

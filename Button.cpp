@@ -38,7 +38,7 @@ void playGame()
 
 void instructions()
 {
-    Sound::stop_all_samples();
+    // Sound::stop_all_samples();
     Mode::set_current(std::make_shared<ControlsMenu>(Mode::current, ControlsMenu::Type::Controls));
 }
 

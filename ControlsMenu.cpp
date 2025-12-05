@@ -52,7 +52,7 @@ ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode, Type type)
 
 bool ControlsMenu::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 {
-    for (Button b : buttons)
+    for (auto &b : buttons)
     {
         if (b.handle_click(evt, window_size, last_drawable_size))
             return true;
@@ -63,7 +63,7 @@ bool ControlsMenu::handle_event(SDL_Event const &evt, glm::uvec2 const &window_s
 
 void ControlsMenu::update(float elapsed)
 {
-    for (Button &b : buttons)
+    for (auto &b : buttons)
     {
         b.update(elapsed);
     }
@@ -105,7 +105,7 @@ void ControlsMenu::draw(glm::uvec2 const &drawable_size)
         controls[currentIndex].draw_mesh();
     }
 
-    for (Button b : buttons)
+    for (auto &b : buttons)
     {
         b.draw(drawable_size);
     }
