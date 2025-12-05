@@ -32,20 +32,21 @@ void playGame()
 {
     Sound::stop_all_samples();
     PlayMode::current_level = 0;
-    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>()));
+    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level1Cutscene));
     // PlayMode::load_level(0);
 }
 
 void instructions()
 {
     Sound::stop_all_samples();
-    Mode::set_current(std::make_shared<ControlsMenu>(Mode::current));
+    Mode::set_current(std::make_shared<ControlsMenu>(Mode::current, ControlsMenu::Type::Controls));
 }
 
 void nextLevel()
 {
     Sound::stop_all_samples();
-    PlayMode::load_next_level();
+    PlayMode::current_level++;
+    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level2Cutscene));
 }
 
 Load<void> createButtons(LoadTagDefault, []() -> void
@@ -66,7 +67,7 @@ Load<void> createButtons(LoadTagDefault, []() -> void
     nextLevelButton.load_image_data(data_path("continue_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement instructionsButton;
-    instructionsButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+    instructionsButton.load_image_data(data_path("instructions_button.png"), OriginLocation::UpperLeftOrigin);
 
     Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.3f), 0.2f);
     Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, -0.6f), 0.2f);

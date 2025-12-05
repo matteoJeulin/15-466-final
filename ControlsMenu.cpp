@@ -15,20 +15,34 @@ void nextPage()
         Mode::set_current(ControlsMenu::nextMode);
 }
 
-ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode)
+ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode, Type type)
 {
     currentIndex = 0;
     nextMode = _nextMode;
 
     controls = std::vector<UIElement>();
 
-    UIElement firstPage;
-    firstPage.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
-    controls.emplace_back(firstPage);
+    if (type == Type::Controls) {
+        UIElement instructions;
+        instructions.load_image_data(data_path("Instructions.png"), OriginLocation::UpperLeftOrigin);
+        //secondPage.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
+        controls.emplace_back(instructions);
+    }
+    else if (type == Type::Level1Cutscene) {
+        UIElement firstPage;
+        UIElement secondPage;
+        firstPage.load_image_data(data_path("Cutscenes/cutscene_1.png"), OriginLocation::UpperLeftOrigin);
+        secondPage.load_image_data(data_path("Cutscenes/cutscene_2.png"), OriginLocation::UpperLeftOrigin);
+        controls.emplace_back(firstPage);
+        controls.emplace_back(secondPage);
+    }
+    else {
+        UIElement lvl2cutscene;
+        lvl2cutscene.load_image_data(data_path("Cutscenes/cutscene_3.png"), OriginLocation::UpperLeftOrigin);
+        //secondPage.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
+        controls.emplace_back(lvl2cutscene);
+    }
 
-    UIElement secondPage;
-    secondPage.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
-    controls.emplace_back(secondPage);
 
     UIElement continueButton;
     continueButton.load_image_data(data_path("continue_button.png"), OriginLocation::UpperLeftOrigin);
