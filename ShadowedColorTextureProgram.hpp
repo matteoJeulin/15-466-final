@@ -5,7 +5,7 @@
 #include "Load.hpp"
 #include "Scene.hpp"
 
-struct Framebuffers {
+struct Framebuffers_shadows {
 	glm::uvec2 size = glm::uvec2(0,0); //remember the size of the framebuffer
 
 	//This framebuffer is used for fullscreen effects:
@@ -27,7 +27,7 @@ struct Framebuffers {
                   glm::uvec2 const &new_shadow_tiles);
 };
 
-extern Framebuffers fbs;
+extern Framebuffers_shadows fbs_shadow;
 //ShadowedColorTextureProgram draws a surface lit by a distant directional light, a hemispherical light, and a spotlight.
 // The color is the vertex color multiplied by the color from texture unit 0.
 // Spotlight shadowing is computed with a shadow map bound to texture unit 1.
