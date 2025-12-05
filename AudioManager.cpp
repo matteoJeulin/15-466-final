@@ -140,8 +140,8 @@ namespace AudioManager {
 		resolidify_limit.max_instances = 1;
 		stove_click_limit.max_instances = 2;
 		mouse_squeak_limit.max_instances = 4;
-		wine_hit_limit = 1;
-		wine_timer_limit = 1;
+		wine_hit_limit.max_instances = 1;
+		wine_timer_limit.max_instances = 1;
 
 		std::cout << "sound effects initialized" << std::endl;
 
