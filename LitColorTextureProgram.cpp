@@ -168,7 +168,6 @@ LitColorTextureProgram::LitColorTextureProgram() {
 	CLIP_FROM_OBJECT_mat4 = glGetUniformLocation(program, "CLIP_FROM_OBJECT");
 	LIGHT_FROM_OBJECT_mat4x3 = glGetUniformLocation(program, "LIGHT_FROM_OBJECT");
 	LIGHT_FROM_NORMAL_mat3 = glGetUniformLocation(program, "LIGHT_FROM_NORMAL");
-	
 
 	ROUGHNESS_float = glGetUniformLocation(program, "ROUGHNESS");
 

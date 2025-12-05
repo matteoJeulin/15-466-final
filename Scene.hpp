@@ -59,7 +59,6 @@ struct Scene {
 			PipelineTypeDefault = 0, //...default drawing
 			PipelineTypeShadow = 1, //...drawing into a shadow map
 			PipelineTypeBlobShadow = 2 , //...drawing into a blob shadow
-			PipelineTypeMetaBalls = 3,
 			PipelineTypes //count of pipeline types
 		};
 

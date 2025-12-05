@@ -4,7 +4,6 @@
 #include "RayCast.hpp"
 #include "DrawLines.hpp"
 #include <numbers>
-#include "SoftBody.hpp"
 
 struct Player : public Character
 {
@@ -117,9 +116,6 @@ struct Player : public Character
     void wall_jump();
     void release_wall();
 
-    glm::vec3 grapple_attach_local = glm::vec3(0.0f); // rope vector at moment of attach, in cheese-local space
-    float grapple_attach_length = 0.0f;    
-
     // Angle to rotate the player
 	glm::quat theta;
 
@@ -129,11 +125,6 @@ struct Player : public Character
 	Mesh const *mesh = nullptr;
 	std::vector<DynamicMeshBuffer::Vertex> initialVerticesCpu;
 	std::vector<DynamicMeshBuffer::Vertex> verticesCpu;
-    std::vector<SoftBodyMassPoint> massPoints;
-    SoftBody cheese_body;
-    Scene::Transform *metaBallCube = nullptr;
-
-
 
 	//vao mapping wave data for lit_color_texture_program:
 	GLuint cheese_lit_color_texture_program = 0;

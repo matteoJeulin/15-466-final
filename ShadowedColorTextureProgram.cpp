@@ -18,14 +18,14 @@
 #include <random>
 
 
-glm::uvec2 Framebuffers_shadows::tile_size() const {
+glm::uvec2 Framebuffers::tile_size() const {
     return glm::uvec2(
         shadow_atlas_size.x / shadow_tiles.x,
         shadow_atlas_size.y / shadow_tiles.y
     );
 }
 
-void Framebuffers_shadows::allocate(glm::uvec2 const &new_size,
+void Framebuffers::allocate(glm::uvec2 const &new_size,
                             glm::uvec2 const &new_shadow_atlas_size,
                             glm::uvec2 const &new_shadow_tiles) {
     // --- fullscreen fb (unchanged) ---

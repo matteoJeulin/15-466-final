@@ -108,9 +108,7 @@ void Scene::draw(glm::mat4 const &clip_from_world, glm::mat4x3 const &light_from
 	for (auto const &drawable : drawables) {
 		//Reference to drawable's pipeline for convenience:
 		Scene::Drawable::Pipeline const &pipeline = drawable.pipeline[pipeline_type];
-		// std::cout << "[Scene::draw] '" << drawable.transform->name << std::endl;
-		// std::cout  << " program=" << pipeline.program << std::endl;
-		// std::cout << " vao=" << pipeline.vao<< std::endl;
+
 
 		//skip any drawables without a shader program set:
 		if (pipeline.program == 0) continue;
@@ -136,9 +134,6 @@ void Scene::draw(glm::mat4 const &clip_from_world, glm::mat4x3 const &light_from
 		if (pipeline.CLIP_FROM_OBJECT_mat4 != -1U) {
 			glm::mat4 clip_from_object = clip_from_world * glm::mat4(world_from_object);
 			glUniformMatrix4fv(pipeline.CLIP_FROM_OBJECT_mat4, 1, GL_FALSE, glm::value_ptr(clip_from_object));
-
-		
-
 		}
 
 		//the object-to-light matrix is used in the next two uniforms:
