@@ -653,9 +653,9 @@ void PlayMode::update(float elapsed)
 		for (Rat *rat : rats)
 			rat->update(elapsed);
 
-		camera->transform->position.y = player->collision->position.y; // need to change this
-		camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
-		// camera_update(elapsed);
+		// camera->transform->position.y = player->collision->position.y; // need to change this
+		// camera->transform->position.z = player->collision->position.z + 30.0f; // need to change this
+		camera_update(elapsed);
 		float last_wine = wine_remaining;
 		wine_remaining = std::clamp(wine_remaining - elapsed, 0.0f, D_RANK_TIME);
 
