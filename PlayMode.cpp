@@ -693,11 +693,12 @@ void PlayMode::update(float elapsed)
 			wine_rank = 0;
 			last_rank = D_RANK_TIME - last_wine < D_RANK_TIME ? 1 : 0;
 		}
-
+		
 		if (wine_rank != last_rank)
 		{
 			wine_bottle_ui.load_image_data(data_path("WineBottle/wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
 			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
+			AudioManager::play_event(AudioManager::Event::WineTimer);
 		}
 
 		if (wine_remaining <= 0.0f)

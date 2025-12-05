@@ -56,6 +56,7 @@ struct MenuMode : Mode
     // Score keeping
     int score = -1;
     Rank rank = NO_RANK;
+    bool background_mesh_created = false;
 
     int displayed = 0;
 };

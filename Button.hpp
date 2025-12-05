@@ -15,6 +15,8 @@ struct Button
 
     UIElement button;
 
+    bool mesh_created = false;
+
     void (*callback)(void) = nullptr;
 
     bool handle_click(SDL_Event const &, glm::uvec2 const &window_size, glm::uvec2 const &drawable_size);
