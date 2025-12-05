@@ -993,6 +993,6 @@ void PlayMode::load_next_level()
 		else if (totalDRankTime - totalScore < totalDRankTime) rank = MenuMode::D;
 		else rank = MenuMode::F; // Should be impossible
 
-		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore * 1000)));
+		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, rank, static_cast<int>(totalScore * 1000)));
 	}
 }
