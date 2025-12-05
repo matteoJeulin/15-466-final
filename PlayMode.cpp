@@ -69,7 +69,7 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
         //     return p;
         // }();
 
-												if (( transform->name == "metaBallCube")||( transform->name == "Cheese_Wheel") ||(transform->name.substr(0, 5) == "Grate")) {
+												if ((transform->name.substr(0, 5) == "Spawn")||(transform->name.substr(0, 16) == "GrapplingCracker")||( transform->name == "metaBallCube")||( transform->name == "Cheese_Wheel") ||(transform->name.substr(0, 5) == "Grate")) {
 												// NOTE: Do NOT create a Scene::Drawable for collision meshes.
 												// The transforms will still be loaded into scene.transforms.
 												return; // Skip the rest of the function for this transform
