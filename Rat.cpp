@@ -24,12 +24,13 @@ void Rat::update(float elapsed)
     // Signed distance between the rat and the player
     float deltaPos = playerPos.y - ratPos.y;
 
-    // Only move if in range
+    // Only move if in range or player is on same (or higher) elevation
     if (!game->player->chomped) {
         if (glm::distance(playerPos, ratPos) < aggroRange)
         {
             // Direction the rat should move in
             float dir = copysign(1.0f, deltaPos);
+            if (playerPos.z < ratPos.z) dir *= -1;
 
             speed.y += dir * acceleration * elapsed;
             speed.y = std::clamp(speed.y, -maxSpeed, maxSpeed);
@@ -74,7 +75,7 @@ void Rat::update(float elapsed)
     {
         platform = nullptr;
 
-        for (int i = 0; platform == nullptr && i < 2; i++) {
+        while (platform == nullptr && lastPosY.size() > 0) {
             for (Scene::Transform *plate : game->collision_plates)
             {
                 collide(plate, false);
@@ -104,13 +105,15 @@ void Rat::update(float elapsed)
                 }
             }
 
-            // TODO: Platform is null even when I don't think it should be
-            if (platform == nullptr)
-                collision->position.y = lastPosY;
+            if (platform == nullptr) {
+                collision->position.y = lastPosY[lastPosY.size() - 1];
+                lastPosY.erase(lastPosY.end() - 1);
+            }
         }
     }
 
-    lastPosY = collision->position.y;
+    lastPosY.emplace_back(collision->position.y);
+    while (lastPosY.size() > MAX_ROLLBACKS) lastPosY.erase(lastPosY.begin());
 
     //apply shadow 
     // applyBlobShadow();

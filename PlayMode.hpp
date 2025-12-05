@@ -119,8 +119,13 @@ struct PlayMode : Mode
 	std::string spawnLocName;
 	glm::vec3 spawnPos = glm::vec3();
 	static float totalScore;
+	static float totalSRankTime;
+	static float totalARankTime;
+	static float totalBRankTime;
+	static float totalCRankTime;
+	static float totalDRankTime;
 
-	// TODO: level camera blocks blocks
+	// level camera blocks blocks
 	int numberOfCameraBlocks = 0;
 	CameraBlock cameraBlocks[64];
 	float CAMERA_CORRECTION_SPEED = 10.0f; // per second

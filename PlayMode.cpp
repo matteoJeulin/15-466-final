@@ -35,6 +35,11 @@ Framebuffers_shadows fbs;
 
 // Set the score to 0
 float PlayMode::totalScore = 0.0f;
+float PlayMode::totalSRankTime = 0.0f;
+float PlayMode::totalARankTime = 0.0f;
+float PlayMode::totalBRankTime = 0.0f;
+float PlayMode::totalCRankTime = 0.0f;
+float PlayMode::totalDRankTime = 0.0f;
 
 Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 							  {
@@ -140,7 +145,7 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
 	if (current_level >= num_levels) 
-		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore)));
+		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore * 1000)));
 
 	// Import code based on Kenechukwu's Game 3 code
 	std::cout << ">>> ENTERED PlayMode constructor body <<<" << std::endl;
@@ -154,9 +159,19 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
     level_meshes->make_vao_for_program(lit_color_texture_program->program);
 
 	Level levelTemp;
+	totalSRankTime = 0.0f;
+	totalARankTime = 0.0f;
+	totalBRankTime = 0.0f;
+	totalCRankTime = 0.0f;
+	totalDRankTime = 0.0f;
 	while (levelFile.read(reinterpret_cast<char *>(&levelTemp), sizeof(Level)))
 	{
 		levels.emplace_back(levelTemp);
+		totalSRankTime += levelTemp.s_rank_time;
+		totalARankTime += levelTemp.a_rank_time;
+		totalBRankTime += levelTemp.b_rank_time;
+		totalCRankTime += levelTemp.c_rank_time;
+		totalDRankTime += levelTemp.d_rank_time;
 		std::cout << ">>> added level<<<" << std::endl;
 	}
 	levelFile.close();
@@ -226,7 +241,10 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 			rat_map[&transform] = rat;
 			rat->model = &transform;
 			rat->collision = &transform;
-			rat->lastPosY = rat->collision->position.y;
+
+			rat->lastPosY = {};
+			rat->lastPosY.emplace_back(rat->collision->position.y);
+
 			rats.emplace_back(rat);
 		}
 		else if (transform.name.substr(0, 9) == "Model_Rat")
@@ -967,6 +985,14 @@ void PlayMode::load_next_level()
 	}
 	else
 	{
-		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore)));
+		MenuMode::Rank rank;
+		if (totalDRankTime - totalScore < totalSRankTime) rank = MenuMode::S;
+		else if (totalDRankTime - totalScore < totalARankTime) rank = MenuMode::A;
+		else if (totalDRankTime - totalScore < totalBRankTime) rank = MenuMode::B;
+		else if (totalDRankTime - totalScore < totalCRankTime) rank = MenuMode::C;
+		else if (totalDRankTime - totalScore < totalDRankTime) rank = MenuMode::D;
+		else rank = MenuMode::F; // Should be impossible
+
+		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore * 1000)));
 	}
 }

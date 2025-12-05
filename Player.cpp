@@ -178,6 +178,7 @@ void Player::update(float elapsed)
 			if (collide(plate, false))
 			{
 				on_any_plate = true;
+				// platform = plate;
 
 				int level = game->stove.get_level_for_plate(plate);
 				max_plate_level = std::max(max_plate_level, level);
@@ -251,17 +252,17 @@ void Player::update(float elapsed)
 			if (collide(plat, true))
 			{
 				MenuMode::Rank rank;
-				if (game->wine_remaining > game->S_RANK_TIME) rank = MenuMode::S;
-				else if (game->wine_remaining > game->A_RANK_TIME) rank = MenuMode::A;
-				else if (game->wine_remaining > game->B_RANK_TIME) rank = MenuMode::B;
-				else if (game->wine_remaining > game->C_RANK_TIME) rank = MenuMode::C;
-				else if (game->wine_remaining > game->D_RANK_TIME) rank = MenuMode::D;
+				if (game->D_RANK_TIME - game->wine_remaining < game->S_RANK_TIME) rank = MenuMode::S;
+				else if (game->D_RANK_TIME - game->wine_remaining < game->A_RANK_TIME) rank = MenuMode::A;
+				else if (game->D_RANK_TIME - game->wine_remaining < game->B_RANK_TIME) rank = MenuMode::B;
+				else if (game->D_RANK_TIME - game->wine_remaining < game->C_RANK_TIME) rank = MenuMode::C;
+				else if (game->D_RANK_TIME - game->wine_remaining < game->D_RANK_TIME) rank = MenuMode::D;
 				else rank = MenuMode::F; // Should be impossible
 
 				game->totalScore += game->wine_remaining;
 				AudioManager::play_event(AudioManager::Event::WineHit);
 
-				Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu, rank, static_cast<int>(game->wine_remaining)));
+				Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu, rank, static_cast<int>(game->wine_remaining * 1000)));
 			}
 		}
 	}

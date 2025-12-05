@@ -26,7 +26,8 @@ struct Rat : public Character
     const float maxSpeed = ((jumpHeight * 2) / (jumpAirTime)) / 2.5f ;
 
     // Rollback to prevent falling off cliffs
-    float lastPosY = 0.0f;
+    std::vector<float> lastPosY = {};
+    const size_t MAX_ROLLBACKS = 4;
 
     // Squeaking
     float squeak_timer = 0.0f;

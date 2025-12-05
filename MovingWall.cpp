@@ -20,7 +20,7 @@ void MovingWall::update(float elapsed) {
         t -= 2.0f * (float)(std::numbers::pi);
     }
     collision->position.z = a * std::cos(b * t) + c;
-    if (collision->name.compare(std::string("Slider_start_001_up")) == 0)
-        std::cout << c << " vs " << a * std::cos(b * t) << std::endl;
+    // if (collision->name.compare(std::string("Slider_start_001_up")) == 0)
+    //     std::cout << c << " vs " << a * std::cos(b * t) << std::endl;
     t += elapsed;
 }
