@@ -13,6 +13,8 @@ namespace {
 	Sound::RandomSamples cheese_resolidify;
 	Sound::RandomSamples stove_click_turn;
 	Sound::RandomSamples mouse_squeak;
+	Sound::RandomSamples wine_hit;
+	Sound::RandomSamples wine_timer;
 
 	bool initialized = false;
 
@@ -28,6 +30,8 @@ namespace {
 	SFXLimit resolidify_limit;
 	SFXLimit stove_click_limit;
 	SFXLimit mouse_squeak_limit;
+	SFXLimit wine_hit_limit;
+	SFXLimit wine_timer_limit;
 
 	void play_with_limit(Sound::RandomSamples& container,
 		SFXLimit& limit,
@@ -88,6 +92,16 @@ namespace AudioManager {
 		static Sound::Sample mouse_squeak_3 = Sound::Sample(data_path("SFX/mouse_squeak_3.wav"));
 		static Sound::Sample mouse_squeak_4 = Sound::Sample(data_path("SFX/mouse_squeak_4.wav"));
 
+		// wine hit 
+		static Sound::Sample wine_hit_1 = Sound::Sample(data_path("SFX/wine_bottle_hit_1.wav"));
+		static Sound::Sample wine_hit_2 = Sound::Sample(data_path("SFX/wine_bottle_hit_2.wav"));
+		static Sound::Sample wine_hit_3 = Sound::Sample(data_path("SFX/wine_bottle_hit_3.wav"));
+
+		// wine timer
+		static Sound::Sample wine_timer_1 = Sound::Sample(data_path("SFX/wine_bottle_timer_1.wav"));
+		static Sound::Sample wine_timer_2 = Sound::Sample(data_path("SFX/wine_bottle_timer_2.wav"));
+		static Sound::Sample wine_timer_3 = Sound::Sample(data_path("SFX/wine_bottle_timer_3.wav"));
+
 		// add to random containers
 		cheese_regular_jump.add(cheese_regular_jump_1);
 		cheese_regular_jump.add(cheese_regular_jump_2);
@@ -110,6 +124,14 @@ namespace AudioManager {
 		mouse_squeak.add(mouse_squeak_3);
 		mouse_squeak.add(mouse_squeak_4);
 
+		wine_hit.add(wine_hit_1);
+		wine_hit.add(wine_hit_2);
+		wine_hit.add(wine_hit_3);
+
+		wine_timer.add(wine_timer_1);
+		wine_timer.add(wine_timer_2);
+		wine_timer.add(wine_timer_3);
+
 		// set limit instances
 		regular_jump_limit.max_instances = 1; 
 		weak_jump_limit.max_instances = 2; 
@@ -118,6 +140,8 @@ namespace AudioManager {
 		resolidify_limit.max_instances = 1;
 		stove_click_limit.max_instances = 2;
 		mouse_squeak_limit.max_instances = 4;
+		wine_hit_limit = 1;
+		wine_timer_limit = 1;
 
 		std::cout << "sound effects initialized" << std::endl;
 
@@ -148,6 +172,13 @@ namespace AudioManager {
 		case Event::MouseSqueak:
 			play_with_limit(mouse_squeak, mouse_squeak_limit, volume, pan);
 			break;
+		case Event::WineHit:
+			play_with_limit(wine_hit, mouse_squeak_limit, volume, pan);
+			break;
+		case Event::WineTimer:
+			play_with_limit(wine_timer, mouse_squeak_limit, volume, pan);
+			break;
+
 		default:
 			break;
 		}

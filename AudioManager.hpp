@@ -13,7 +13,9 @@ namespace AudioManager {
 		CheeseMelt,
 		CheeseResolidify,
 		StoveClick,
-		MouseSqueak
+		MouseSqueak,
+		WineHit,
+		WineTimer
 	};
 
 	void play_event(Event e, float volume = 1.0f, float pan = 0.0f);
