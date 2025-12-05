@@ -253,9 +253,9 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 		{
 			MovingWall *wall = nullptr;
 			if (transform.name.substr(17, 19) == "up")
-				wall = new MovingWall(-player->height * 5, 2.0f, transform.position.z);
+				wall = new MovingWall(-player->height * 2.5f, 2.0f, transform.position.z + player->height * 2.5f);
 			else
-				wall = new MovingWall(player->height * 5, 2.0f, transform.position.z);
+				wall = new MovingWall(player->height * 5, 2.0f, transform.position.z - player->height * 2.5f);
 			assert(wall != nullptr);
 			wall->collision = &transform;
 			moving_walls.emplace_back(wall);
@@ -634,6 +634,11 @@ void PlayMode::update(float elapsed)
 
 	if (!paused)
 	{
+		for (MovingWall *mv : moving_walls) {
+			// std::cout << "Moving wall " << mv->collision->name << std::endl;
+			mv->update(elapsed);
+		}
+		
 		player->update(elapsed);
 
 		if (player->dead)
@@ -694,11 +699,6 @@ void PlayMode::update(float elapsed)
 		{
 			Mode::set_current(std::make_shared<MenuMode>(MenuMode::LoseMenu, MenuMode::F, 0));
 			return;
-		}
-
-		for (MovingWall *mv : moving_walls) {
-			// std::cout << "Moving wall " << mv->collision->name << std::endl;
-			mv->update(elapsed);
 		}
 	}
 
