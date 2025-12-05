@@ -71,7 +71,7 @@ Load<void> createButtons(LoadTagDefault, []() -> void
     Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.3f), 0.2f);
     Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, -0.6f), 0.2f);
     Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(0.0f, -0.3f), 0.2f);
-    Button::NextLevel = Button(&nextLevel, nextLevelButton, glm::vec2(-0.3f, -0.6f), 0.2f);
+    Button::NextLevel = Button(&nextLevel, nextLevelButton, glm::vec2(0.5f, -0.6f), 0.2f);
     Button::Instructions = Button(&instructions, instructionsButton, glm::vec2(0.0f, 0.0f), 0.2f);
 });
 
@@ -101,7 +101,10 @@ bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size, g
             glm::vec2 mouse_px = mouse_win * scale;
 
             // Get the position of the button in screen space (0 to 1, starting from top-left)
-            glm::vec2 button_screen_pos = (1.0f - ((position + 1.0f) / 2.0f)) * glm::vec2(drawable_size);
+            glm::vec2 button_screen_pos;
+            button_screen_pos.y = (1.0f - ((position.y + 1.0f) / 2.0f)) * glm::vec2(drawable_size).y;
+            button_screen_pos.x = (((position.x + 1.0f) / 2.0f)) * glm::vec2(drawable_size).x;
+
 
             width = ((float)window_size.y / window_size.x) * height * (button.data_width / button.data_height);
 
@@ -109,6 +112,7 @@ bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size, g
             if (mouse_px.x >= button_screen_pos.x - (width / 4.0f) * drawable_size.x && mouse_px.x <= button_screen_pos.x + (width / 4.0f) * drawable_size.x &&
                 mouse_px.y >= button_screen_pos.y - (height / 4.0f) * drawable_size.y && mouse_px.y <= button_screen_pos.y + (height / 4.0f) * drawable_size.y)
             {
+                std::cout << "clicked =====================" << std::endl;
                 callback();
                 return true;
             }
