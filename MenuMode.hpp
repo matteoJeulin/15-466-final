@@ -47,8 +47,8 @@ struct MenuMode : Mode
     UIElement background;
     glm::uvec2 last_drawable_size = glm::uvec2(0, 0);
 
-    TextManager text = TextManager("Monteilga.otf", 54);
-    TextManager numbers = TextManager("Royal_Cocktail.ttf", 60);
+    TextManager text = TextManager(data_path("Fonts/Monteilga.otf").c_str(), 54);
+    TextManager numbers = TextManager(data_path("Fonts/Royal_Cocktail.ttf").c_str(), 60);
 
     std::string title;
     float title_x_pos;
