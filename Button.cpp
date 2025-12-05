@@ -67,7 +67,7 @@ Load<void> createButtons(LoadTagDefault, []() -> void
     nextLevelButton.load_image_data(data_path("continue_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement instructionsButton;
-    instructionsButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+    instructionsButton.load_image_data(data_path("instructions_button.png"), OriginLocation::UpperLeftOrigin);
 
     Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.3f), 0.2f);
     Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, -0.6f), 0.2f);
