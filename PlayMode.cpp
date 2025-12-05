@@ -538,14 +538,14 @@ void PlayMode::camera_update(float elapsed)
 			if (player->collision->position.y < cameraBlocks[i].cameraLeft)
 			{
 				camera->transform->position.y = cameraBlocks[i].cameraLeft;
-				// std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed),
-				// 		 cameraBlocks[i].cameraLeft);
+				// camera->transform->position.y = std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed),
+						 								//  cameraBlocks[i].cameraLeft);
 			}
 			else if (player->collision->position.y > cameraBlocks[i].cameraRight)
 			{
 				camera->transform->position.y = cameraBlocks[i].cameraRight;
-				// std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed),
-				// 		 cameraBlocks[i].cameraRight);
+				// camera->transform->position.y = std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed),
+						 								//  cameraBlocks[i].cameraRight);
 			}
 			else
 			{
@@ -556,14 +556,14 @@ void PlayMode::camera_update(float elapsed)
 			if (player->collision->position.z + cameraBlocks[i].cameraVerticalOffset < cameraBlocks[i].cameraBottom)
 			{
 				camera->transform->position.z = cameraBlocks[i].cameraBottom;
-				// std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed),
-				// 		 cameraBlocks[i].cameraBottom);
+				// camera->transform->position.z = std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed),
+						 								//  cameraBlocks[i].cameraBottom);
 			}
 			else if (player->collision->position.z + cameraBlocks[i].cameraVerticalOffset > cameraBlocks[i].cameraTop)
 			{
 				camera->transform->position.z = cameraBlocks[i].cameraTop;
-				// std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed),
-				// 		 cameraBlocks[i].cameraTop);
+				// camera->transform->position.z = std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed),
+				// 		 								 cameraBlocks[i].cameraTop);
 			}
 			else
 			{
@@ -574,8 +574,9 @@ void PlayMode::camera_update(float elapsed)
 		}
 	}
 
-	// camera->transform->position.y = player->collision->position.y;
-	// camera->transform->position.z = player->collision->position.z + 30.0f;
+	camera->transform->position.y = player->collision->position.y;
+	camera->transform->position.z = player->collision->position.z + 30.0f;
+	return;
 }
 
 void PlayMode::update(float elapsed)
