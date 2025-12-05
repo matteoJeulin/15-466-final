@@ -259,6 +259,7 @@ void Player::update(float elapsed)
 				else rank = MenuMode::F; // Should be impossible
 
 				game->totalScore += game->wine_remaining;
+				AudioManager::play_event(AudioManager::Event::WineHit);
 
 				Mode::set_current(std::make_shared<MenuMode>(MenuMode::LevelClearMenu, rank, static_cast<int>(game->wine_remaining)));
 			}
