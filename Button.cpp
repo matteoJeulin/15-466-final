@@ -52,22 +52,22 @@ void nextLevel()
 Load<void> createButtons(LoadTagDefault, []() -> void
                          {
     UIElement resumeButton;
-    resumeButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+    resumeButton.load_image_data(data_path("Buttons/resume_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement quitButton;
-    quitButton.load_image_data(data_path("quit_button.png"), OriginLocation::UpperLeftOrigin);
+    quitButton.load_image_data(data_path("Buttons/quit_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement startButton;
-    startButton.load_image_data(data_path("start_button.png"), OriginLocation::UpperLeftOrigin);
+    startButton.load_image_data(data_path("Buttons/start_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement mainMenuButton;
-    mainMenuButton.load_image_data(data_path("back_to_menu_button.png"), OriginLocation::UpperLeftOrigin);
+    mainMenuButton.load_image_data(data_path("Buttons/back_to_menu_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement nextLevelButton;
-    nextLevelButton.load_image_data(data_path("continue_button.png"), OriginLocation::UpperLeftOrigin);
+    nextLevelButton.load_image_data(data_path("Buttons/continue_button.png"), OriginLocation::UpperLeftOrigin);
 
     UIElement instructionsButton;
-    instructionsButton.load_image_data(data_path("instructions_button.png"), OriginLocation::UpperLeftOrigin);
+    instructionsButton.load_image_data(data_path("Buttons/instructions_button.png"), OriginLocation::UpperLeftOrigin);
 
     Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.3f), 0.2f);
     Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, -0.6f), 0.2f);

@@ -10,31 +10,31 @@ Load<void> loadScores(LoadTagDefault, []() -> void
     MenuMode::rankSprites = std::unordered_map<MenuMode::Rank, UIElement>();
 
     UIElement SScore;
-    SScore.load_image_data(data_path("S_tier.png"), OriginLocation::UpperLeftOrigin);
+    SScore.load_image_data(data_path("Tiers/S_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::S, SScore);
 
     UIElement AScore;
-    AScore.load_image_data(data_path("A_tier.png"), OriginLocation::UpperLeftOrigin);
+    AScore.load_image_data(data_path("Tiers/A_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::A, AScore);
 
     UIElement BScore;
-    BScore.load_image_data(data_path("B_tier.png"), OriginLocation::UpperLeftOrigin);
+    BScore.load_image_data(data_path("Tiers/B_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::B, BScore);
 
     UIElement CScore;
-    CScore.load_image_data(data_path("C_tier.png"), OriginLocation::UpperLeftOrigin);
+    CScore.load_image_data(data_path("Tiers/C_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::C, CScore);
 
     UIElement DScore;
-    DScore.load_image_data(data_path("D_tier.png"), OriginLocation::UpperLeftOrigin);
+    DScore.load_image_data(data_path("Tiers/D_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::D, DScore);
 
     UIElement FScore;
-    FScore.load_image_data(data_path("F_tier.png"), OriginLocation::UpperLeftOrigin);
+    FScore.load_image_data(data_path("Tiers/F_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::F, FScore);
 
     UIElement NoScore;
-    NoScore.load_image_data(data_path("F_tier.png"), OriginLocation::UpperLeftOrigin); // Use F for no tier
+    NoScore.load_image_data(data_path("Tiers/F_tier.png"), OriginLocation::UpperLeftOrigin); // Use F for no tier
     MenuMode::rankSprites.emplace(MenuMode::NO_RANK, NoScore); });
 
 MenuMode::MenuMode(MenuType menu, Rank _rank, int _score)
@@ -50,7 +50,7 @@ MenuMode::MenuMode(MenuType menu, Rank _rank, int _score)
         buttons.push_back(Button::NextLevel);
         buttons.push_back(Button::MainMenu);
         buttons.push_back(Button::QuitGame);
-        background.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
+        background.load_image_data(data_path("Background/CheeseWin.png"), OriginLocation::UpperLeftOrigin);
         break;
 
     case MenuType::WinMenu:
@@ -58,7 +58,7 @@ MenuMode::MenuMode(MenuType menu, Rank _rank, int _score)
         title_x_pos = 120.0f;
         buttons.push_back(Button::MainMenu);
         buttons.push_back(Button::QuitGame);
-        background.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
+        background.load_image_data(data_path("Background/CheeseWin.png"), OriginLocation::UpperLeftOrigin);
         break;
 
     case MenuType::LoseMenu:
@@ -66,7 +66,7 @@ MenuMode::MenuMode(MenuType menu, Rank _rank, int _score)
         title_x_pos = 120.0f;
         buttons.push_back(Button::MainMenu);
         buttons.push_back(Button::QuitGame);
-        background.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
+        background.load_image_data(data_path("Background/RatWin.png"), OriginLocation::UpperLeftOrigin);
         break;
 
     case MenuType::StartMenu:
@@ -75,7 +75,7 @@ MenuMode::MenuMode(MenuType menu, Rank _rank, int _score)
         buttons.push_back(Button::Play);
         buttons.push_back(Button::QuitGame);
         buttons.push_back(Button::Instructions);
-        background.load_image_data(data_path("TitleSlide2.png"), OriginLocation::UpperLeftOrigin);
+        background.load_image_data(data_path("Background/TitleSlide2.png"), OriginLocation::UpperLeftOrigin);
         break;
 
     default:

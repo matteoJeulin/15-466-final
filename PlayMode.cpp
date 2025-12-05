@@ -122,10 +122,10 @@ Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 												
 												}); }	);
 
-Sound::Sample kitchen_first = Sound::Sample(data_path("kitchen_music_first.wav"));
-Sound::Sample kitchen_loop = Sound::Sample(data_path("kitchen_music_loop.wav"));
-Sound::Sample kitchen_pause_first = Sound::Sample(data_path("kitchen_pause_music_loop.wav"));
-Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("kitchen_pause_music_loop.wav"));
+Sound::Sample kitchen_first = Sound::Sample(data_path("Music/kitchen_music_first.wav"));
+Sound::Sample kitchen_loop = Sound::Sample(data_path("Music/kitchen_music_loop.wav"));
+Sound::Sample kitchen_pause_first = Sound::Sample(data_path("Music/kitchen_pause_music_loop.wav"));
+Sound::Sample kitchen_pause_loop = Sound::Sample(data_path("Music/kitchen_pause_music_loop.wav"));
 
 // PlayMode::PlayMode() : scene(*level_scene), kitchen_music(data_path("kitchen_music_first.wav"), data_path("kitchen_music_loop.wav")),
 // 											pause_music(data_path("kitchen_pause_music_first.wav"), data_path("kitchen_pause_music_loop.wav"))
@@ -194,7 +194,7 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 	CAMERA_CORRECTION_SPEED = player->maxSpeed;
 
 	UIElement resumeButton;
-	resumeButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+	resumeButton.load_image_data(data_path("Buttons/resume_button.png"), OriginLocation::UpperLeftOrigin);
 
 	buttons.push_back(Button(&resume, resumeButton, glm::vec2(0.0f, 0.7f), 0.2f));
 	buttons.push_back(Button::MainMenu);
@@ -385,7 +385,7 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 	blob_mesh.set(verts.data(), verts.size(), GL_STATIC_DRAW);
 
 	// UI seteup
-	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
+	wine_bottle_ui.load_image_data(data_path("WineBottle/wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
 	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 
 	// kitchen_music = DynamicSoundLoop::DynamicSoundLoop();
@@ -695,7 +695,7 @@ void PlayMode::update(float elapsed)
 
 		if (wine_rank != last_rank)
 		{
-			wine_bottle_ui.load_image_data(data_path("wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
+			wine_bottle_ui.load_image_data(data_path("WineBottle/wine_bottle_" + std::to_string(wine_rank) + ".png"), OriginLocation::UpperLeftOrigin);
 			wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 		}
 

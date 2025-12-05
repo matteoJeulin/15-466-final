@@ -45,7 +45,7 @@ ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode, Type type)
 
 
     UIElement continueButton;
-    continueButton.load_image_data(data_path("continue_button.png"), OriginLocation::UpperLeftOrigin);
+    continueButton.load_image_data(data_path("Buttons/continue_button.png"), OriginLocation::UpperLeftOrigin);
 
     buttons.emplace_back(Button(&nextPage, continueButton, glm::vec2(0.0f, -0.7f), 0.2f));
 }
