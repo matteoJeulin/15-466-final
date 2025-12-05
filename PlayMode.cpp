@@ -215,16 +215,17 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
 		{
 			grapple_crackers.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 11) == "Slider_start")
+		else if (transform.name.substr(0, 12) == "Slider_start")
 		{
 			MovingWall *wall = nullptr;
 			if (transform.name.substr(17, 19) == "up")
-				wall = new MovingWall(-player->height * 5, 1.0f, transform.position.z);
+				wall = new MovingWall(-player->height * 5, 2.0f, transform.position.z);
 			else
-				wall = new MovingWall(player->height * 5, 1.0f, transform.position.z);
+				wall = new MovingWall(player->height * 5, 2.0f, transform.position.z);
 			assert(wall != nullptr);
 			wall->collision = &transform;
 			moving_walls.emplace_back(wall);
+			collision_platforms.emplace_back(&transform);
 		}
 		else if (transform.name.substr(0, 5) == "Spawn")
 		{
@@ -656,6 +657,11 @@ void PlayMode::update(float elapsed)
 		{
 			Mode::set_current(std::make_shared<MenuMode>(MenuMode::LoseMenu, MenuMode::F, 0));
 			return;
+		}
+
+		for (MovingWall *mv : moving_walls) {
+			// std::cout << "Moving wall " << mv->collision->name << std::endl;
+			mv->update(elapsed);
 		}
 	}
 

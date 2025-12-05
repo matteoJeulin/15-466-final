@@ -240,7 +240,7 @@ void Player::update(float elapsed)
 						chomped = false;
 					}
 				}
-				else if (wall && (melt_level / MELT_MAX > MELT_FOR_CLING) && game->current_level >= 1) {
+				else if (wall && (melt_level / MELT_MAX > MELT_FOR_CLING) && game->current_level >= 1 && wall->scale.z > height) {
 					wall_cling(wall);
 				}
 			}

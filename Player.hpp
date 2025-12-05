@@ -98,7 +98,7 @@ struct Player : public Character
      ******************/
     // Wall on which the player is clinging to
     // See Character.cpp Scene::Transform *wall = nullptr;
-    const float STICK_TIME = 0.6f; // time until the player starts sliding
+    const float STICK_TIME = 1.2f; // time until the player starts sliding
     const float SLIDE_MAX_SPEED = maxSpeed / 2.0f;
     const float SLIDE_ACCEL = SLIDE_MAX_SPEED * 4.0f;
 

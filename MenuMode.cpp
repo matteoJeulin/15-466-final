@@ -26,7 +26,7 @@ Load<void> loadScores(LoadTagDefault, []() -> void
     MenuMode::rankSprites.emplace(MenuMode::C, CScore);
 
     UIElement DScore;
-    DScore.load_image_data(data_path("S_tier.png"), OriginLocation::UpperLeftOrigin);
+    DScore.load_image_data(data_path("D_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::D, DScore);
 
     UIElement FScore;
