@@ -332,7 +332,7 @@ void Player::update(float elapsed)
 		// float cheese_spread = 1.0f;
 
 		// Target Brown (e.g., RGB: 139, 69, 19)
-		constexpr glm::vec4 TARGET_BROWN = glm::vec4(60.0f, 10.0f, 2.0f, 255.0f);
+		// constexpr glm::vec4 TARGET_BROWN = glm::vec4(60.0f, 10.0f, 2.0f, 255.0f);
 
 		verticesCpu = initialVerticesCpu;
 		initialMeshBuffer.set(initialVerticesCpu.data(), verticesCpu.size(), GL_DYNAMIC_DRAW);
@@ -440,7 +440,7 @@ void Player::update(float elapsed)
 			}
 		}
 	}
-	glm::vec3 world_gravity_dir = glm::vec3(0.0f, 0.0f, -1.0f);
+	// glm::vec3 world_gravity_dir = glm::vec3(0.0f, 0.0f, -1.0f);
 	float cheese_base = mesh->min.z;
 	float cheese_top = mesh->max.z;
 	// cheese_body.update(elapsed, collision->position, melt_factor, gravity, platform != nullptr,  game->collision_platforms, game->grates);
@@ -575,7 +575,7 @@ void Player::update(float elapsed)
 		// At this point, 'rotated' is your deformed local position
 		glm::vec3 pos = rotated;    // object-space (no translation)
 		vertex.Position = pos;
-		glm::vec4 original_color_f = glm::vec4(vertex.Color); // Already 0-255 range
+		// glm::vec4 original_color_f = glm::vec4(vertex.Color); // Already 0-255 range
 
 		
 

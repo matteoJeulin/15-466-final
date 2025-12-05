@@ -15,7 +15,7 @@ void nextPage()
         Mode::set_current(ControlsMenu::nextMode);
 }
 
-ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode)
+ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode, Type type)
 {
     currentIndex = 0;
     nextMode = _nextMode;
@@ -23,11 +23,31 @@ ControlsMenu::ControlsMenu(std::shared_ptr<Mode> _nextMode)
     controls = std::vector<UIElement>();
 
     UIElement firstPage;
-    firstPage.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
-    controls.emplace_back(firstPage);
-
     UIElement secondPage;
-    secondPage.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
+
+    switch (type)
+    {
+    case Type::Controls:
+        firstPage.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
+        secondPage.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
+        break;
+
+    case Type::Level1Cutscene:
+        firstPage.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
+        secondPage.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
+        break;
+
+    case Type::Level2Cutscene:
+        firstPage.load_image_data(data_path("CheeseWin.png"), OriginLocation::UpperLeftOrigin);
+        secondPage.load_image_data(data_path("RatWin.png"), OriginLocation::UpperLeftOrigin);
+        break;
+
+    default:
+        std::cout << "Unknown menu type" << std::endl;
+        break;
+    }
+
+    controls.emplace_back(firstPage);
     controls.emplace_back(secondPage);
 
     UIElement continueButton;

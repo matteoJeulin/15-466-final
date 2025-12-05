@@ -32,20 +32,21 @@ void playGame()
 {
     Sound::stop_all_samples();
     PlayMode::current_level = 0;
-    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>()));
+    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level1Cutscene));
     // PlayMode::load_level(0);
 }
 
 void instructions()
 {
     Sound::stop_all_samples();
-    Mode::set_current(std::make_shared<ControlsMenu>(Mode::current));
+    Mode::set_current(std::make_shared<ControlsMenu>(Mode::current, ControlsMenu::Type::Controls));
 }
 
 void nextLevel()
 {
     Sound::stop_all_samples();
-    PlayMode::load_next_level();
+    PlayMode::current_level++;
+    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level2Cutscene));
 }
 
 Load<void> createButtons(LoadTagDefault, []() -> void

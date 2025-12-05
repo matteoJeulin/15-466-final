@@ -139,6 +139,9 @@ void resume(void)
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
 					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
+	if (current_level >= num_levels) 
+		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore)));
+
 	// Import code based on Kenechukwu's Game 3 code
 	std::cout << ">>> ENTERED PlayMode constructor body <<<" << std::endl;
 	levels.clear();
