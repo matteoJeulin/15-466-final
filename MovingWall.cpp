@@ -9,7 +9,7 @@ MovingWall::MovingWall(float amplitude, float period, float offset) {
         b = 2.0f * (float)(std::numbers::pi);
     }
     else
-        b = 2.0f * (float)(std::numbers::pi) * period;
+        b = 2.0f * (float)(std::numbers::pi) / period;
 
     c = offset;
     t = 0.0f;

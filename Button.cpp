@@ -5,7 +5,7 @@
 #include "PlayMode.hpp"
 #include "MenuMode.hpp"
 #include "Sound.hpp"
-
+#include "ControlsMenu.hpp"
 
 #include <cassert>
 
@@ -14,7 +14,7 @@ Button Button::MainMenu;
 Button Button::Play;
 Button Button::QuitGame;
 Button Button::NextLevel;
-
+Button Button::Instructions;
 
 void backToMainMenu()
 {
@@ -31,8 +31,15 @@ void quitGame()
 void playGame()
 {
     Sound::stop_all_samples();
-    PlayMode::load_level(0);
-    // Mode::set_current(std::make_shared<PlayMode>());
+    PlayMode::current_level = 0;
+    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>()));
+    // PlayMode::load_level(0);
+}
+
+void instructions()
+{
+    Sound::stop_all_samples();
+    Mode::set_current(std::make_shared<ControlsMenu>(Mode::current));
 }
 
 void nextLevel()
@@ -58,11 +65,16 @@ Load<void> createButtons(LoadTagDefault, []() -> void
     UIElement nextLevelButton;
     nextLevelButton.load_image_data(data_path("continue_button.png"), OriginLocation::UpperLeftOrigin);
 
-    Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.0f), 0.2f);
-    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, -0.3f), 0.2f);
-    Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(0.0f, -0.6f), 0.2f);
-    Button::NextLevel = Button(&nextLevel, nextLevelButton, glm::vec2(-0.3f, -0.6f), 0.2f);
+    UIElement instructionsButton;
+    instructionsButton.load_image_data(data_path("resume_button.png"), OriginLocation::UpperLeftOrigin);
+
+    Button::Play = Button(&playGame, startButton, glm::vec2(0.0f, 0.3f), 0.2f);
+    Button::QuitGame = Button(&quitGame, quitButton, glm::vec2(0.0f, -0.6f), 0.2f);
+    Button::MainMenu = Button(&backToMainMenu, mainMenuButton, glm::vec2(0.0f, -0.3f), 0.2f);
+    Button::NextLevel = Button(&nextLevel, nextLevelButton, glm::vec2(0.5f, -0.6f), 0.2f);
+    Button::Instructions = Button(&instructions, instructionsButton, glm::vec2(0.0f, 0.0f), 0.2f);
 });
+
 
 Button::Button(void (*_callback)(void), UIElement _button, glm::vec2 _position, float _height)
 {
@@ -72,7 +84,6 @@ Button::Button(void (*_callback)(void), UIElement _button, glm::vec2 _position, 
 
     height = _height;
     width = _height * float(button.data_width) / float(button.data_height);
-    std::cout << "Button created at position (" << position.x << ", " << position.y << ") with size (" << width << ", " << height << ")" << std::endl;
 };
 
 Button::~Button()
@@ -90,10 +101,10 @@ bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size, g
             glm::vec2 mouse_px = mouse_win * scale;
 
             // Get the position of the button in screen space (0 to 1, starting from top-left)
-            glm::vec2 button_screen_pos = (1.0f - ((position + 1.0f) / 2.0f)) * glm::vec2(drawable_size);
+            glm::vec2 button_screen_pos;
+            button_screen_pos.y = (1.0f - ((position.y + 1.0f) / 2.0f)) * glm::vec2(drawable_size).y;
+            button_screen_pos.x = (((position.x + 1.0f) / 2.0f)) * glm::vec2(drawable_size).x;
 
-            std::cout << "Mouse position: " << mouse_px.x << ", " << mouse_px.y << std::endl;
-            std::cout << "Button position: " << button_screen_pos.x << ", " << button_screen_pos.y << std::endl;
 
             width = ((float)window_size.y / window_size.x) * height * (button.data_width / button.data_height);
 
@@ -101,7 +112,7 @@ bool Button::handle_click(SDL_Event const &evt, glm::uvec2 const &window_size, g
             if (mouse_px.x >= button_screen_pos.x - (width / 4.0f) * drawable_size.x && mouse_px.x <= button_screen_pos.x + (width / 4.0f) * drawable_size.x &&
                 mouse_px.y >= button_screen_pos.y - (height / 4.0f) * drawable_size.y && mouse_px.y <= button_screen_pos.y + (height / 4.0f) * drawable_size.y)
             {
-                std::cout << "Button clicked!" << std::endl;
+                std::cout << "clicked =====================" << std::endl;
                 callback();
                 return true;
             }

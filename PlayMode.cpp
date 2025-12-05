@@ -52,7 +52,6 @@ Load<MeshBuffer> level_meshes(LoadTagDefault, []() -> MeshBuffer const *
 // 	return new GLuint(level_meshes->make_vao_for_program(depth_only_program->program));
 // });
 
-
 Load<Scene> level_scene(LoadTagDefault, []() -> Scene const *
 						{ return new Scene(data_path("Cheese.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name)
 										   {
@@ -137,8 +136,6 @@ void resume(void)
 	((PlayMode *)Mode::current.get())->vol_fade_rate = -2.0f;
 }
 
-
-
 PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitchen_loop),
 					   pause_music(&kitchen_pause_first, &kitchen_pause_loop)
 {
@@ -154,7 +151,8 @@ PlayMode::PlayMode() : scene(*level_scene), kitchen_music(&kitchen_first, &kitch
     level_meshes->make_vao_for_program(lit_color_texture_program->program);
 
 	Level levelTemp;
-	while (levelFile.read(reinterpret_cast<char*>(&levelTemp), sizeof(Level))) {
+	while (levelFile.read(reinterpret_cast<char *>(&levelTemp), sizeof(Level)))
+	{
 		levels.emplace_back(levelTemp);
 		std::cout << ">>> added level<<<" << std::endl;
 	}
@@ -165,7 +163,8 @@ std::cerr << "[PlayMode] program id = " << lit_color_texture_program->program <<
 std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_program->program))<< "\n";
 
 	foundLevel = false;
-	if (current_level >= 0 && current_level < levels.size()) {
+	if (current_level >= 0 && current_level < levels.size())
+	{
 		S_RANK_TIME = levels[current_level].s_rank_time;
 		A_RANK_TIME = levels[current_level].a_rank_time;
 		B_RANK_TIME = levels[current_level].b_rank_time;
@@ -173,7 +172,8 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 		D_RANK_TIME = levels[current_level].d_rank_time;
 
 		numberOfCameraBlocks = levels[current_level].numberOfCameraBlocks;
-		for (int block = 0; block < numberOfCameraBlocks; block++) {
+		for (int block = 0; block < numberOfCameraBlocks; block++)
+		{
 			cameraBlocks[block] = levels[current_level].cameraBlocks[block];
 		}
 
@@ -195,6 +195,7 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 	buttons.push_back(Button(&resume, resumeButton, glm::vec2(0.0f, 0.7f), 0.2f));
 	buttons.push_back(Button::MainMenu);
 	buttons.push_back(Button::QuitGame);
+	buttons.push_back(Button::Instructions);
 
 	for (auto &transform : scene.transforms)
 	{
@@ -248,31 +249,37 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 		{
 			grapple_crackers.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 11) == "Slider_start") {
+		else if (transform.name.substr(0, 12) == "Slider_start")
+		{
 			MovingWall *wall = nullptr;
 			if (transform.name.substr(17, 19) == "up")
-				wall = new MovingWall(-player->height * 5, 1.0f, transform.position.z);
+				wall = new MovingWall(-player->height * 5, 2.0f, transform.position.z);
 			else
-				wall = new MovingWall(player->height * 5, 1.0f, transform.position.z);
-			assert (wall != nullptr);
+				wall = new MovingWall(player->height * 5, 2.0f, transform.position.z);
+			assert(wall != nullptr);
 			wall->collision = &transform;
 			moving_walls.emplace_back(wall);
+			collision_platforms.emplace_back(&transform);
 		}
-		else if (transform.name.substr(0, 5) == "Spawn") {
+		else if (transform.name.substr(0, 5) == "Spawn")
+		{
 			spawn_locations.emplace_back(&transform);
 
-			if (transform.name.substr(6, 1)[0] == std::to_string(current_level + 1)[0]) {
+			if (transform.name.substr(6, 1)[0] == std::to_string(current_level + 1)[0])
+			{
 				foundLevel = true;
 				spawnPos = glm::vec3(0.0f, transform.position.y, transform.position.z);
 			}
 		}
-		else if (transform.name.substr(0, 4) == "Wine") {
+		else if (transform.name.substr(0, 4) == "Wine")
+		{
 			wine_bottles.emplace_back(&transform);
 		}
 	}
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
-	if (foundLevel) {
+	if (foundLevel)
+	{
 		player->collision->position = spawnPos;
 		std::cout << "Level found!\n";
 	}
@@ -341,40 +348,35 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 	player->cheese_body.init(initial_vertices);
 
 
-	//blob shadow mesh
-	 // Build a unit quad in the XY plane at z = 0, centered at origin.
-    // Local +Z is up (0,0,1) so your rotation-from-normal logic works.
-    std::vector<DynamicMeshBuffer::Vertex> verts;
-    verts.reserve(6);
+	auto make_vertex = [](float x, float y, float u, float v) -> DynamicMeshBuffer::Vertex
+	{
+		DynamicMeshBuffer::Vertex vert;
+		vert.Position = glm::vec3(x, y, 0.0f);			  // in X-Y plane
+		vert.Normal = glm::vec3(0.0f, 0.0f, 1.0f);		  // up
+		vert.Color = glm::u8vec4(0xff, 0xff, 0xff, 0xff); // white (ignored by blob branch if you want)
+		vert.TexCoord = glm::vec2(u, v);				  // [0,1] range
+		return vert;
+	};
 
-    auto make_vertex = [](float x, float y, float u, float v) -> DynamicMeshBuffer::Vertex {
-        DynamicMeshBuffer::Vertex vert;
-        vert.Position = glm::vec3(x, y, 0.0f);          // in X-Y plane
-        vert.Normal   = glm::vec3(0.0f, 0.0f, 1.0f);    // up
-        vert.Color    = glm::u8vec4(0xff, 0xff, 0xff, 0xff); // white (ignored by blob branch if you want)
-        vert.TexCoord = glm::vec2(u, v);                // [0,1] range
-        return vert;
-    };
+	// Quad corners: (-1,-1), (1,-1), (1,1), (-1,1)
+	DynamicMeshBuffer::Vertex v0 = make_vertex(-1.0f, -1.0f, 0.0f, 0.0f);
+	DynamicMeshBuffer::Vertex v1 = make_vertex(1.0f, -1.0f, 1.0f, 0.0f);
+	DynamicMeshBuffer::Vertex v2 = make_vertex(1.0f, 1.0f, 1.0f, 1.0f);
+	DynamicMeshBuffer::Vertex v3 = make_vertex(-1.0f, 1.0f, 0.0f, 1.0f);
 
-    // Quad corners: (-1,-1), (1,-1), (1,1), (-1,1)
-    DynamicMeshBuffer::Vertex v0 = make_vertex(-1.0f, -1.0f, 0.0f, 0.0f);
-    DynamicMeshBuffer::Vertex v1 = make_vertex( 1.0f, -1.0f, 1.0f, 0.0f);
-    DynamicMeshBuffer::Vertex v2 = make_vertex( 1.0f,  1.0f, 1.0f, 1.0f);
-    DynamicMeshBuffer::Vertex v3 = make_vertex(-1.0f,  1.0f, 0.0f, 1.0f);
+	// Two triangles: (0,1,2) and (0,2,3)
+	verts.push_back(v0);
+	verts.push_back(v1);
+	verts.push_back(v2);
 
-    // Two triangles: (0,1,2) and (0,2,3)
-    verts.push_back(v0);
-    verts.push_back(v1);
-    verts.push_back(v2);
+	verts.push_back(v0);
+	verts.push_back(v2);
+	verts.push_back(v3);
 
-    verts.push_back(v0);
-    verts.push_back(v2);
-    verts.push_back(v3);
+	// Upload once:
+	blob_mesh.set(verts.data(), verts.size(), GL_STATIC_DRAW);
 
-    // Upload once:
-    blob_mesh.set(verts.data(), verts.size(), GL_STATIC_DRAW);
-
-	//UI seteup 
+	// UI seteup
 	wine_bottle_ui.load_image_data(data_path("wine_bottle_5.png"), OriginLocation::UpperLeftOrigin);
 	wine_bottle_ui.create_mesh(Mode::window, bottle_ui_pos_x, bottle_ui_pos_y, bottle_ui_height);
 
@@ -394,10 +396,14 @@ PlayMode::~PlayMode()
 	player->shadow_vao = 0;
 	player->shadow_form = nullptr;
 
-	if (stove_tint_lvl0) glDeleteTextures(1, &stove_tint_lvl0);
-	if (stove_tint_lvl1) glDeleteTextures(1, &stove_tint_lvl1);
-	if (stove_tint_lvl2) glDeleteTextures(1, &stove_tint_lvl2);
-	if (stove_tint_lvl3) glDeleteTextures(1, &stove_tint_lvl3);
+	if (stove_tint_lvl0)
+		glDeleteTextures(1, &stove_tint_lvl0);
+	if (stove_tint_lvl1)
+		glDeleteTextures(1, &stove_tint_lvl1);
+	if (stove_tint_lvl2)
+		glDeleteTextures(1, &stove_tint_lvl2);
+	if (stove_tint_lvl3)
+		glDeleteTextures(1, &stove_tint_lvl3);
 
 	Sound::stop_all_samples();
 }
@@ -438,7 +444,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		}
 		else if (evt.key.key == SDLK_TAB)
 		{
-			if (!player->pause.pressed) {
+			if (!player->pause.pressed)
+			{
 				player->pause.downs += 1;
 			}
 			player->pause.pressed = true;
@@ -547,53 +554,63 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
-void PlayMode::camera_update(float elapsed) {
+void PlayMode::camera_update(float elapsed)
+{
 	// 0) Determine which player block the player is in
-	for (int i = 0; i < numberOfCameraBlocks; i++) {
+	for (int i = 0; i < numberOfCameraBlocks; i++)
+	{
 		if (player->collision->position.y >= cameraBlocks[i].playerLeft &&
 			player->collision->position.y <= cameraBlocks[i].playerRight &&
 			player->collision->position.z >= cameraBlocks[i].playerBottom &&
-			player->collision->position.z <= cameraBlocks[i].playerTop) {
+			player->collision->position.z <= cameraBlocks[i].playerTop)
+		{
 
-				// 1) Determine if camera is in the camera block with the correct offset
-				//    if wrong, correct using CAMERA_CORRECTION_SPEED
+			// 1) Determine if camera is in the camera block with the correct offset
+			//    if wrong, correct using CAMERA_CORRECTION_SPEED
 
-				// Horizontal Correction
-				if (camera->transform->position.y < cameraBlocks[i].cameraLeft) {
-					camera->transform->position.y =
-						std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed),
-								 cameraBlocks[i].cameraLeft);
-				}
-				else if (camera->transform->position.y > cameraBlocks[i].cameraRight) {
-					camera->transform->position.y =
-						std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed),
-								 cameraBlocks[i].cameraRight);
-				}
-				else {
-					camera->transform->position.y = player->collision->position.y;
-				}
+			// Horizontal Correction
+			if (player->collision->position.y < cameraBlocks[i].cameraLeft)
+			{
+				camera->transform->position.y = cameraBlocks[i].cameraLeft;
+				// camera->transform->position.y = std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed),
+						 								//  cameraBlocks[i].cameraLeft);
+			}
+			else if (player->collision->position.y > cameraBlocks[i].cameraRight)
+			{
+				camera->transform->position.y = cameraBlocks[i].cameraRight;
+				// camera->transform->position.y = std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed),
+						 								//  cameraBlocks[i].cameraRight);
+			}
+			else
+			{
+				camera->transform->position.y = player->collision->position.y;
+			}
 
-				// Vertical Correction
-				if (camera->transform->position.z < cameraBlocks[i].cameraBottom) {
-					camera->transform->position.z =
-						std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed),
-								 cameraBlocks[i].cameraBottom);
-				}
-				else if (camera->transform->position.z > cameraBlocks[i].cameraTop) {
-					camera->transform->position.z =
-						std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed),
-								 cameraBlocks[i].cameraTop);
-				}
-				else {
-					camera->transform->position.z =
-						player->collision->position.z + cameraBlocks[i].cameraVerticalOffset;
-				}
-				return;
+			// Vertical Correction
+			if (player->collision->position.z + cameraBlocks[i].cameraVerticalOffset < cameraBlocks[i].cameraBottom)
+			{
+				camera->transform->position.z = cameraBlocks[i].cameraBottom;
+				// camera->transform->position.z = std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed),
+						 								//  cameraBlocks[i].cameraBottom);
+			}
+			else if (player->collision->position.z + cameraBlocks[i].cameraVerticalOffset > cameraBlocks[i].cameraTop)
+			{
+				camera->transform->position.z = cameraBlocks[i].cameraTop;
+				// camera->transform->position.z = std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed),
+				// 		 								 cameraBlocks[i].cameraTop);
+			}
+			else
+			{
+				camera->transform->position.z =
+					player->collision->position.z + cameraBlocks[i].cameraVerticalOffset;
+			}
+			return;
 		}
 	}
 
 	camera->transform->position.y = player->collision->position.y;
 	camera->transform->position.z = player->collision->position.z + 30.0f;
+	return;
 }
 
 void PlayMode::update(float elapsed)
@@ -632,27 +649,33 @@ void PlayMode::update(float elapsed)
 
 		int last_rank, wine_rank;
 
-		if (D_RANK_TIME - wine_remaining < S_RANK_TIME) {
+		if (D_RANK_TIME - wine_remaining < S_RANK_TIME)
+		{
 			wine_rank = 5;
 			last_rank = 5;
 		}
-		else if (D_RANK_TIME - wine_remaining < A_RANK_TIME) {
+		else if (D_RANK_TIME - wine_remaining < A_RANK_TIME)
+		{
 			wine_rank = 4;
 			last_rank = D_RANK_TIME - last_wine < S_RANK_TIME ? 5 : 4;
 		}
-		else if (D_RANK_TIME - wine_remaining < B_RANK_TIME) {
+		else if (D_RANK_TIME - wine_remaining < B_RANK_TIME)
+		{
 			wine_rank = 3;
 			last_rank = D_RANK_TIME - last_wine < A_RANK_TIME ? 4 : 3;
 		}
-		else if (D_RANK_TIME - wine_remaining < C_RANK_TIME) {
+		else if (D_RANK_TIME - wine_remaining < C_RANK_TIME)
+		{
 			wine_rank = 2;
 			last_rank = D_RANK_TIME - last_wine < B_RANK_TIME ? 3 : 2;
 		}
-		else if (D_RANK_TIME - wine_remaining < D_RANK_TIME) {
+		else if (D_RANK_TIME - wine_remaining < D_RANK_TIME)
+		{
 			wine_rank = 1;
 			last_rank = D_RANK_TIME - last_wine < C_RANK_TIME ? 2 : 1;
 		}
-		else {
+		else
+		{
 			wine_rank = 0;
 			last_rank = D_RANK_TIME - last_wine < D_RANK_TIME ? 1 : 0;
 		}
@@ -669,6 +692,10 @@ void PlayMode::update(float elapsed)
 			return;
 		}
 
+		for (MovingWall *mv : moving_walls) {
+			// std::cout << "Moving wall " << mv->collision->name << std::endl;
+			mv->update(elapsed);
+		}
 	}
 
 	player->pause.downs = 0;
@@ -704,43 +731,56 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 	glm::vec3 eye = camera->transform->make_world_from_local()[3];
 	glm::mat4 light_camera_view = camera->make_projection() * glm::mat4(camera->transform->make_local_from_world());
 
-	//compute light uniforms:
+	// compute light uniforms:
 	uint32_t lights = uint32_t(scene.lights.size());
 
-	//clamp lights to maximum lights allowed by shader:
-	lights = std::min< uint32_t >(lights, LitColorTextureProgram::MaxLights);
+	// clamp lights to maximum lights allowed by shader:
+	lights = std::min<uint32_t>(lights, LitColorTextureProgram::MaxLights);
 
-	std::vector< int32_t > light_type; light_type.reserve(lights);
-	std::vector< glm::vec3 > light_location; light_location.reserve(lights);
-	std::vector< glm::vec3 > light_direction; light_direction.reserve(lights);
-	std::vector< glm::vec3 > light_energy; light_energy.reserve(lights);
-	std::vector< float > light_cutoff; light_cutoff.reserve(lights);
+	std::vector<int32_t> light_type;
+	light_type.reserve(lights);
+	std::vector<glm::vec3> light_location;
+	light_location.reserve(lights);
+	std::vector<glm::vec3> light_direction;
+	light_direction.reserve(lights);
+	std::vector<glm::vec3> light_energy;
+	light_energy.reserve(lights);
+	std::vector<float> light_cutoff;
+	light_cutoff.reserve(lights);
 
-	for (auto const &light : scene.lights) {
+	for (auto const &light : scene.lights)
+	{
 		glm::mat4 light_to_world = light.transform->make_world_from_local();
 
-		
-		//set up lighting information for this light:
+		// set up lighting information for this light:
 		light_location.emplace_back(glm::vec3(light_to_world[3]));
 		light_direction.emplace_back(glm::vec3(-light_to_world[2]));
 		light_energy.emplace_back(light.energy);
 
-		if (light.type == Scene::Light::Point) {
+		if (light.type == Scene::Light::Point)
+		{
 			light_type.emplace_back(0);
 			light_cutoff.emplace_back(1.0f);
-		} else if (light.type == Scene::Light::Hemisphere) {
+		}
+		else if (light.type == Scene::Light::Hemisphere)
+		{
 			light_type.emplace_back(1);
 			light_cutoff.emplace_back(1.0f);
-		} else if (light.type == Scene::Light::Spot) {
+		}
+		else if (light.type == Scene::Light::Spot)
+		{
 			light_type.emplace_back(2);
 			light_cutoff.emplace_back(std::cos(0.5f * light.spot_fov));
-		} else if (light.type == Scene::Light::Directional) {
+		}
+		else if (light.type == Scene::Light::Directional)
+		{
 			light_type.emplace_back(3);
 			light_cutoff.emplace_back(1.0f);
 		}
 
-		//skip remaining lights if maximum light count reached:
-		if (light_type.size() == lights) break;
+		// skip remaining lights if maximum light count reached:
+		if (light_type.size() == lights)
+			break;
 	}
 
 	// --- actual drawing ---
@@ -760,7 +800,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size)
 
 	glUniform1ui(lit_color_texture_program->LIGHTS_uint, lights);
 
-	if (lights > 0) {
+	if (lights > 0)
+	{
 		glUniform1iv(lit_color_texture_program->LIGHT_TYPE_int_array, lights, light_type.data());
 		glUniform3fv(lit_color_texture_program->LIGHT_LOCATION_vec3_array, lights, glm::value_ptr(light_location[0]));
 		glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3_array, lights, glm::value_ptr(light_direction[0]));
@@ -899,18 +940,23 @@ void PlayMode::reset()
 	Mode::set_current(std::make_shared<PlayMode>());
 }
 
-void PlayMode::load_level(int lvl) {
+void PlayMode::load_level(int lvl)
+{
 	current_level = lvl;
-	std::cout<< "going to another " <<current_level <<std::endl;
+	std::cout << "going to another " << current_level << std::endl;
 	Mode::set_current(std::make_shared<PlayMode>());
-	std::cout<< "loading level" <<current_level <<std::endl;
+	std::cout << "loading level" << current_level << std::endl;
 }
 
-void PlayMode::load_next_level() {
-	if (current_level + 1 < num_levels) {
+void PlayMode::load_next_level()
+{
+	if (current_level + 1 < num_levels)
+	{
 		PlayMode::load_level((int)current_level + 1);
-		std::cout<< "loading level" <<std::endl;
-	} else {
+		std::cout << "loading level" << std::endl;
+	}
+	else
+	{
 		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, MenuMode::S, static_cast<int>(totalScore)));
 	}
 }

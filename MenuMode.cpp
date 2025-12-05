@@ -26,7 +26,7 @@ Load<void> loadScores(LoadTagDefault, []() -> void
     MenuMode::rankSprites.emplace(MenuMode::C, CScore);
 
     UIElement DScore;
-    DScore.load_image_data(data_path("S_tier.png"), OriginLocation::UpperLeftOrigin);
+    DScore.load_image_data(data_path("D_tier.png"), OriginLocation::UpperLeftOrigin);
     MenuMode::rankSprites.emplace(MenuMode::D, DScore);
 
     UIElement FScore;
@@ -74,6 +74,7 @@ MenuMode::MenuMode(MenuType menu, Rank _rank, int _score)
         title_x_pos = 220.0f;
         buttons.push_back(Button::Play);
         buttons.push_back(Button::QuitGame);
+        buttons.push_back(Button::Instructions);
         background.load_image_data(data_path("TitleSlide2.png"), OriginLocation::UpperLeftOrigin);
         break;
 

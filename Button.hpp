@@ -27,6 +27,7 @@ struct Button
     static Button Play;
     static Button QuitGame;
     static Button NextLevel;
+    static Button Instructions;
 
     Button() = default; // Default constructor
     Button(void (*_callback)(void), UIElement _button, glm::vec2 position, float height);
