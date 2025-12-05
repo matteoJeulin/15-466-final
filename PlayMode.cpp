@@ -346,7 +346,11 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 	player->drawable->pipeline[0].count = player->mesh->count;
 
 	player->cheese_body.init(initial_vertices);
-
+	// blob shadow mesh
+	//  Build a unit quad in the XY plane at z = 0, centered at origin.
+	// Local +Z is up (0,0,1) so your rotation-from-normal logic works.
+	std::vector<DynamicMeshBuffer::Vertex> verts;
+	verts.reserve(6);
 
 	auto make_vertex = [](float x, float y, float u, float v) -> DynamicMeshBuffer::Vertex
 	{

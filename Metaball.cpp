@@ -45,7 +45,7 @@ void draw_cheese_metaballs(
 
         // std::cout<< "metaball"<<i<< " pistion" << mb.position.y<< std::endl;
         // std::cout<< "metaball"<<i<< " pistion" << mb.position.z<< std::endl;
-        txt
+        // txt
 
         // If mb.position is WORLD space:
         glm::vec3 posOS = glm::vec3(object_from_world * glm::vec4(mb.render_position, 1.0f));
