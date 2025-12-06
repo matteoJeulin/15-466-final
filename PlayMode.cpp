@@ -302,17 +302,19 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 	}
 	if (player->model == nullptr)
 		throw std::runtime_error("Cheese not found.");
-	if (foundLevel)
-	{
-		player->collision->position = spawnPos;
-		std::cout << "Level found!\n";
-	}
 
 	// get pointer to camera for convenience:
 	if (scene.cameras.size() != 1)
 		throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
 
+	if (foundLevel)
+	{
+		player->collision->position = spawnPos;
+		camera->transform->position.y = player->collision->position.y;
+		camera->transform->position.z = player->collision->position.z + 30.0f;
+		std::cout << "Level found!\n";
+	}
 
 	//shadow map camera
 	// scene.transforms.emplace_back();
@@ -598,41 +600,51 @@ void PlayMode::camera_update(float elapsed)
 			// 1) Determine if camera is in the camera block with the correct offset
 			//    if wrong, correct using CAMERA_CORRECTION_SPEED
 
+			float horizontalPos = std::min(std::max(cameraBlocks[i].cameraLeft, player->collision->position.y), cameraBlocks[i].cameraRight);
+			float verticalPos = std::min(std::max(cameraBlocks[i].cameraBottom, player->collision->position.z + cameraBlocks[i].cameraVerticalOffset),
+											   cameraBlocks[i].cameraTop);
+
 			// Horizontal Correction
-			if (player->collision->position.y < cameraBlocks[i].cameraLeft)
+			if (camera->transform->position.y < horizontalPos)
 			{
-				camera->transform->position.y = cameraBlocks[i].cameraLeft;
-				// camera->transform->position.y = std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed),
-						 								//  cameraBlocks[i].cameraLeft);
+				// std::cout << std::abs(cameraBlocks[i].cameraLeft - camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
+				// camera->transform->position.y = cameraBlocks[i].cameraLeft;
+				// std::cout << "Correcting (too far left)\n";
+				camera->transform->position.y = std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed), horizontalPos);
 			}
-			else if (player->collision->position.y > cameraBlocks[i].cameraRight)
+			else if (camera->transform->position.y > horizontalPos)
 			{
-				camera->transform->position.y = cameraBlocks[i].cameraRight;
-				// camera->transform->position.y = std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed),
-						 								//  cameraBlocks[i].cameraRight);
+				// std::cout << std::abs(cameraBlocks[i].cameraRight - camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
+
+				// camera->transform->position.y = cameraBlocks[i].cameraRight;
+				// std::cout << "Correcting (too far right)\n";
+				camera->transform->position.y = std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed), horizontalPos);
 			}
 			else
 			{
-				camera->transform->position.y = player->collision->position.y;
+				camera->transform->position.y = horizontalPos;
 			}
 
 			// Vertical Correction
-			if (player->collision->position.z + cameraBlocks[i].cameraVerticalOffset < cameraBlocks[i].cameraBottom)
+			if (camera->transform->position.z + cameraBlocks[i].cameraVerticalOffset < verticalPos)
 			{
-				camera->transform->position.z = cameraBlocks[i].cameraBottom;
-				// camera->transform->position.z = std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed),
-						 								//  cameraBlocks[i].cameraBottom);
+				// std::cout << std::abs(cameraBlocks[i].cameraBottom - camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
+
+				// camera->transform->position.z = cameraBlocks[i].cameraBottom;
+				// std::cout << "Correcting (too far down)\n";
+				camera->transform->position.z = std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed), verticalPos);
 			}
-			else if (player->collision->position.z + cameraBlocks[i].cameraVerticalOffset > cameraBlocks[i].cameraTop)
+			else if (camera->transform->position.z + cameraBlocks[i].cameraVerticalOffset > verticalPos)
 			{
-				camera->transform->position.z = cameraBlocks[i].cameraTop;
-				// camera->transform->position.z = std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed),
-				// 		 								 cameraBlocks[i].cameraTop);
+				// std::cout << std::abs(cameraBlocks[i].cameraTop - camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
+
+				// camera->transform->position.z = cameraBlocks[i].cameraTop;
+				// std::cout << "Correcting (too far up)\n";
+				camera->transform->position.z = std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed), verticalPos);
 			}
 			else
 			{
-				camera->transform->position.z =
-					player->collision->position.z + cameraBlocks[i].cameraVerticalOffset;
+				camera->transform->position.z = verticalPos;
 				// std::cout << "Vertical offset = " << cameraBlocks[i].cameraVerticalOffset << "\n";
 			}
 			return;
@@ -641,6 +653,7 @@ void PlayMode::camera_update(float elapsed)
 
 	camera->transform->position.y = player->collision->position.y;
 	camera->transform->position.z = player->collision->position.z + 30.0f;
+	std::cout << "out of block\n";
 	return;
 }
 

@@ -126,7 +126,7 @@ int main() {
 
     levels.emplace_back(load_level("level1_info.txt"));
     std::cout << std::endl;
-    levels.emplace_back(load_level("level2_info.txt"));
+    levels.emplace_back(load_level("level2_info_wip.txt"));
 
     levelOutput.write(reinterpret_cast<const char*>(&levels[0]), levels.size() * sizeof(Level));
     levelOutput.close();
