@@ -32,6 +32,9 @@ void playGame()
 {
     Sound::stop_all_samples();
     PlayMode::current_level = 0;
+    PlayMode::totalScore = 0.0f;
+    // DEBUG:
+    // PlayMode::current_level = 1;
     Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level1Cutscene));
     // PlayMode::load_level(0);
 }
@@ -46,7 +49,21 @@ void nextLevel()
 {
     Sound::stop_all_samples();
     PlayMode::current_level++;
-    Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level2Cutscene));
+    if (PlayMode::current_level == 1)
+        Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level2Cutscene));
+    else {
+        MenuMode::Rank rank;
+		if (PlayMode::totalDRankTime - PlayMode::totalScore < PlayMode::totalSRankTime) rank = MenuMode::S;
+		else if (PlayMode::totalDRankTime - PlayMode::totalScore < PlayMode::totalARankTime) rank = MenuMode::A;
+		else if (PlayMode::totalDRankTime - PlayMode::totalScore < PlayMode::totalBRankTime) rank = MenuMode::B;
+		else if (PlayMode::totalDRankTime - PlayMode::totalScore < PlayMode::totalCRankTime) rank = MenuMode::C;
+		else if (PlayMode::totalDRankTime - PlayMode::totalScore < PlayMode::totalDRankTime) rank = MenuMode::D;
+		else rank = MenuMode::F; // Should be impossible
+
+		Mode::set_current(std::make_shared<MenuMode>(MenuMode::WinMenu, rank, static_cast<int>(PlayMode::totalScore * 1000)));
+
+        // Mode::set_current(std::make_shared<MenuMode>(std::make_shared<PlayMode>(), MenuMode::MenuType::WinMenu));
+    }
 }
 
 Load<void> createButtons(LoadTagDefault, []() -> void

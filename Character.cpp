@@ -130,9 +130,9 @@ bool Character::collide(Scene::Transform *object, bool isTrigger)
             wall = object;
         }
 
-        if (collision == game->player->collision) {
-            std::cout << "Player is touching " << object->name << "\n";
-        }
+        // if (collision == game->player->collision) {
+        //     std::cout << "Player is touching " << object->name << "\n";
+        // }
 
         return true;
     }

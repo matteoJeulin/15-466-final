@@ -77,7 +77,7 @@ void Player::update(float elapsed)
 			}
 		}
 		else if (locomotionState & PlayerLocomotion::WallClinging) {
-			if (jump.pressed) { // wall jump
+			if (jump.downs > 0) { // wall jump
 				wall_jump();
 				applySpeed(elapsed);
 			}

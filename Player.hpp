@@ -72,9 +72,9 @@ struct Player : public Character
     float prev_melt_level = 0.0f;
     bool had_full_melt = false;
 
-    const float MELT_FOR_GRAPPLE = 0.3f; // >=30% melt to grapple
+    const float MELT_FOR_GRAPPLE = 0.5f; // >=30% melt to grapple
     const float MELT_FOR_GRATE = 0.5f; // >=50% melt to pass through
-    const float MELT_FOR_CLING = 0.7f; // >=70% melt to cling
+    const float MELT_FOR_CLING = 0.5f; // >=70% melt to cling
 
     // Stove Heat
     void set_heat_level(int level);
@@ -99,7 +99,7 @@ struct Player : public Character
      ******************/
     // Wall on which the player is clinging to
     // See Character.cpp Scene::Transform *wall = nullptr;
-    const float STICK_TIME = 1.2f; // time until the player starts sliding
+    const float STICK_TIME = 4.8f; // time until the player starts sliding
     const float SLIDE_MAX_SPEED = maxSpeed / 2.0f;
     const float SLIDE_ACCEL = SLIDE_MAX_SPEED * 4.0f;
 

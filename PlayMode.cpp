@@ -193,6 +193,7 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 		for (int block = 0; block < numberOfCameraBlocks; block++)
 		{
 			cameraBlocks[block] = levels[current_level].cameraBlocks[block];
+			std::cout << "Block height " << cameraBlocks[block].cameraVerticalOffset << "\n";
 		}
 
 		spawnLocName = std::string(levels[current_level].spawnLocation);
@@ -276,9 +277,9 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 		{
 			MovingWall *wall = nullptr;
 			if (transform.name.substr(17, 19) == "up")
-				wall = new MovingWall(-player->height * 2.5f, 2.0f, transform.position.z + player->height * 2.5f);
+				wall = new MovingWall(-player->height * 3.0f, 2.0f, transform.position.z + player->height * 3.0f);
 			else
-				wall = new MovingWall(player->height * 5, 2.0f, transform.position.z - player->height * 2.5f);
+				wall = new MovingWall(player->height * 3.0f, 2.0f, transform.position.z - player->height * 3.0f);
 			assert(wall != nullptr);
 			wall->collision = &transform;
 			moving_walls.emplace_back(wall);
@@ -583,6 +584,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::camera_update(float elapsed)
 {
+	// std::cout << "Checking against " << numberOfCameraBlocks << " camera blocks\n";
 	// 0) Determine which player block the player is in
 	for (int i = 0; i < numberOfCameraBlocks; i++)
 	{
@@ -591,6 +593,7 @@ void PlayMode::camera_update(float elapsed)
 			player->collision->position.z >= cameraBlocks[i].playerBottom &&
 			player->collision->position.z <= cameraBlocks[i].playerTop)
 		{
+			std::cout << "In block " << i << std::endl;
 
 			// 1) Determine if camera is in the camera block with the correct offset
 			//    if wrong, correct using CAMERA_CORRECTION_SPEED
@@ -630,6 +633,7 @@ void PlayMode::camera_update(float elapsed)
 			{
 				camera->transform->position.z =
 					player->collision->position.z + cameraBlocks[i].cameraVerticalOffset;
+				// std::cout << "Vertical offset = " << cameraBlocks[i].cameraVerticalOffset << "\n";
 			}
 			return;
 		}
@@ -727,6 +731,7 @@ void PlayMode::update(float elapsed)
 	}
 
 	player->pause.downs = 0;
+	player->jump.downs = 0;
 
 	// music
 	float base_kitchen_vol = 0.5f;
