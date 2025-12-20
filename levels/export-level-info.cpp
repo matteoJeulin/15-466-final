@@ -97,14 +97,15 @@ Level load_level(std::string inputFileName) {
                         //              block->cameraRight << "," << block->cameraTop << ")" << "\n";
                     }
                     else {
-                        block->cameraVerticalOffset = std::stof(info[0]);
+                        block->cameraHorizontalOffset = std::stof(info[0]);
+                        block->cameraVerticalOffset = std::stof(info[1]);
 
                         std::cout << "Level " << inputFileName <<
                                      " Player Range of Block: (" << block->playerLeft << "," << block->playerBottom << ") -> (" <<
                                      block->playerRight << "," << block->playerTop << ")\n" <<
                                      "Camera Range of Block: (" << block->cameraLeft << "," << block->cameraBottom << ") -> (" <<
                                      block->cameraRight << "," << block->cameraTop << ")" << "\n" <<
-                                     "Camera Vertical Offset: " << block->cameraVerticalOffset << "\n\n";
+                                     "Camera Offset: (" << block->cameraHorizontalOffset << ", " << block->cameraVerticalOffset << ")\n\n";
                     }
 
                     blockLineCounter++;
@@ -126,7 +127,7 @@ int main() {
 
     levels.emplace_back(load_level("level1_info.txt"));
     std::cout << std::endl;
-    levels.emplace_back(load_level("level2_info_wip.txt"));
+    levels.emplace_back(load_level("level2_info.txt"));
 
     levelOutput.write(reinterpret_cast<const char*>(&levels[0]), levels.size() * sizeof(Level));
     levelOutput.close();

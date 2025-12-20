@@ -128,7 +128,7 @@ struct PlayMode : Mode
 	// level camera blocks blocks
 	int numberOfCameraBlocks = 0;
 	CameraBlock cameraBlocks[64];
-	float CAMERA_CORRECTION_SPEED = 6.24f / 0.4f; // per second
+	float MIN_CAMERA_CORRECTION_SPEED = 6.24f; // per second
 
 	void camera_update(float elapsed);
 

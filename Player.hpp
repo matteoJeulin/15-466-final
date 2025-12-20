@@ -117,6 +117,8 @@ struct Player : public Character
     void wall_jump();
     void release_wall();
 
+    glm::vec3 get_speed(); // for converting speed in different states to linear speed
+
     glm::vec3 grapple_attach_local = glm::vec3(0.0f); // rope vector at moment of attach, in cheese-local space
     float grapple_attach_length = 0.0f;    
 

@@ -11,5 +11,6 @@ struct CameraBlock {
     float cameraBottom = 0.0f;
     float cameraTop = 0.0f;
 
+    float cameraHorizontalOffset = 0.0f;
     float cameraVerticalOffset = 0.0f;
 };

@@ -815,3 +815,24 @@ void Player::release_wall()
 	speed.z = -slideSpeed;
 	cheese_body.clearWallCling();
 }
+
+glm::vec3 Player::get_speed()
+{
+	if (locomotionState & PlayerLocomotion::WallClinging)
+	{
+		// unknown: have no (simple) way of knowing if wall is moving
+		return glm::vec3(0.0f, 0.0f, 0.0f);
+	}
+
+	if (locomotionState & PlayerLocomotion::Grappling)
+	{
+		glm::vec3 return_speed = glm::vec3(0.0f, 0.0f, 0.0f);
+		float lin_speed = grapple_angular_velocity * grapple_length; // v = wr
+		return_speed.y = std::cos(grapple_angle) * lin_speed;
+		return_speed.z = std::sin(grapple_angle) * lin_speed;
+
+		return return_speed;
+	}
+
+	return glm::vec3(speed.x, speed.y, speed.z);
+}

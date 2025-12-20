@@ -207,7 +207,7 @@ std::cerr << "[PlayMode] glIsProgram() = " << int(glIsProgram(lit_color_texture_
 
 	player = new Player(this);
 
-	CAMERA_CORRECTION_SPEED = player->maxSpeed;
+	MIN_CAMERA_CORRECTION_SPEED = player->maxSpeed * 2.0f;
 
 	UIElement resumeButton;
 	resumeButton.load_image_data(data_path("Buttons/resume_button.png"), OriginLocation::UpperLeftOrigin);
@@ -595,30 +595,38 @@ void PlayMode::camera_update(float elapsed)
 			player->collision->position.z >= cameraBlocks[i].playerBottom &&
 			player->collision->position.z <= cameraBlocks[i].playerTop)
 		{
-			std::cout << "In block " << i << std::endl;
+			// std::cout << "In block " << i << std::endl;
 
 			// 1) Determine if camera is in the camera block with the correct offset
 			//    if wrong, correct using CAMERA_CORRECTION_SPEED
 
-			float horizontalPos = std::min(std::max(cameraBlocks[i].cameraLeft, player->collision->position.y), cameraBlocks[i].cameraRight);
+			float horizontalPos = std::min(std::max(cameraBlocks[i].cameraLeft, player->collision->position.y + cameraBlocks[i].cameraHorizontalOffset),
+													cameraBlocks[i].cameraRight);
 			float verticalPos = std::min(std::max(cameraBlocks[i].cameraBottom, player->collision->position.z + cameraBlocks[i].cameraVerticalOffset),
-											   cameraBlocks[i].cameraTop);
+											   	  cameraBlocks[i].cameraTop);
+			// float camCorrectSpeed = std::max(MIN_CAMERA_CORRECTION_SPEED, std::powf(glm::length(player->speed), 2.0f));
+			glm::vec3 playerSpeed = player->get_speed();
+			float camCorrectSpeedY = std::max(MIN_CAMERA_CORRECTION_SPEED, std::max(std::abs(horizontalPos - camera->transform->position.y) * 4.0f, playerSpeed.y));
+			float camCorrectSpeedZ = std::max(MIN_CAMERA_CORRECTION_SPEED, std::max(std::abs(verticalPos - camera->transform->position.z) * 4.0f, playerSpeed.z));
+			std::cout << "Camera correct = (" << camCorrectSpeedY << ", " << camCorrectSpeedZ << ")\n";
 
 			// Horizontal Correction
+			// if (camera->transform->position.y + cameraBlocks[i].cameraHorizontalOffset < horizontalPos)
 			if (camera->transform->position.y < horizontalPos)
 			{
 				// std::cout << std::abs(cameraBlocks[i].cameraLeft - camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
 				// camera->transform->position.y = cameraBlocks[i].cameraLeft;
 				// std::cout << "Correcting (too far left)\n";
-				camera->transform->position.y = std::min(camera->transform->position.y + (CAMERA_CORRECTION_SPEED * elapsed), horizontalPos);
+				camera->transform->position.y = std::min(camera->transform->position.y + (camCorrectSpeedY * elapsed), horizontalPos);
 			}
+			// else if (camera->transform->position.y + cameraBlocks[i].cameraHorizontalOffset > horizontalPos)
 			else if (camera->transform->position.y > horizontalPos)
 			{
 				// std::cout << std::abs(cameraBlocks[i].cameraRight - camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
 
 				// camera->transform->position.y = cameraBlocks[i].cameraRight;
 				// std::cout << "Correcting (too far right)\n";
-				camera->transform->position.y = std::max(camera->transform->position.y - (CAMERA_CORRECTION_SPEED * elapsed), horizontalPos);
+				camera->transform->position.y = std::max(camera->transform->position.y - (camCorrectSpeedY * elapsed), horizontalPos);
 			}
 			else
 			{
@@ -626,27 +634,30 @@ void PlayMode::camera_update(float elapsed)
 			}
 
 			// Vertical Correction
-			if (camera->transform->position.z + cameraBlocks[i].cameraVerticalOffset < verticalPos)
+			// if (camera->transform->position.z + cameraBlocks[i].cameraVerticalOffset < verticalPos)
+			if (camera->transform->position.z < verticalPos)
 			{
 				// std::cout << std::abs(cameraBlocks[i].cameraBottom - camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
 
 				// camera->transform->position.z = cameraBlocks[i].cameraBottom;
 				// std::cout << "Correcting (too far down)\n";
-				camera->transform->position.z = std::min(camera->transform->position.z + (CAMERA_CORRECTION_SPEED * elapsed), verticalPos);
+				camera->transform->position.z = std::min(camera->transform->position.z + (camCorrectSpeedZ * elapsed), verticalPos);
 			}
-			else if (camera->transform->position.z + cameraBlocks[i].cameraVerticalOffset > verticalPos)
+			// else if (camera->transform->position.z + cameraBlocks[i].cameraVerticalOffset > verticalPos)
+			else if (camera->transform->position.z > verticalPos)
 			{
 				// std::cout << std::abs(cameraBlocks[i].cameraTop - camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed)) << std::endl;
 
 				// camera->transform->position.z = cameraBlocks[i].cameraTop;
 				// std::cout << "Correcting (too far up)\n";
-				camera->transform->position.z = std::max(camera->transform->position.z - (CAMERA_CORRECTION_SPEED * elapsed), verticalPos);
+				camera->transform->position.z = std::max(camera->transform->position.z - (camCorrectSpeedZ * elapsed), verticalPos);
 			}
 			else
 			{
 				camera->transform->position.z = verticalPos;
 				// std::cout << "Vertical offset = " << cameraBlocks[i].cameraVerticalOffset << "\n";
 			}
+
 			return;
 		}
 	}
@@ -738,6 +749,7 @@ void PlayMode::update(float elapsed)
 
 		if (wine_remaining <= 0.0f)
 		{
+			// printf("oops\n");
 			Mode::set_current(std::make_shared<MenuMode>(MenuMode::LoseMenu, MenuMode::F, 0));
 			return;
 		}

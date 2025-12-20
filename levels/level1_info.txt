@@ -4,19 +4,19 @@
 % Camera Blocks
 % player left, right, bottom, top trigger zone...
 % camera left, right, bottom, top bounds...
-% standard vertical offset of the camera
+% standard horizontal, vertical offset of the camera
 
 % sections 1 and 2
 50.0, 336.78, 0.0, 135.37
 76.0603, 336.78, 0.0, 127.280
-30.0
+0.0, 30.0
 
 % section 3
 333.93, 462.95, 0.0, 150.892
 333.93, 462.95, 0.0, 127.280
-30.0
+0.0, 30.0
 
 % section 4
 462.95, 970.00, 0.0, 400.92
 462.95, 970.00, 0.0, 400.92
-30.0
+0.0, 30.0
