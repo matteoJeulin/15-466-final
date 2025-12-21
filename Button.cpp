@@ -31,10 +31,10 @@ void quitGame()
 void playGame()
 {
     Sound::stop_all_samples();
-    // PlayMode::current_level = 0;
+    PlayMode::current_level = 0;
     PlayMode::totalScore = 0.0f;
     // DEBUG:
-    PlayMode::current_level = 1;
+    // PlayMode::current_level = 1;
     Mode::set_current(std::make_shared<ControlsMenu>(std::make_shared<PlayMode>(), ControlsMenu::Type::Level1Cutscene));
     // PlayMode::load_level(0);
 }

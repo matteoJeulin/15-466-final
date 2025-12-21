@@ -629,7 +629,8 @@ void Player::update(float elapsed)
 void Player::set_heat_level(int level) {
 	heat_level = std::clamp(level, 0, 3);
 	// knob to melt rate multipliers
-	float rate_by_level[4] = { -1.0f, 0.5f, 1.0f, 2.0f };
+	// float rate_by_level[4] = { -1.0f, 0.5f, 1.0f, 2.0f };
+	float rate_by_level[4] = { -1.0f, 2.0f, 1.0f, 2.0f };
 	melt_delta = base_melt_rate * rate_by_level[heat_level];
 }
 

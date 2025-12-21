@@ -26,7 +26,7 @@ public:
 private:
     struct Knob {
         Scene::Transform* t = nullptr;
-        int state = 0;             // 0..3
+        int state = 0;             // 0..1
         int plate_index = -1;      // nearest Plate* at init
     };
     struct Plate {

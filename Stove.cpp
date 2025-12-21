@@ -74,7 +74,8 @@ void StoveSystem::init(Scene& scene) {
 int StoveSystem::get_level_for_plate(Scene::Transform* plate_t) const {
     if (!plate_t) return 0;
     for (const auto& p : plates_) {
-        if (p.t == plate_t) return std::clamp(p.level, 0, 3);
+        // if (p.t == plate_t) return std::clamp(p.level, 0, 3);
+        if (p.t == plate_t) return std::clamp(p.level, 0, 1);
     }
     return 0; // default to 0
 }
@@ -101,7 +102,8 @@ int* StoveSystem::find_knob_state(Scene::Transform* t) {
 }
 
 void StoveSystem::rotate_knob(Scene::Transform* t) {
-    t->rotation = t->rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0, 0, 1));
+    // t->rotation = t->rotation * glm::angleAxis(glm::radians(90.0f), glm::vec3(0, 0, 1));
+    t->rotation = t->rotation * glm::angleAxis(glm::radians(180.0f), glm::vec3(0, 0, 1));
 }
 
 void StoveSystem::apply_plate_tint_for_level(int plate_index, int level) {
@@ -109,7 +111,8 @@ void StoveSystem::apply_plate_tint_for_level(int plate_index, int level) {
     Plate& p = plates_[plate_index];
     if (!p.d) return; // non-rendered plate
 
-    int L = std::clamp(level, 0, 3);
+    // int L = std::clamp(level, 0, 3);
+    int L = std::clamp(level, 0, 1);
     p.d->pipeline[0].textures[0].texture = tint_lvl_[L];
     p.d->pipeline[0].textures[0].target = GL_TEXTURE_2D;
     p.level = L;
@@ -126,7 +129,8 @@ void StoveSystem::set_level_for_plate(Scene::Transform* plate_t, int level) {
 }
 
 void StoveSystem::set_level(int level) {
-    int L = std::clamp(level, 0, 3);
+    // int L = std::clamp(level, 0, 3);
+    int L = std::clamp(level, 0, 1);
     for (auto& k : knobs_) k.state = L;
 }
 
@@ -152,7 +156,8 @@ bool StoveSystem::try_toggle(const Ray& ray, int* out_level) {
     rotate_knob(best_switch);
     int* state = find_knob_state(best_switch);
     if (!state) return false;
-    *state = (*state + 1) % 4;
+    // *state = (*state + 1) % 4;
+    *state = (*state + 1) % 2;
 
     // find the knob object to get its paired plate
     for (auto& k : knobs_) {

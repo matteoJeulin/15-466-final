@@ -606,9 +606,9 @@ void PlayMode::camera_update(float elapsed)
 											   	  cameraBlocks[i].cameraTop);
 			// float camCorrectSpeed = std::max(MIN_CAMERA_CORRECTION_SPEED, std::powf(glm::length(player->speed), 2.0f));
 			glm::vec3 playerSpeed = player->get_speed();
-			float camCorrectSpeedY = std::max(MIN_CAMERA_CORRECTION_SPEED, std::max(std::abs(horizontalPos - camera->transform->position.y) * 4.0f, playerSpeed.y));
-			float camCorrectSpeedZ = std::max(MIN_CAMERA_CORRECTION_SPEED, std::max(std::abs(verticalPos - camera->transform->position.z) * 4.0f, playerSpeed.z));
-			std::cout << "Camera correct = (" << camCorrectSpeedY << ", " << camCorrectSpeedZ << ")\n";
+			float camCorrectSpeedY = std::max(MIN_CAMERA_CORRECTION_SPEED, std::max(std::abs(horizontalPos - camera->transform->position.y) * 10.0f, playerSpeed.y * 4.0f));
+			float camCorrectSpeedZ = std::max(MIN_CAMERA_CORRECTION_SPEED, std::max(std::abs(verticalPos - camera->transform->position.z) * 10.0f, playerSpeed.z * 4.0f));
+			// std::cout << "Camera correct = (" << camCorrectSpeedY << ", " << camCorrectSpeedZ << ")\n";
 
 			// Horizontal Correction
 			// if (camera->transform->position.y + cameraBlocks[i].cameraHorizontalOffset < horizontalPos)
@@ -763,6 +763,10 @@ void PlayMode::update(float elapsed)
 	pause_vol = std::clamp(pause_vol + (vol_fade_rate * elapsed), 0.0f, 1.0f);
 	kitchen_music.set_volume(base_kitchen_vol * (1.0f - pause_vol), 1.f / 60.f);
 	pause_music.set_volume(pause_vol * 2.0f, 1.f / 60.f);
+
+	// Trailer: Mute Footage
+	// kitchen_music.set_volume(0.0f, 1.f / 60.f);
+	// pause_music.set_volume(0.0f, 1.f / 60.f);
 
 	kitchen_music.update();
 	pause_music.update();
